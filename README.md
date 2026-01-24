@@ -40,4 +40,4 @@ EasyADB, USB hata ayıklama üzerinden Android uygulamalarınızı hızlıca yed
 - **Data Flow:** Tauri IPC (Invoke/Events)
 
 ---
-*Developed with Passion by Antigravity*
+*Developed with Passion by EasyADB Team*

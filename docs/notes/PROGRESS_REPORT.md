@@ -54,4 +54,4 @@ Bu güncellemelerin sağlıklı çalıştığından emin olmak için şu adımla
 4.  **Hacker Terminal:** Sidebar'daki makrolara ("REBOOT SYSTEM" vb.) basıldığında doğru `adb` komutunun terminale düştüğünü izleyin.
 
 ---
-*Hazırlayan: EasyADB Geliştirme Ekibi (Antigravity)*
+*Hazırlayan: EasyADB Geliştirme Ekibi*
