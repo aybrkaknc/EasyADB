@@ -1,0 +1,131 @@
+@import "tailwindcss";
+@config "../tailwind.config.js";
+
+@layer base {
+  :root {
+    --background: 0 0% 4%;
+    /* #0a0a0a */
+    --foreground: 135 100% 50%;
+    /* #00ff41 Neon Green */
+
+    --card: 0 0% 4%;
+    --card-foreground: 135 100% 50%;
+
+    --popover: 0 0% 4%;
+    --popover-foreground: 135 100% 50%;
+
+    --primary: 135 100% 50%;
+    --primary-foreground: 0 0% 0%;
+
+    --secondary: 0 0% 10%;
+    --secondary-foreground: 135 100% 50%;
+
+    --muted: 0 0% 10%;
+    --muted-foreground: 135 60% 50%;
+
+    --accent: 135 100% 50%;
+    --accent-foreground: 0 0% 0%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 135 100% 20%;
+    --input: 135 100% 20%;
+    --ring: 135 100% 50%;
+
+    --radius: 0rem;
+    /* Sharp corners for Hacker UI */
+  }
+
+  .dark {
+    /* Same as root because we are always dark */
+    --background: 0 0% 4%;
+    --foreground: 135 100% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-mono antialiased;
+    background-image: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+    background-size: 100% 2px, 2px 100%;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Custom Scrollbar for Hacker UI */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(0, 255, 65, 0.2);
+    border: 1px solid rgba(0, 255, 65, 0.3);
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 255, 65, 0.6);
+    box-shadow: 0 0 10px rgba(0, 255, 65, 0.4);
+  }
+
+  /* Specific handle for nicer look */
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+}
+
+@layer utilities {
+  @keyframes scanline {
+    0% {
+      transform: translateY(-100%);
+    }
+
+    100% {
+      transform: translateY(400%);
+    }
+  }
+
+  .animate-scanline {
+    animation: scanline 2.5s linear infinite;
+  }
+
+  @keyframes glitch {
+    0% {
+      transform: translate(0);
+    }
+
+    20% {
+      transform: translate(-2px, 2px);
+    }
+
+    40% {
+      transform: translate(-2px, -2px);
+    }
+
+    60% {
+      transform: translate(2px, 2px);
+    }
+
+    80% {
+      transform: translate(2px, -2px);
+    }
+
+    100% {
+      transform: translate(0);
+    }
+  }
+
+  .animate-glitch {
+    animation: glitch 0.3s cubic-bezier(.25, .46, .45, .94) both infinite;
+  }
+}

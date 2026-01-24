@@ -1,0 +1,86 @@
+[
+    {
+        "id": "com.android.chrome",
+        "description": "Google Chrome browser.",
+        "list": "user",
+        "recommendation": "safe"
+    },
+    {
+        "id": "com.google.android.youtube",
+        "description": "YouTube application.",
+        "list": "user",
+        "recommendation": "safe"
+    },
+    {
+        "id": "com.android.vending",
+        "description": "Google Play Store. Core for app updates.",
+        "list": "google",
+        "recommendation": "advanced"
+    },
+    {
+        "id": "com.google.android.gms",
+        "description": "Google Play Services. System core.",
+        "list": "google",
+        "recommendation": "unsafe"
+    },
+    {
+        "id": "com.miui.analytics",
+        "description": "MIUI Analytics. Safe to disable/remove.",
+        "list": "miui",
+        "recommendation": "recommended"
+    },
+    {
+        "id": "com.miui.msa.global",
+        "description": "MIUI System Ads service.",
+        "list": "miui",
+        "recommendation": "recommended"
+    },
+    {
+        "id": "com.miui.daemon",
+        "description": "MIUI Daemon. Collects data.",
+        "list": "miui",
+        "recommendation": "recommended"
+    },
+    {
+        "id": "com.xiaomi.joyose",
+        "description": "Xiaomi Joyose. Gaming turbo (junk).",
+        "list": "miui",
+        "recommendation": "advanced"
+    },
+    {
+        "id": "com.android.systemui",
+        "description": "System UI. DO NOT REMOVE.",
+        "list": "aosp",
+        "recommendation": "unsafe"
+    },
+    {
+        "id": "com.android.settings",
+        "description": "Android Settings.",
+        "list": "aosp",
+        "recommendation": "unsafe"
+    },
+    {
+        "id": "com.miui.player",
+        "description": "Mi Music app.",
+        "list": "miui",
+        "recommendation": "safe"
+    },
+    {
+        "id": "com.miui.videoplayer",
+        "description": "Mi Video app.",
+        "list": "miui",
+        "recommendation": "safe"
+    },
+    {
+        "id": "com.mi.android.globalminusscreen",
+        "description": "App Vault / Minus One Screen.",
+        "list": "miui",
+        "recommendation": "recommended"
+    },
+    {
+        "id": "com.xiaomi.finddevice",
+        "description": "Xiaomi Find Device service.",
+        "list": "miui",
+        "recommendation": "advanced"
+    }
+]

@@ -1,0 +1,62 @@
+[
+    {
+        "id": "com.android.chrome",
+        "description": "Google Chrome browser. Safe to remove if you use another browser.",
+        "list": "user",
+        "recommendation": "safe"
+    },
+    {
+        "id": "com.google.android.youtube",
+        "description": "YouTube application.",
+        "list": "user",
+        "recommendation": "safe"
+    },
+    {
+        "id": "com.google.android.gm",
+        "description": "Gmail application.",
+        "list": "user",
+        "recommendation": "safe"
+    },
+    {
+        "id": "com.miui.analytics",
+        "description": "MIUI Analytics service. Tracks user behavior.",
+        "list": "miui",
+        "recommendation": "recommended"
+    },
+    {
+        "id": "com.miui.msa.global",
+        "description": "MIUI System Ads. Responsible for ads in system apps.",
+        "list": "miui",
+        "recommendation": "recommended"
+    },
+    {
+        "id": "com.xiaomi.joyose",
+        "description": "Xiaomi Joyose. Gaming turbo and analytics. Sometimes causes lag.",
+        "list": "miui",
+        "recommendation": "advanced"
+    },
+    {
+        "id": "com.android.systemui",
+        "description": "Android System UI. DO NOT REMOVE.",
+        "list": "aosp",
+        "recommendation": "unsafe"
+    },
+    {
+        "id": "com.android.settings",
+        "description": "Android Settings. DO NOT REMOVE.",
+        "list": "aosp",
+        "recommendation": "unsafe"
+    },
+    {
+        "id": "com.android.vending",
+        "description": "Google Play Store. Removing breaks app updates.",
+        "list": "google",
+        "recommendation": "advanced"
+    },
+    {
+        "id": "com.google.android.gms",
+        "description": "Google Play Services. Core framework for Google apps.",
+        "list": "google",
+        "recommendation": "unsafe"
+    }
+]
