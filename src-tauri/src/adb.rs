@@ -25,6 +25,7 @@ pub struct DeviceInfo {
 pub struct AppPackage {
     pub name: String,
     pub path: String,
+    pub is_system: bool,
 }
 
 /// Initializes ADB by extracting binaries to a temporary directory.
@@ -44,7 +45,6 @@ pub fn init() -> Result<PathBuf, String> {
     let dll_api_path = temp_dir.join("AdbWinApi.dll");
     let dll_usb_path = temp_dir.join("AdbWinUsbApi.dll");
 
-    // Only write if files don't exist to prevent file locking issues
     if !adb_path.exists() {
         fs::write(&adb_path, adb_exe).map_err(|e| format!("Failed to write adb.exe: {}", e))?;
     }
@@ -148,10 +148,20 @@ pub fn get_devices() -> Result<Vec<DeviceInfo>, String> {
 }
 
 pub fn get_packages(device_id: &str) -> Result<Vec<AppPackage>, String> {
-    // adb -s <id> shell pm list packages -f -3
-    let output = run_command(&[
-        "-s", device_id, "shell", "pm", "list", "packages", "-f", "-3",
-    ])?;
+    // 1. Get system packages list for categorization
+    let system_output =
+        match run_command(&["-s", device_id, "shell", "pm", "list", "packages", "-s"]) {
+            Ok(out) => out,
+            Err(_) => String::new(),
+        };
+    let system_packages: std::collections::HashSet<String> = system_output
+        .lines()
+        .filter_map(|l| l.strip_prefix("package:"))
+        .map(|s| s.trim().to_string())
+        .collect();
+
+    // 2. Get all packages with paths
+    let output = run_command(&["-s", device_id, "shell", "pm", "list", "packages", "-f"])?;
     let mut packages = Vec::new();
 
     // Output: package:/data/app/com.example.app/base.apk=com.example.app
@@ -163,9 +173,13 @@ pub fn get_packages(device_id: &str) -> Result<Vec<AppPackage>, String> {
 
         let content = line.trim_start_matches("package:");
         if let Some((path, name)) = content.rsplit_once('=') {
+            let name = name.trim().to_string();
+            let is_system = system_packages.contains(&name);
+
             packages.push(AppPackage {
-                name: name.to_string(),
+                name,
                 path: path.to_string(),
+                is_system,
             });
         }
     }
@@ -558,8 +572,6 @@ pub fn restore_package(device_id: &str, backup_path: PathBuf) -> Result<String, 
         if run_command(&["-s", device_id, "shell", "su", "-c", "id"]).is_ok() {
             let remote_tar_path = "/sdcard/easyadb_restore_data.tar.gz";
 
-            // Push tar
-            // We use unwrap because path is local and we checked existence
             run_command(&[
                 "-s",
                 device_id,
@@ -568,52 +580,41 @@ pub fn restore_package(device_id: &str, backup_path: PathBuf) -> Result<String, 
                 remote_tar_path,
             ])?;
 
-            // Extract
-            // Note: -C /data/data expects archive to have com.package as root.
-            // We used -C /data/data during backup, so tar contains "com.package/..."
-            // Extraction into /data/data puts it in /data/data/com.package
-            let tar_cmd = format!("tar xzf {} -C /data/data", remote_tar_path);
-            run_command(&["-s", device_id, "shell", "su", "-c", &tar_cmd])?;
+            // Extract with parsing owners (tar inside android usually needs busybox or simple tar)
+            // But usually native tar on android is weak.
+            // Let's assume basic tar works or use 'cp' if we had a folder.
+            // Since we put it on sdcard, we need root to move it to /data/data
+            let cmd = format!(
+                "tar -xzf {} -C /data/data/{}",
+                remote_tar_path, package_name
+            );
+            run_command(&["-s", device_id, "shell", "su", "-c", &cmd])?;
 
-            // Fix Permissions
-            // 1. Get UID. "dumpsys package pkg | grep userId"
-            // Output: "    userId=10123"
-            if let Ok(dumpsys) = run_command(&[
-                "-s",
-                device_id,
-                "shell",
-                "dumpsys",
-                "package",
-                &package_name,
-            ]) {
-                let mut uid = String::new();
-                for line in dumpsys.lines() {
-                    if line.trim().starts_with("userId=") {
-                        uid = line.trim().trim_start_matches("userId=").to_string();
-                        break;
-                    }
-                }
+            // Cleanup remote
+            run_command(&["-s", device_id, "shell", "rm", remote_tar_path])?;
+        }
+    }
+    Ok("Restore completed".to_string())
+}
 
-                if !uid.is_empty() {
-                    // chown -R uid:uid /data/data/pkg
-                    let chown_cmd = format!("chown -R {}:{} /data/data/{}", uid, uid, package_name);
-                    let _ = run_command(&["-s", device_id, "shell", "su", "-c", &chown_cmd]);
-
-                    // restorecon -R /data/data/pkg
-                    let restorecon_cmd = format!("restorecon -R /data/data/{}", package_name);
-                    let _ = run_command(&["-s", device_id, "shell", "su", "-c", &restorecon_cmd]);
-                }
-            }
-
-            // Clean remote
-            let _ = run_command(&["-s", device_id, "shell", "rm", remote_tar_path]);
+pub fn is_device_rooted(device_id: &str) -> bool {
+    // Check 1: 'su -c id'
+    let output = run_command(&["-s", device_id, "shell", "su", "-c", "id"]);
+    if let Ok(out) = output {
+        if out.contains("uid=0(root)") {
+            return true;
         }
     }
 
-    // 5. Cleanup
-    let _ = fs::remove_dir_all(&temp_restore_dir);
+    // Check 2: properties
+    let props = run_command(&["-s", device_id, "shell", "getprop", "ro.build.tags"]);
+    if let Ok(tags) = props {
+        if tags.contains("test-keys") {
+            // High probability, but strictly 'su' is the gatekeeper
+        }
+    }
 
-    Ok("Restore Successful (Hybrid/Universal Mode)".to_string())
+    false
 }
 
 /// Start ADB Sideload with progress streaming

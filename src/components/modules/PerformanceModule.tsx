@@ -2,42 +2,7 @@ import { Activity, Battery, Cpu, Database, RefreshCw, Zap, Shield, Monitor, Laye
 import { cn } from '../../lib/utils';
 import { usePerformanceMetrics, HWInfo } from '../../hooks/usePerformanceMetrics';
 
-// =====================================================================
-// PERFORMANCE SIDEBAR
-// =====================================================================
 
-export function PerformanceSidebar() {
-    return (
-        <div className="flex flex-col h-full bg-black">
-            <div className="p-4 border-b border-terminal-green/20 bg-zinc-950/20">
-                <h2 className="text-xs font-space font-black text-terminal-green tracking-[0.2em] flex items-center gap-2 uppercase">
-                    <Activity className="w-3.5 h-3.5" />
-                    TELEMETRY_LOG
-                </h2>
-                <p className="text-[9px] text-terminal-green/60 font-mono mt-1.5 uppercase tracking-tighter">
-                    Active node synchronization
-                </p>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-3 space-y-3">
-                <div className="p-3 bg-terminal-green/5 border border-terminal-green/10 rounded-sm relative overflow-hidden group">
-                    <div className="absolute top-0 left-0 w-full h-[1px] bg-terminal-green/10 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                    <div className="flex items-center gap-2 mb-2">
-                        <Zap className="w-3 h-3 text-terminal-green" />
-                        <span className="text-[10px] font-space font-black text-terminal-green tracking-widest uppercase">STREAM_LINK</span>
-                    </div>
-                    <div className="text-[9px] text-zinc-400 font-mono leading-relaxed">
-                        Data packets are sampled at <span className="text-terminal-green font-bold">1Hz</span>. Prolonged monitoring affects battery longevity.
-                    </div>
-                </div>
-            </div>
-
-            <div className="p-4 mt-auto border-t border-terminal-green/5 text-[8px] text-terminal-green/40 font-mono tracking-widest text-center uppercase">
-                S_DATA_SUBSYSTEM v1.2
-            </div>
-        </div>
-    );
-}
 
 // =====================================================================
 // PERFORMANCE VIEW SUB-COMPONENTS
@@ -101,45 +66,45 @@ function HardwareInfo({ info }: { info?: HWInfo }) {
         return (
             <div className="lg:col-span-2 relative bg-zinc-950/40 border border-terminal-green/20 p-8 flex flex-col items-center justify-center gap-4">
                 <RefreshCw className="w-8 h-8 text-terminal-green/20 animate-spin" />
-                <span className="text-[10px] font-space font-black text-terminal-green/40 animate-pulse uppercase tracking-[0.3em]">INITIALIZING_HW_LINK...</span>
+                <span className="text-[10px] font-space font-black text-terminal-green/40 animate-pulse uppercase tracking-[0.3em]">CONNECTING DEVICE...</span>
             </div>
         );
     }
 
     const groups = [
         {
-            title: "SYSTEM_SILICON",
+            title: "SYSTEM CHIPSET",
             icon: Cpu,
             items: [
-                { label: 'CPU_PLATFORM', val: info.soc },
+                { label: 'PLATFORM', val: info.soc },
                 { label: 'ARCHITECTURE', val: info.cpu_abi },
-                { label: 'GPU_RENDERER', val: info.gpu_renderer, highlight: true }
+                { label: 'GPU RENDERER', val: info.gpu_renderer, highlight: true }
             ]
         },
         {
-            title: "CORE_SUBSYSTEM",
+            title: "OS INFORMATION",
             icon: Terminal,
             items: [
-                { label: 'NODE_VERSION', val: `v${info.android_ver} (SDK ${info.sdk_ver})` },
-                { label: 'KERNEL_ID', val: info.kernel },
-                { label: 'SEC_PATCH', val: info.security_patch }
+                { label: 'ANDROID VERSION', val: `v${info.android_ver} (SDK ${info.sdk_ver})` },
+                { label: 'KERNEL ID', val: info.kernel },
+                { label: 'SECURITY PATCH', val: info.security_patch }
             ]
         },
         {
-            title: "DISPLAY_PANEL",
+            title: "DISPLAY PANEL",
             icon: Monitor,
             items: [
                 { label: 'RESOLUTION', val: info.resolution },
-                { label: 'PIXEL_DENSITY', val: info.density }
+                { label: 'PIXEL DENSITY', val: info.density }
             ]
         },
         {
-            title: "NODE_TAGS",
+            title: "DEVICE IDENTITY",
             icon: Layers,
             items: [
-                { label: 'PRODUCT_ID', val: info.model },
-                { label: 'BUILD_REV', val: info.build_id },
-                { label: 'SERIAL_NUM', val: info.serial }
+                { label: 'MODEL ID', val: info.model },
+                { label: 'BUILD VERSION', val: info.build_id },
+                { label: 'SERIAL NUMBER', val: info.serial }
             ]
         }
     ];
@@ -154,7 +119,7 @@ function HardwareInfo({ info }: { info?: HWInfo }) {
 
                 <h3 className="text-xs font-space font-black text-terminal-green tracking-[0.3em] mb-10 flex items-center gap-3">
                     <div className="w-2 h-2 bg-terminal-green animate-pulse" />
-                    HW_INVENTORY_REPORT_V2.1
+                    HARDWARE INVENTORY
                 </h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-12 relative z-10">
@@ -196,20 +161,20 @@ function TelemetrySpecs({ uptime }: { uptime: string }) {
         <div className="bg-zinc-950/60 border border-terminal-green/20 p-8 flex flex-col justify-between group overflow-hidden relative">
             <div className="absolute top-0 right-0 w-16 h-16 bg-terminal-green/5 blur-3xl rounded-full" />
             <div>
-                <h3 className="text-[10px] font-space font-black text-terminal-green tracking-[0.25em] mb-8 uppercase">NODE_UPTIME</h3>
+                <h3 className="text-[10px] font-space font-black text-terminal-green tracking-[0.25em] mb-8 uppercase">SYSTEM UPTIME</h3>
                 <div className="text-4xl font-mono font-black text-terminal-green tracking-tighter drop-shadow-[0_0_15px_rgba(0,255,65,0.3)] tabular-nums">
                     {uptime}
                 </div>
                 <p className="text-[10px] text-zinc-400 font-mono mt-6 leading-relaxed uppercase tracking-tight">
-                    Link integrity verified. Sub-atomic packet routing is <span className="text-terminal-green">OPTIMAL</span>. No kernel vectors detected.
+                    Link integrity verified. Data routing is <span className="text-terminal-green">OPTIMAL</span>. No system errors detected.
                 </p>
             </div>
 
             <div className="mt-12 space-y-3">
                 {[
-                    { label: 'NODE_STAT', val: 'ADB_LIVE', icon: Terminal },
-                    { label: 'KERNEL_ENV', val: 'LNX_AARCH64', icon: Cpu },
-                    { label: 'SEC_STATUS', val: 'VAULT_LOCK', icon: Shield }
+                    { label: 'STATUS', val: 'CONNECTED', icon: Terminal },
+                    { label: 'ARCHITECTURE', val: 'LNX_AARCH64', icon: Cpu },
+                    { label: 'SECURITY', val: 'ENCRYPTED', icon: Shield }
                 ].map(spec => (
                     <div key={spec.label} className="flex justify-between items-center text-[10px] font-mono group/item">
                         <div className="flex items-center gap-3">
@@ -221,7 +186,7 @@ function TelemetrySpecs({ uptime }: { uptime: string }) {
                 ))}
                 <div className="w-full h-px bg-terminal-green/10 my-4" />
                 <div className="text-[9px] font-mono text-terminal-green/40 text-center animate-pulse tracking-[0.3em] font-black uppercase">
-                    SECTOR_07_LINKED
+                    DEVICE LINK ACTIVE
                 </div>
             </div>
         </div>
@@ -239,8 +204,8 @@ export function PerformanceView({ deviceId }: { deviceId?: string }) {
                     <div className="absolute inset-0 bg-terminal-green/20 blur-2xl animate-pulse" />
                 </div>
                 <div className="text-center">
-                    <p className="text-lg font-black text-white tracking-[0.4em] uppercase mb-2">TELEMETRY_OFFLINE</p>
-                    <p className="text-xs text-terminal-green/40 font-mono tracking-widest uppercase">Awaiting physical node connection...</p>
+                    <p className="text-lg font-black text-white tracking-[0.4em] uppercase mb-2">SYSTEM OFFLINE</p>
+                    <p className="text-xs text-terminal-green/40 font-mono tracking-widest uppercase">Awaiting device connection...</p>
                 </div>
             </div>
         );
@@ -254,8 +219,8 @@ export function PerformanceView({ deviceId }: { deviceId?: string }) {
                 <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,65,0.05)_1px,transparent_1px)] bg-[size:100%_4px]" />
             </div>
 
-            <div className="flex-1 p-8 overflow-y-auto scrollbar-thin scrollbar-thumb-terminal-green/10 z-10 relative">
-                <div className="max-w-6xl mx-auto w-full">
+            <div className="flex-1 p-8 overflow-y-auto min-h-0 scrollbar-thin scrollbar-thumb-terminal-green/10 z-10 relative">
+                <div className="max-w-7xl mx-auto w-full">
                     {/* Header HUD - Fixed Layout (No sticky overlap) */}
                     <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-16 border-b border-terminal-green/20 pb-10 relative">
                         <div className="flex flex-col gap-3">
@@ -264,11 +229,11 @@ export function PerformanceView({ deviceId }: { deviceId?: string }) {
                                     <Activity className="w-10 h-10 text-terminal-green drop-shadow-[0_0_12px_#00ff41]" />
                                     <div className="absolute inset-0 bg-terminal-green/30 blur-2xl animate-pulse" />
                                 </div>
-                                S_Monitor_HUD_0.2
+                                System Monitor
                             </h1>
                             <div className="flex items-center gap-4 font-mono text-[10px] tracking-[0.2em]">
-                                <span className="text-white bg-terminal-green/20 px-2 py-0.5 border border-terminal-green/40 font-black">LINK_ESTABLISHED</span>
-                                <span className="text-zinc-500 uppercase font-black">NODE_ID://{deviceId}</span>
+                                <span className="text-white bg-terminal-green/20 px-2 py-0.5 border border-terminal-green/40 font-black">CONNECTED</span>
+                                <span className="text-zinc-500 uppercase font-black">ID://{deviceId}</span>
                             </div>
                         </div>
 
@@ -281,10 +246,10 @@ export function PerformanceView({ deviceId }: { deviceId?: string }) {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-                        <MetricCard title="Battery" value={metrics.batteryLevel} unit="%" icon={Battery} subtext="PACK: INTEGRATED" color={metrics.batteryLevel < 20 ? "text-red-500" : "text-terminal-green"} />
-                        <MetricCard title="CPU_Temp" value={metrics.batteryTemp} unit="°C" icon={Zap} subtext="THRM: SAFE_ZONE" color={metrics.batteryTemp > 45 ? "text-orange-500" : "text-emerald-400"} />
-                        <MetricCard title="Proc_Load" value={metrics.cpuUsage} unit="%" icon={Cpu} subtext="FREQ: OSCILLATING" />
-                        <MetricCard title="Memory_Map" value={metrics.ramUsage} unit="%" icon={Database} subtext="ADDR: VIRTUAL" />
+                        <MetricCard title="Battery" value={metrics.batteryLevel} unit="%" icon={Battery} subtext="STAT: CONNECTED" color={metrics.batteryLevel < 20 ? "text-red-500" : "text-terminal-green"} />
+                        <MetricCard title="CPU Temperature" value={metrics.batteryTemp} unit="°C" icon={Zap} subtext="STATUS: OK" color={metrics.batteryTemp > 45 ? "text-orange-500" : "text-emerald-400"} />
+                        <MetricCard title="CPU Load" value={metrics.cpuUsage} unit="%" icon={Cpu} subtext="ACTIVE" />
+                        <MetricCard title="RAM Usage" value={metrics.ramUsage} unit="%" icon={Database} subtext="MAP: DYNAMIC" />
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">

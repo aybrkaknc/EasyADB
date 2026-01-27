@@ -25,10 +25,10 @@ export function BackupConfirmationView({
 
                 <div className="text-4xl mb-6 text-terminal-green animate-pulse text-center">📦</div>
                 <h2 className="text-xl font-space font-black text-white mb-2 text-center tracking-widest">
-                    {selectedPackages.length}_TARGETS_LOCKED
+                    {selectedPackages.length} PACKAGE SELECTED
                 </h2>
-                <div className="mb-6 py-2 px-4 border border-terminal-green/20 bg-terminal-green/5 text-center">
-                    <span className="text-[10px] font-mono text-terminal-green uppercase tracking-widest opacity-60">BIT_SIZE: </span>
+                <div className="mb-6 text-center">
+                    <span className="text-[10px] font-mono text-terminal-green uppercase tracking-widest opacity-60">BATCH SIZE: </span>
                     <span className="text-sm font-mono font-black text-terminal-green drop-shadow-[0_0_8px_rgba(34,197,94,0.5)]">{formatSize(totalSize)}</span>
                 </div>
 
@@ -44,9 +44,9 @@ export function BackupConfirmationView({
                 <button
                     onClick={onExecute}
                     disabled={isProcessing}
-                    className="w-full py-4 bg-terminal-green text-black font-space font-black text-[11px] tracking-[0.3em] hover:bg-terminal-green/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full py-4 bg-terminal-green text-black font-space font-black text-[12px] tracking-[0.4em] hover:bg-white hover:text-black transition-all shadow-[0_0_25px_rgba(34,197,94,0.4)] disabled:bg-zinc-950 disabled:text-zinc-500 disabled:border-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                    {isProcessing ? "INITIALIZING_PAYLOAD..." : "EXECUTE_BATCH_BACKUP"}
+                    {isProcessing ? "INITIALIZING_PAYLOAD..." : "EXECUTE_BACKUP"}
                 </button>
             </div>
         </div>

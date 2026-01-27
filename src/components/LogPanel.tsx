@@ -17,11 +17,12 @@ interface LogPanelProps {
     logs: LogEntry[];
     isOpen: boolean;
     onToggle: () => void;
+    onClear: () => void;
     className?: string;
     progress?: ProgressState;
 }
 
-export function LogPanel({ logs, isOpen, onToggle, className, progress }: LogPanelProps) {
+export function LogPanel({ logs, isOpen, onToggle, onClear, className, progress }: LogPanelProps) {
     const scrollRef = useRef<HTMLDivElement>(null);
     const latestLog = logs[logs.length - 1];
 
@@ -51,14 +52,15 @@ export function LogPanel({ logs, isOpen, onToggle, className, progress }: LogPan
     return (
         <div
             className={cn(
-                "flex flex-col bg-black border-t border-terminal-green/30 transition-all duration-300 ease-in-out shrink-0 z-50 overflow-hidden",
-                isOpen ? "h-64 shadow-[0_-5px_20px_rgba(0,0,0,0.5)]" : "h-8 hover:bg-terminal-green/5 cursor-pointer",
+                "flex flex-col bg-black border-t border-terminal-green/20 transition-all duration-300 ease-in-out shrink-0 z-50 overflow-hidden",
+                isOpen && "h-64 shadow-[0_-5px_20px_rgba(0,0,0,0.5)]",
+                !isOpen && "h-10",
                 className
             )}
         >
             {/* Header / Status Bar */}
             <div
-                className="flex items-center justify-between px-3 py-0 h-8 relative overflow-hidden shrink-0"
+                className="flex items-center justify-between px-3 py-0 h-10 relative overflow-hidden shrink-0 cursor-pointer hover:bg-terminal-green/5 transition-colors"
                 onClick={onToggle}
             >
                 {/* Background Pulse Effect */}
@@ -139,9 +141,20 @@ export function LogPanel({ logs, isOpen, onToggle, className, progress }: LogPan
                     )}
                 </div>
 
-                {/* Toggle Icon */}
-                <div className="text-terminal-green/50 text-[10px] font-space font-bold hover:text-terminal-green">
-                    {isOpen ? "[v] MINIMIZE" : "[^] EXPAND"}
+                {/* Toggle & Clear Actions */}
+                <div className="flex items-center gap-4">
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onClear();
+                        }}
+                        className="text-zinc-500 text-[10px] font-space font-bold hover:text-red-500 transition-colors"
+                    >
+                        [x] CLEAR
+                    </button>
+                    <div className="text-terminal-green/50 text-[10px] font-space font-bold hover:text-terminal-green uppercase">
+                        {isOpen ? "[v] MINIMIZE" : "[^] EXPAND"}
+                    </div>
                 </div>
             </div>
 
@@ -153,7 +166,7 @@ export function LogPanel({ logs, isOpen, onToggle, className, progress }: LogPan
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         ref={scrollRef}
-                        className="flex-1 overflow-y-auto p-2 font-mono text-xs space-y-1 bg-black/40 shadow-inner"
+                        className="flex-1 overflow-y-auto min-h-0 p-2 font-mono text-xs space-y-1 bg-black/40 shadow-inner"
                     >
                         {logs.map((log) => {
                             const smartError = log.type === "error" ? analyzeError(log.message) : null;

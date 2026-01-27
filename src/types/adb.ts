@@ -12,6 +12,8 @@ export interface DeviceInfo {
 export interface PackageInfo {
     name: string;
     path: string;
+    is_system?: boolean;
+    label?: string; // Human readable name (e.g. "Poweramp")
 }
 
 /**
@@ -32,6 +34,7 @@ export interface DebloaterPackage {
     is_system: boolean;
     is_disabled: boolean;
     is_uninstalled: boolean;
+    label?: string; // Human readable name
     description?: string;
     recommendation?: 'safe' | 'recommended' | 'advanced' | 'expert' | 'unsafe' | 'unknown';
 }
@@ -44,4 +47,5 @@ export interface ProgressState {
     current: number;
     total: number;
     isIndeterminate?: boolean;
+    completedItems?: string[];
 }

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
 import { PackageInfo, BackupFile, DeviceInfo } from '../types/adb';
 
 /**
@@ -36,6 +36,13 @@ interface AppState {
 
     // İşlem durumu
     isProcessing: boolean;
+
+    // Ayarlar
+    settings: {
+        notificationsEnabled: boolean;
+        soundEnabled: boolean;
+        backupPath: string | null; // null = default Downloads
+    };
 }
 
 /**
@@ -54,6 +61,7 @@ interface AppContextActions {
     setIsProcessing: (processing: boolean) => void;
     clearSelectedPackages: () => void;
     clearSelectedBackups: () => void;
+    updateSettings: (settings: Partial<AppState['settings']>) => void;
 }
 
 type AppContextType = AppState & AppContextActions;
@@ -79,7 +87,33 @@ export function AppProvider({ children }: { children: ReactNode }) {
         },
         logs: [],
         isProcessing: false,
+        settings: {
+            notificationsEnabled: true,
+            soundEnabled: true,
+            backupPath: null, // Will be loaded from localStorage
+        },
     });
+
+    // Load settings from localStorage on mount
+    useEffect(() => {
+        const savedSettings = localStorage.getItem('easyAdbSettings');
+        if (savedSettings) {
+            try {
+                const parsed = JSON.parse(savedSettings);
+                setState(prev => ({
+                    ...prev,
+                    settings: { ...prev.settings, ...parsed },
+                }));
+            } catch (e) {
+                console.error('Failed to parse saved settings:', e);
+            }
+        }
+    }, []);
+
+    // Save settings to localStorage when they change
+    useEffect(() => {
+        localStorage.setItem('easyAdbSettings', JSON.stringify(state.settings));
+    }, [state.settings]);
 
     // Navigasyon
     const setActiveModule = useCallback((module: ModuleType) => {
@@ -175,6 +209,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setState(prev => ({ ...prev, isProcessing: processing }));
     }, []);
 
+    // Ayarlar
+    const updateSettings = useCallback((newSettings: Partial<AppState['settings']>) => {
+        setState(prev => ({
+            ...prev,
+            settings: { ...prev.settings, ...newSettings },
+        }));
+    }, []);
+
     const value: AppContextType = {
         ...state,
         setActiveModule,
@@ -189,6 +231,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setIsProcessing,
         clearSelectedPackages,
         clearSelectedBackups,
+        updateSettings,
     };
 
     return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

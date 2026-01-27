@@ -14,35 +14,37 @@
 - [x] **Geri Yükleme:** Yedekleri listeleme ve cihaza kurma.
 - [x] **Universal Backup:** Split APK (App Bundle), OBB ve Root Data desteği (v3.0).
 - [x] **Yedek Yönetimi:** Yedekleri uygulama içinden silme (delete_backup).
+- [x] **BIT_SIZE Optimization:** Toplu seçimlerde asenkron boyut hesaplama motoru. [YENİ]
 
 ## Faz 3: Sistem Yönetimi (Debloater) [TAMAMLANDI]
 - [x] **Debloater Modülü:** Sistem ve Kullanıcı uygulamalarını ayrıştırma.
 - [x] Toplu Kaldırma (Uninstall) ve Devre Dışı Bırakma (Disable).
 - [x] Geri Getirme (Reinstall/Enable) özellikleri.
 - [x] Kritik sistem uygulamaları için güvenlik uyarısı.
+- [x] **Debounced Search:** Performanslı ve takılmayan paket arama motoru. [YENİ]
 
-## Faz 4: Güçlü Özellikler (Power User) [AKTİF]
+## Faz 4: Güçlü Özellikler (Power User) [TAMAMLANDI]
 - [x] **Hybrid Backup (Root):** Root yetkisi ile `/data/data` yedekleme.
-- [x] **Minimalist Progress:** Log paneline entegre 2px neon ilerleme hattı.
-- [x] **Real-time Sideload:** Terminal üzerinden yüzdeli ilerleme çubuğu ile ROM/Update yükleme. [YENİ]
-- [ ] **Kablosuz Hata Ayıklama:** QR kod veya IP ile kablosuz bağlantı.
+- [x] **Real-time Sideload:** Terminal üzerinden yüzdeli ilerleme çubuğu ile ROM/Update yükleme.
+- [x] **Interactive Terminal:** Gerçek zamanlı, log akışına gömülü interaktif komut satırı. [YENİ]
+- [x] **Advanced Macros:** Tek tıkla Reboot, Recovery ve Diagnostic komutları.
 
-## Faz 5: Debloater İstihbaratı (Intelligence) [TAMAMLANDI]
-> *UAD-NG Analizi Sonrası Eklenen Özellikler*
-- [x] **Güvenlik Derecelendirmesi (Safety Ratings):** Paketleri risk seviyesine göre (Safe, Advanced, Unsafe, Expert) renklendirme.
-- [x] **Bilgi Bankası (Knowledge Base):** Paketlerin ne işe yaradığını gösteren açıklama paneli (Embedded JSON).
-- [ ] **Restore Center:** Silinen sistem uygulamalarını tek tıkla geri getirmek için özel sekme.
-- [ ] **Profil Yönetimi:** Debloat listelerini dışa/içe aktarma (Import/Export Preset).
+## Faz 5: Tasarım Dili ve Standartlar (ADB_UI) [TAMAMLANDI]
+- [x] **Spec v1.5:** Proje genelinde HUD (Heads-Up Display) tasarım standartları.
+- [x] **Unified Headers:** Tüm modüllerde (Backup, Restore, Debloater, Terminal) ortak başlık yapısı.
+- [x] **Minimalist UI:** No-Footer politikası ve kutusuz (borderless) metin göstergeleri.
+- [x] **Görsel Fix:** Uygulama genelinde scroll ve tıklama engellerinin kaldırılması.
 
-## Faz 6: Akıllı Hata Ayıklama & Donanım [AKTİF]
-- [x] **Smart Error Analysis:** Karmaşık ADB hatalarını insan diline çeviren çözüm merkezi. [YENİ]
-- [x] **One-Click Fix:** Hata panelinden tek tıkla ADB server yenileme. [YENİ]
-- [ ] **Performans Paneli:** CPU, RAM ve Pil sıcaklığı için canlı neon grafikler.
+## Faz 6: Akıllı Hata Ayıklama & Donanım [TAMAMLANDI]
+- [x] **Smart Error Analysis:** Karmaşık ADB hatalarını insan diline çeviren çözüm merkezi.
+- [x] **One-Click Fix:** Hata panelinden tek tıkla ADB server yenileme.
+- [x] **Performans Dashboard:** CPU, RAM, Pil Sıcaklığı ve Uptime takibi.
+- [x] **Hardware Inventory:** Cihazın donanım kimliğini (SoC, Display, Android Ver) listeleyen detaylı rapor.
+
+## Faz 7: Kablosuz & Dağıtım [SIRADAKİ]
 - [ ] **Kablosuz Hata Ayıklama:** QR kod veya IP ile kablosuz bağlantı sihirbazı.
-
-## Faz 7: Cila & Dağıtım
-- [x] **UI/UX:** Compact Sidebar, IconRail, Optimized Log Panel.
-- [ ] **Hata Ayıklama:** Detaylı hata mesajları ve çözüm önerileri.
+- [ ] **Profil Yönetimi:** Debloat listelerini dışa/içe aktarma (Import/Export Preset).
 - [ ] **Dağıtım:** `.exe` ve `.msi` paketleme (Portable Mode optimizasyonu).
 
 ---
+*Son Güncelleme: 24 Ocak 2026*

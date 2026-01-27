@@ -1,27 +1,27 @@
 import { useRef, useEffect, useState } from 'react';
-import { Play, RefreshCw, Smartphone, ShieldAlert, Wifi, List, Activity, Zap, Cpu, Download, Battery, Trash2 } from 'lucide-react';
+import { RefreshCw, Smartphone, ShieldAlert, Wifi, List, Activity, Zap, Cpu, Battery, Trash2, Terminal } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { TerminalLog, ToolsStatus } from '../../hooks/useTerminal';
 
 const MACROS = [
     // System Actions
-    { id: 'reboot', label: 'REBOOT_SYSTEM', command: 'reboot', icon: RefreshCw, group: 'SYSTEM', variant: 'amber' },
-    { id: 'recovery', label: 'REBOOT_RECOVERY', command: 'reboot recovery', icon: ShieldAlert, group: 'SYSTEM', variant: 'amber' },
-    { id: 'bootloader', label: 'REBOOT_BOOTLOADER', command: 'reboot bootloader', icon: Smartphone, group: 'SYSTEM', variant: 'amber' },
+    { id: 'reboot', label: 'REBOOT SYSTEM', command: 'reboot', icon: RefreshCw, group: 'SYSTEM', variant: 'amber' },
+    { id: 'recovery', label: 'REBOOT RECOVERY', command: 'reboot recovery', icon: ShieldAlert, group: 'SYSTEM', variant: 'amber' },
+    { id: 'bootloader', label: 'REBOOT BOOTLOADER', command: 'reboot bootloader', icon: Smartphone, group: 'SYSTEM', variant: 'amber' },
 
     // Fastboot Actions
-    { id: 'fb_devices', label: 'FASTBOOT_DEVICES', command: 'fastboot devices', icon: Zap, danger: false, group: 'FASTBOOT' },
-    { id: 'fb_reboot', label: 'FASTBOOT_REBOOT', command: 'fastboot reboot', icon: RefreshCw, group: 'FASTBOOT', variant: 'amber' },
+    { id: 'fb_devices', label: 'FASTBOOT DEVICES', command: 'fastboot devices', icon: Zap, danger: false, group: 'FASTBOOT' },
+    { id: 'fb_reboot', label: 'FASTBOOT REBOOT', command: 'fastboot reboot', icon: RefreshCw, group: 'FASTBOOT', variant: 'amber' },
 
     // Info & Diagnostics
-    { id: 'ip', label: 'SHOW_IP_ADDR', command: 'shell ip -f inet addr show wlan0', icon: Wifi, danger: false, group: 'DIAGNOSTICS' },
-    { id: 'battery', label: 'BATT_TELEMETRY', command: 'shell dumpsys battery', icon: Battery, danger: false, group: 'DIAGNOSTICS' },
-    { id: 'uptime', label: 'CLOCK_UPTIME', command: 'shell uptime', icon: Activity, danger: false, group: 'DIAGNOSTICS' },
-    { id: 'cpu', label: 'CPU_CORE_INFO', command: 'shell cat /proc/cpuinfo | grep Hardware', icon: Cpu, danger: false, group: 'DIAGNOSTICS' },
+    { id: 'ip', label: 'SHOW IP ADDRESS', command: 'shell ip -f inet addr show wlan0', icon: Wifi, danger: false, group: 'DIAGNOSTICS' },
+    { id: 'battery', label: 'BATTERY STATUS', command: 'shell dumpsys battery', icon: Battery, danger: false, group: 'DIAGNOSTICS' },
+    { id: 'uptime', label: 'SYSTEM UPTIME', command: 'shell uptime', icon: Activity, danger: false, group: 'DIAGNOSTICS' },
+    { id: 'cpu', label: 'CPU HARDWARE', command: 'shell cat /proc/cpuinfo | grep Hardware', icon: Cpu, danger: false, group: 'DIAGNOSTICS' },
 
     // Package Management
-    { id: 'packages', label: 'ALL_PKGS', command: 'shell pm list packages', icon: List, danger: false, group: 'PACKAGE_MGMT' },
-    { id: 'packages_3rd', label: 'USER_PKGS', command: 'shell pm list packages -3', icon: List, danger: false, group: 'PACKAGE_MGMT' },
+    { id: 'packages', label: 'ALL PACKAGES', command: 'shell pm list packages', icon: List, danger: false, group: 'PACKAGES' },
+    { id: 'packages_3rd', label: 'THIRD PARTY APPS', command: 'shell pm list packages -3', icon: List, danger: false, group: 'PACKAGES' },
 ];
 
 interface MacroButtonProps {
@@ -50,98 +50,40 @@ function MacroButton({ macro, disabled, onClick }: MacroButtonProps) {
                     macro.danger ? "text-terminal-red/70 group-hover:text-terminal-red" :
                         "text-terminal-green/50 group-hover:text-terminal-green"
             )} />
-            <div className="flex flex-col overflow-hidden leading-tight z-10">
+            <div className="flex flex-col overflow-hidden leading-tight z-10 w-full">
                 <span className="font-space font-black text-[10px] truncate uppercase tracking-[0.15em] drop-shadow-[0_0_5px_rgba(34,197,94,0.2)]">{macro.label}</span>
-                <span className="text-[8px] text-zinc-500 truncate font-mono tracking-tighter group-hover:text-zinc-400 mt-0.5">{macro.command}</span>
+                <span className="text-[8px] text-zinc-500 truncate font-mono tracking-tighter group-hover:text-zinc-400 mt-0.5 opacity-60">{macro.command}</span>
             </div>
         </button>
     );
 }
 
-interface TerminalSidebarProps {
-    onExecute: (cmd: string, isMacro: boolean) => void;
-    isExecuting: boolean;
-    disabled: boolean;
-    toolsStatus: ToolsStatus;
-    onInstallTools: () => void;
-}
-
-export function TerminalSidebar({ onExecute, isExecuting, disabled, toolsStatus, onInstallTools }: TerminalSidebarProps) {
-    const hasMissingTools = !toolsStatus.adb || !toolsStatus.fastboot;
-
-    return (
-        <div className="flex flex-col h-full bg-black">
-            <div className="p-4 border-b border-terminal-green/20 bg-zinc-950/20">
-                <h2 className="text-xs font-space font-black text-white tracking-[0.25em] uppercase drop-shadow-[0_0_8px_rgba(34,197,94,0.3)]">
-                    MACRO_BANK_0.1
-                </h2>
-            </div>
-
-            {hasMissingTools && (
-                <div className="p-3 space-y-2">
-                    <button
-                        onClick={onInstallTools}
-                        disabled={isExecuting}
-                        className="w-full flex items-center p-3 text-left bg-red-950/20 border border-red-500/40 hover:bg-red-900/20 transition-all group overflow-hidden relative shadow-lg"
-                        style={{ clipPath: 'polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))' }}
-                    >
-                        <div className="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 border-red-400/60" />
-                        <Download className="w-5 h-5 mr-3 text-red-500 shrink-0" />
-                        <div className="flex flex-col">
-                            <span className="font-space font-black text-[10px] text-red-100 tracking-widest uppercase">INSTALL_TOOLS</span>
-                            <span className="text-[8px] text-red-500/60 font-mono uppercase tracking-tighter">BINARIES_NOT_FOUND</span>
-                        </div>
-                    </button>
-                </div>
-            )}
-
-            <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-terminal-green/10">
-                {MACROS.map((macro, index) => {
-                    const prevGroup = index > 0 ? MACROS[index - 1].group : null;
-                    const showHeader = macro.group !== prevGroup;
-                    const isFBCmd = macro.group === 'FASTBOOT';
-                    const cmdDisabledByTools = isFBCmd && !toolsStatus.fastboot;
-
-                    return (
-                        <div key={macro.id}>
-                            {showHeader && (
-                                <div className="px-4 py-2 mt-5 text-[9px] font-space font-black text-terminal-green/30 uppercase tracking-[0.3em] border-b border-terminal-green/5">
-                                    {macro.group}_PROTOCOLS
-                                </div>
-                            )}
-                            <MacroButton
-                                macro={macro}
-                                disabled={disabled || isExecuting || cmdDisabledByTools}
-                                onClick={(cmd) => onExecute(cmd, true)}
-                            />
-                        </div>
-                    );
-                })}
-            </div>
-            <div className="p-4 border-t border-terminal-green/5 text-[8px] text-terminal-green/30 font-mono tracking-widest text-center uppercase">
-                CMD_KERNEL_V1.2
-            </div>
-        </div>
-    );
+// Deprecated Sidebar - kept for type safety if needed but logic moved to Main View
+export function TerminalSidebar(_props: any) {
+    return null;
 }
 
 function TerminalLogEntry({ log }: { log: TerminalLog }) {
-    const styles = {
-        command: "text-white mt-10 font-space font-black uppercase tracking-[0.25em] text-[11px] flex items-center gap-4 drop-shadow-[0_0_8px_rgba(255,255,255,0.2)]",
-        output: "text-terminal-green font-mono leading-relaxed text-[12px] opacity-90",
-        error: "text-red-400 font-mono font-bold border-l-2 border-red-500/30 pl-4 py-1 my-2 bg-red-500/5 uppercase text-[11px] tracking-wide",
-        info: "text-blue-300 font-black font-space text-[12px] tracking-wider my-2 opacity-80",
-        success: "text-terminal-green font-black font-space text-[12px] tracking-widest my-2 drop-shadow-[0_0_5px_rgba(0,255,65,0.3)]",
-        warning: "text-terminal-amber font-black font-space text-[12px] tracking-wider my-2"
-    };
+    if (log.type === 'command') {
+        return (
+            <div className="flex items-start gap-3 w-full font-mono text-[13px] leading-relaxed group hover:bg-white/5 px-2 py-0.5 -mx-2 rounded transition-colors">
+                <span className="text-terminal-green/80 font-bold select-none shrink-0">{">"}</span>
+                <span className="text-yellow-400 font-medium tracking-wide break-all">{log.content}</span>
+            </div>
+        );
+    }
+
+    const outputColor =
+        log.type === 'error' ? 'text-red-400' :
+            log.type === 'success' ? 'text-terminal-green' :
+                log.type === 'warning' ? 'text-terminal-amber' :
+                    'text-zinc-300';
 
     return (
         <div className={cn(
-            "whitespace-pre-wrap break-words w-full px-2",
-            styles[log.type]
+            "whitespace-pre-wrap break-words w-full font-mono text-[12px] leading-normal pl-[20px] py-0.5 opacity-90",
+            outputColor
         )}>
-            {log.type === 'command' && <div className="h-[2px] flex-1 bg-white/10" />}
-            {log.type === 'command' && <span className="text-terminal-green/40">{"//"}</span>}
             {log.content}
         </div>
     );
@@ -154,10 +96,12 @@ interface TerminalViewProps {
     disabled: boolean;
     onClear?: () => void;
     sideloadProgress?: number | null;
+    toolsStatus?: ToolsStatus;
 }
 
-export function TerminalView({ history, onExecute, isExecuting, disabled, onClear, sideloadProgress }: TerminalViewProps) {
+export function TerminalView({ history, onExecute, isExecuting, disabled, onClear, sideloadProgress, toolsStatus: _toolsStatus }: TerminalViewProps) {
     const [input, setInput] = useState('');
+    const [showMacros, setShowMacros] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -178,42 +122,147 @@ export function TerminalView({ history, onExecute, isExecuting, disabled, onClea
 
     return (
         <div className="flex flex-col h-full bg-black font-mono text-sm relative w-full overflow-hidden">
-            {/* CRUNCHY GRID BACKGROUND */}
-            <div className="absolute inset-0 pointer-events-none opacity-[0.03] z-0">
-                <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,65,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,65,0.1)_1px,transparent_1px)] bg-[size:30px_30px]" />
-            </div>
-
-            <div className="absolute top-4 right-6 z-20">
-                <button
-                    onClick={onClear}
-                    className="p-2.5 text-terminal-green/40 hover:text-red-500 hover:bg-red-500/10 transition-all border border-terminal-green/20 hover:border-red-500/40 rounded-none shadow-xl bg-black/60 backdrop-blur-md"
-                    title="TERMINATE_HISTORY"
-                >
-                    <Trash2 className="w-5 h-5" />
-                </button>
-            </div>
-
-            <div
-                ref={scrollRef}
-                className="flex-1 p-10 overflow-y-auto scrollbar-thin scrollbar-thumb-terminal-green/10 w-full bg-zinc-950/20 relative z-10"
-            >
-                {history.map((log) => (
-                    <TerminalLogEntry key={log.id} log={log} />
-                ))}
-                {isExecuting && sideloadProgress === null && (
-                    <div className="text-terminal-green/60 animate-pulse mt-8 font-space font-black tracking-[0.3em] text-[11px] flex items-center gap-3">
-                        <div className="w-1.5 h-1.5 bg-terminal-green rotate-45" />
-                        OVERWRITING_SECTORS_IN_PROGRESS...
+            {/* Unified Command Center HUD Header */}
+            <div className="p-4 border-b border-terminal-green/20 bg-zinc-950/20 space-y-4 shrink-0 relative z-30">
+                <div className="flex items-start justify-between">
+                    <div className="flex flex-col">
+                        <h2 className="text-xs font-space font-black text-terminal-green tracking-[0.2em] flex items-center gap-2 uppercase text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.2)]">
+                            <Terminal className="w-3.5 h-3.5 text-terminal-green" />
+                            TERMINAL
+                        </h2>
+                        <div className="flex items-center gap-2 mt-1.5 font-mono text-[9px] tracking-widest uppercase">
+                            <div className="flex items-center gap-2">
+                                <Activity className="w-3 h-3 text-terminal-green/60" />
+                                <span className="text-zinc-500 font-bold">LIVE SHELL SESSION</span>
+                            </div>
+                            <div className="w-1 h-1 bg-terminal-green/30 rounded-full" />
+                            <span className="text-terminal-green/60">READY</span>
+                        </div>
                     </div>
-                )}
+
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={onClear}
+                            disabled={disabled || isExecuting}
+                            className="group relative p-2 border border-terminal-green/20 hover:border-terminal-green/60 hover:bg-terminal-green/5 transition-all outline-none"
+                        >
+                            <Trash2 className="w-3.5 h-3.5 text-terminal-green/40 group-hover:text-red-500 transition-all" />
+                        </button>
+
+                        <div className="w-px h-6 bg-terminal-green/20 mx-1" />
+
+                        {/* Quick Action Trigger */}
+                        <button
+                            onClick={() => setShowMacros(!showMacros)}
+                            className={cn(
+                                "flex items-center gap-2 px-3 py-1.5 border transition-all text-[9px] font-space font-black tracking-widest uppercase",
+                                showMacros
+                                    ? "opacity-0 w-0 px-0 overflow-hidden border-0"
+                                    : "bg-transparent text-terminal-green border-terminal-green/40 hover:bg-terminal-green/10"
+                            )}
+                        >
+                            <List className="w-3 h-3" />
+                            <span className={cn("whitespace-nowrap transition-all", showMacros && "opacity-0 w-0")}>QUICK MACROS</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Main Content Area: Terminal + Sidebar */}
+            <div className="flex-1 flex overflow-hidden relative z-10">
+                {/* CRUNCHY GRID BACKGROUND */}
+                <div className="absolute inset-0 pointer-events-none opacity-[0.03] z-0">
+                    <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,65,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,65,0.1)_1px,transparent_1px)] bg-[size:30px_30px]" />
+                </div>
+
+                {/* Terminal Output */}
+                <div
+                    ref={scrollRef}
+                    className="flex-1 pt-[26px] px-[18px] pb-10 overflow-y-auto min-h-0 scrollbar-thin scrollbar-thumb-terminal-green/10 w-full relative z-10 transition-all duration-300"
+                    onClick={() => {
+                        // Focus input when clicking anywhere in terminal
+                        const inputElement = document.querySelector('input[type="text"]') as HTMLInputElement;
+                        if (inputElement) inputElement.focus();
+                    }}
+                >
+                    {history.map((log) => (
+                        <TerminalLogEntry key={log.id} log={log} />
+                    ))}
+
+                    {isExecuting && sideloadProgress === null && (
+                        <div className="text-terminal-green/60 animate-pulse mt-4 font-space font-black tracking-[0.3em] text-[11px] flex items-center gap-3 mb-4">
+                            <div className="w-1.5 h-1.5 bg-terminal-green rotate-45" />
+                            COMMAND EXECUTION IN PROGRESS...
+                        </div>
+                    )}
+
+                    {/* Active Input Line - Integrated into flow */}
+                    {!disabled && !isExecuting && (
+                        <div className="flex items-center w-full mt-2 group">
+                            <span className="text-terminal-green mr-3 font-black text-[13px] select-none shrink-0 group-focus-within:drop-shadow-[0_0_8px_rgba(0,255,65,0.6)] transition-all">{">"}</span>
+                            <input
+                                type="text"
+                                value={input}
+                                onChange={(e) => setInput(e.target.value)}
+                                onKeyDown={handleKeyDown}
+                                disabled={isExecuting || disabled}
+                                className="flex-1 bg-transparent text-white font-mono text-[13px] focus:outline-none placeholder:text-zinc-800 transition-colors tracking-wide caret-terminal-green selection:bg-terminal-green/30"
+                                autoFocus
+                                spellCheck={false}
+                                autoComplete="off"
+                            />
+                        </div>
+                    )}
+                </div>
+
+                {/* Quick Macro Sidebar (Dynamic Resize) */}
+                <div className={cn(
+                    "bg-zinc-950/40 border-l border-terminal-green/20 overflow-hidden flex flex-col transition-all duration-300 ease-in-out",
+                    showMacros ? "w-64 opacity-100" : "w-0 opacity-0 border-l-0"
+                )}>
+                    {/* Header that matches the trigger button style */}
+                    <div className="p-4 py-3 border-b border-terminal-green/10 flex items-center justify-between shrink-0 bg-black/40">
+                        <button
+                            onClick={() => setShowMacros(false)}
+                            className="bg-terminal-green text-black border border-terminal-green flex items-center gap-2 px-3 py-1.5 transition-all text-[9px] font-space font-black tracking-widest uppercase w-full justify-center"
+                        >
+                            <List className="w-3 h-3" />
+                            QUICK MACROS
+                        </button>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-terminal-green/10 p-2">
+                        {MACROS.map((macro, index) => {
+                            const prevGroup = index > 0 ? MACROS[index - 1].group : null;
+                            const showHeader = macro.group !== prevGroup;
+
+                            return (
+                                <div key={macro.id}>
+                                    {showHeader && (
+                                        <div className="px-4 py-2 mt-2 text-[8px] font-space font-black text-terminal-green/30 uppercase tracking-[0.3em] border-b border-terminal-green/5 mb-1">
+                                            {macro.group}
+                                        </div>
+                                    )}
+                                    <MacroButton
+                                        macro={macro}
+                                        disabled={disabled || isExecuting}
+                                        onClick={(cmd) => {
+                                            onExecute(cmd, true);
+                                        }}
+                                    />
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
             </div>
 
             {sideloadProgress !== null && (
                 <div className="flex-none p-6 bg-zinc-950/95 border-t border-terminal-green/40 backdrop-blur-2xl shadow-2xl relative z-20">
-                    <div className="flex justify-between items-center mb-3 text-[11px] font-space font-black text-terminal-green tracking-widest">
+                    <div className="justify-between items-center mb-3 text-[11px] font-space font-black text-terminal-green tracking-widest flex">
                         <span className="flex items-center gap-3">
                             <Zap className="w-4 h-4 animate-ping" />
-                            DATA_SIDELOAD_ACTIVE_LINK
+                            SIDELOAD PROGRESS
                         </span>
                         <span className="tabular-nums bg-terminal-green/20 px-2 py-0.5 border border-terminal-green/30">{sideloadProgress}%</span>
                     </div>
@@ -225,32 +274,6 @@ export function TerminalView({ history, onExecute, isExecuting, disabled, onClea
                     </div>
                 </div>
             )}
-
-            <div className="flex-none p-6 border-t border-terminal-green/20 bg-zinc-950/90 backdrop-blur-md flex items-center w-full relative z-20">
-                <span className="text-terminal-green mr-5 font-black text-lg animate-pulse drop-shadow-[0_0_8px_#00ff41] select-none">{">"}</span>
-                <input
-                    type="text"
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    disabled={isExecuting || disabled}
-                    placeholder={disabled ? "ESTABLISH_CONNECTION_TO_ACCESS_TERMINAL..." : "COMMAND_INPUT_01..."}
-                    className="flex-1 bg-transparent text-white font-mono text-base focus:outline-none placeholder:text-zinc-600 transition-colors uppercase tracking-wider"
-                    autoFocus
-                />
-                <button
-                    onClick={() => {
-                        if (input.trim()) {
-                            onExecute(input, false);
-                            setInput('');
-                        }
-                    }}
-                    disabled={isExecuting || disabled || !input.trim()}
-                    className="ml-5 p-3 px-6 bg-terminal-green/10 border border-terminal-green/40 text-terminal-green hover:bg-terminal-green hover:text-black transition-all shadow-[0_0_15px_rgba(0,255,65,0.1)] group"
-                >
-                    <Play className="w-5 h-5 fill-current transform group-hover:scale-110" />
-                </button>
-            </div>
         </div>
     );
 }

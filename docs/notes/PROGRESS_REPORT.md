@@ -1,35 +1,35 @@
-# İlerleme Raporu: Rebranding, Sideload & Smart Debloater Entegrasyonu
+# İlerleme Raporu: UI/UX Standartlaşma, İnteraktif Terminal & Geri Bildirim Sistemi
 
-Bu rapor, `EasyBackupADB`'den `EasyADB`'ye geçiş sürecini ve Faz 4-5 kapsamında eklenen stratejik özellikleri kapsamaktadır.
+Bu rapor, EasyADB'nin v2.0 sürümüne doğru attığı en büyük adımları; ADB_UI v1.5 tasarım standartlarını, interaktif terminal akışını ve kullanıcı geri bildirim (feedback) sistemini kapsamaktadır.
 
 ---
 
 ## 1. Neler Yapıldı? (Özet)
 
-### A. Marka Dönüşümü (Rebranding)
-- Uygulama ismi sistem genelinde `EasyADB` olarak güncellendi.
-- Backend (`src-tauri/src/adb.rs`) tarafındaki tüm geçici dosya yolları (`easyadb_tools`, `easyadb_processing` vb.) yeni marka ile uyumlu hale getirildi.
-- Frontend'deki tüm metin referansları ve Terminal karşılama mesajları revize edildi.
+### A. ADB_UI v1.5 Tasarım Standartları
+- **Unified Headers:** Tüm ana modüller (Backup, Restore, Debloater, Terminal) ortak bir "Bulk Action Header" yapısına kavuşturuldu.
+- **No-Footer Policy:** Maksimum dikey alan kullanımı için bilgilendirici alt çubuklar kaldırıldı.
+- **Minimalist Göstergeler:** "BATCH SIZE" gibi veriler kutusuz, sade metin formatına çekildi.
+- **Minimal Action Buttons:** Birincil aksiyonlar için metin yerine minimal ikon ve üzerine gelince parlama (glow) efekti getirilerek "Hacker HUD" estetiği pekiştirildi.
 
-### B. Gerçek Zamanlı Sideload Modülü
-- **Backend:** `sideload_with_progress` fonksiyonu eklendi. ADB çıktısını (stdout) asenkron bir thread üzerinden anlık okuyarak `%` bilgisini Regex ile ayrıştırır.
-- **Frontend:** `useTerminal` hook'u geliştirildi. `sideload` komutu yakalanarak Tauri üzerinden Rust thread'i tetiklenir.
-- **UI:** Terminalin altında neon yeşili, animasyonlu bir **Progress Bar** (İlerleme Çubuğu) eklendi.
+### B. İnteraktif Terminal flow
+- **Entegre Komut Satırı:** Ayrı bir metin kutusu yerine, komut girişi doğrudan log geçmişinin altına (`>` imleci ile) entegre edildi.
+- **Kesintisiz Akış:** Gerçek bir terminal emülatörü gibi yukarıdan aşağıya akan yoğun bir görüntü sağlandı.
+- **Case-Sensitivity:** Komut girişlerindeki zorunlu büyük harf kısıtlaması kaldırıldı (`grep` vb. hassas komutlar için).
+- **Yazım Renklendirmesi:** Komutlar sarı (`Yellow-400`), çıktılar ise durumuna göre yeşil/kırmızı/gri olarak renklendirildi.
 
-### C. Smart Debloater (İstihbarat Portalı)
-- **Veri Bankası:** Universal Android Debloater (UAD-NG) standartlarına uygun bir `knowledge_base.json` oluşturuldu.
-- **Entegrasyon:** Rust backend, paket listesi çekerken her paketi bu bilgi bankasıyla eşleştirir.
-- **Güvenlik Derecelendirmesi:** Paketler `SAFE`, `RECOMMENDED`, `ADVANCED`, `EXPERT` ve `UNSAFE` olarak sınıflandırıldı.
-- **UI:** Her paketin yanına renkli güvenlik rozetleri ve altına topluluk açıklamaları eklendi.
+### C. Akıllı Geri Bildirim (Feedback) Sistemi
+- **Sesli Uyarı (Audio Cues):** İşlem bitişlerinde Web Audio API ile sentezlenen minimalist bir "ping" sesi entegre edildi.
+- **Sistem Bildirimleri:** Arka planda çalışan uzun işlemler bittiğinde OS düzeyinde (Windows Bildirim Merkezi) bilgilendirme sağlandı.
+- **Genel Ayarlar:** Kullanıcının bu özellikleri aktif/pasif edebileceği "Settings > General" sekmesi eklendi.
 
 ---
 
-## 2. Nasıl Yapıldı? (Teknik Mimari)
+## 2. Teknik Detaylar (Architecture)
 
-- **Rust Multi-threading:** Sideload gibi uzun süren işlemler `tauri::async_runtime::spawn_blocking` ile ana thread'den ayrıldı. UI donması engellendi.
-- **Tauri Event System:** Backend'den frontend'e `emit` yöntemiyle anlık yüzde (%) verisi akışı sağlandı.
-- **Knowledge Mapping:** Paket eşleşmeleri için Rust tarafında `HashMap` kullanılarak `O(1)` hızında veri erişimi gerçekleştirildi.
-- **Embedded Assets:** Bilgi bankası JSON dosyası `include_str!` makrosuyla ikili dosyanın (exe) içine gömüldü.
+- **Web Audio API:** Harici bir ses dosyasına ihtiyaç duymadan uygulama içinde 880Hz'lik bir sinüs dalgasıyla dinamik ses sentezi yapıldı.
+- **Integrated Input Logic:** Terminal görünümü, log listesini ve aktif input satırını tek bir `overflow-y-auto` konteynerinde birleştirerek doğal scroll davranışını korudu.
+- **State Serialization:** Kullanıcı bildirim/ses tercihleri `AppContext` üzerinden yönetilerek oturum boyunca korunması sağlandı.
 
 ---
 
@@ -37,10 +37,11 @@ Bu rapor, `EasyBackupADB`'den `EasyADB`'ye geçiş sürecini ve Faz 4-5 kapsamı
 
 | Özellik | Açıklama |
 | :--- | :--- |
-| **Live Sideload** | ROM/Zip yüklerken terminalin donması yerine canlı ilerleme takibi. |
-| **Safety Badges** | Hangi sistem paketinin güvenli bir şekilde silinebileceğini gösteren görsel rehber. |
-| **Package Descriptions** | `com.miui.analytics` gibi gizemli paketlerin ne işe yaradığını gösteren bilgi paneli. |
-| **Hacker Terminal Macros** | IP gösterme, pil durumu, sistem reboot gibi hızlı komutlar sidebar'a eklendi. |
+| **Integrated Shell** | Log geçmişiyle bütünleşik, akıcı terminal deneyimi. |
+| **Notification Center** | İşlem bittiğinde bildirim gönderen masaüstü entegrasyonu. |
+| **About Sector** | Versiyon bilgisi, GitHub repo linki ve sistem detaylarını içeren bilgi paneli. |
+| **General Config** | Bildirim ve ses tercihlerini yöneten yeni ayar paneli. |
+| **Yellow Commands** | Loglar arasında kaybolmayan, belirgin sarı komut satırları. |
 
 ---
 
@@ -48,10 +49,11 @@ Bu rapor, `EasyBackupADB`'den `EasyADB`'ye geçiş sürecini ve Faz 4-5 kapsamı
 
 Bu güncellemelerin sağlıklı çalıştığından emin olmak için şu adımlar izlenebilir:
 
-1.  **Rebranding Kontrolü:** Uygulamayı başlatın ve `%TEMP%/easyadb_tools` klasörünün oluşup oluşmadığını kontrol edin.
-2.  **Sideload Simülasyonu:** Terminale `sideload test.zip` yazıldığında (dosya olmasa bile) progress bar'ın belirdiğini ve hata mesajının terminale düştüğünü doğrulayın.
-3.  **Debloater Eşleşmesi:** Bir Xiaomi veya Google cihazı bağlayarak listede `Chrome` veya `Analytics` yanında yeşil/turuncu etiketlerin göründüğünü denetleyin.
-4.  **Hacker Terminal:** Sidebar'daki makrolara ("REBOOT SYSTEM" vb.) basıldığında doğru `adb` komutunun terminale düştüğünü izleyin.
+1.  **Terminal Focus:** Terminal ekranında herhangi bir boşluğa tıklandığında imlecin (caret) otomatik olarak komut satırına odaklandığını doğrulayın.
+2.  **Notification Test:** Settings > General altından bildirimleri açıp bir paket yedekleyin; işlem bitince bildirim geldiğini ve ses çaldığını kontrol edin.
+3.  **Header Tutarlılığı:** Tüm modüller (Backup/Restore/Debloat) arasında geçiş yaparken başlık yapısının ve simetrisinin değişmediğini gözlemleyin.
+4.  **About Link:** About sekmesindeki GitHub butonuna basıldığında tarayıcının doğru sayfayı açtığını denetleyin.
 
 ---
+*Son Güncelleme: 24 Ocak 2026*
 *Hazırlayan: EasyADB Geliştirme Ekibi*

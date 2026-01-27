@@ -11,4 +11,4 @@ Belirli tetikleyiciler daha sonra eklenecek.
 -https://github.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation/releases/tag/v1.2.0 
 Bu projeden esinleneceğiz.
 
--Kullanıcının adb komutu girebilmesi için bir terminal ekleyeceğiz.
+Dosya transferi için backendde ADB'yi kullanan ancak kullanıcı için kolay arayüz. (Sürükle Bırak gibi)

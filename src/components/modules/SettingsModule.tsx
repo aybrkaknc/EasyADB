@@ -1,14 +1,15 @@
 import { cn } from '../../lib/utils';
-import { FolderOpen, Monitor, Info } from 'lucide-react';
+import { Settings, Info } from 'lucide-react';
 
 interface SettingsModuleProps {
-    activeTab: 'paths' | 'general' | 'about';
+    activeTab: 'general' | 'about';
     bgStyle?: string;
-    onTabChange: (tab: 'paths' | 'general' | 'about') => void;
+    onTabChange: (tab: 'general' | 'about') => void;
 }
 
 /**
  * SettingsModule: Ayarlar menüsü yan paneli.
+ * Artık sadece General ve About sekmeleri var.
  */
 export function SettingsModule({ activeTab, onTabChange }: SettingsModuleProps) {
     return (
@@ -25,12 +26,12 @@ export function SettingsModule({ activeTab, onTabChange }: SettingsModuleProps) 
 
             {/* Config List */}
             <div className="flex-1 p-2 space-y-1.5">
-                {/* Paths Option */}
+                {/* General Option */}
                 <button
-                    onClick={() => onTabChange('paths')}
+                    onClick={() => onTabChange('general')}
                     className={cn(
                         "relative w-full flex items-center p-3 text-left transition-all group overflow-hidden border",
-                        activeTab === 'paths'
+                        activeTab === 'general'
                             ? "bg-terminal-green/10 border-terminal-green/50 text-terminal-green"
                             : "bg-black/40 border-terminal-green/10 text-terminal-green/60 hover:border-terminal-green/30 hover:bg-terminal-green/5"
                     )}
@@ -38,53 +39,40 @@ export function SettingsModule({ activeTab, onTabChange }: SettingsModuleProps) 
                         clipPath: 'polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))'
                     }}
                 >
-                    {/* Laser Scan (Hover) */}
                     <div className="absolute inset-0 w-full h-[1px] bg-terminal-green/20 -translate-y-full group-hover:animate-scanline pointer-events-none" />
-
-                    <FolderOpen className="w-4 h-4 mr-3 relative z-10" />
+                    <Settings className="w-4 h-4 mr-3 relative z-10" />
                     <div className="relative z-10 flex-1">
-                        <div className="text-[11px] font-space font-black tracking-widest uppercase">DIRECTORY_PATHS</div>
-                        <div className="text-[9px] font-mono opacity-50">Backup & Restore locations</div>
+                        <div className="text-[11px] font-space font-black tracking-widest uppercase">GENERAL_CONFIG</div>
+                        <div className="text-[9px] font-mono opacity-50">Preferences & Storage</div>
                     </div>
-                    {activeTab === 'paths' && (
+                    {activeTab === 'general' && (
                         <div className="ml-2 w-1.5 h-1.5 bg-terminal-green rotate-45 shadow-[0_0_8px_rgba(0,255,65,1)]" />
                     )}
                 </button>
 
-                {/* General Option (Disabled) */}
+                {/* About Option */}
                 <button
-                    disabled
-                    className="relative w-full flex items-center p-3 text-left text-terminal-green/20 cursor-not-allowed border border-terminal-green/5 bg-black/20"
+                    onClick={() => onTabChange('about')}
+                    className={cn(
+                        "relative w-full flex items-center p-3 text-left transition-all group overflow-hidden border",
+                        activeTab === 'about'
+                            ? "bg-terminal-green/10 border-terminal-green/50 text-terminal-green"
+                            : "bg-black/40 border-terminal-green/10 text-terminal-green/60 hover:border-terminal-green/30 hover:bg-terminal-green/5"
+                    )}
                     style={{
                         clipPath: 'polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))'
                     }}
                 >
-                    <Monitor className="w-4 h-4 mr-3 opacity-30" />
-                    <div>
-                        <div className="text-[11px] font-space font-black tracking-widest uppercase opacity-40">GENERAL</div>
-                        <div className="text-[9px] font-mono opacity-20">Display & Behavior (Soon)</div>
+                    <div className="absolute inset-0 w-full h-[1px] bg-terminal-green/20 -translate-y-full group-hover:animate-scanline pointer-events-none" />
+                    <Info className="w-4 h-4 mr-3 relative z-10" />
+                    <div className="relative z-10 flex-1">
+                        <div className="text-[11px] font-space font-black tracking-widest uppercase">ABOUT</div>
+                        <div className="text-[9px] font-mono opacity-50">Version & Credits</div>
                     </div>
+                    {activeTab === 'about' && (
+                        <div className="ml-2 w-1.5 h-1.5 bg-terminal-green rotate-45 shadow-[0_0_8px_rgba(0,255,65,1)]" />
+                    )}
                 </button>
-
-                {/* About Option (Disabled) */}
-                <button
-                    disabled
-                    className="relative w-full flex items-center p-3 text-left text-terminal-green/20 cursor-not-allowed border border-terminal-green/5 bg-black/20"
-                    style={{
-                        clipPath: 'polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))'
-                    }}
-                >
-                    <Info className="w-4 h-4 mr-3 opacity-30" />
-                    <div>
-                        <div className="text-[11px] font-space font-black tracking-widest uppercase opacity-40">ABOUT</div>
-                        <div className="text-[9px] font-mono opacity-20">System Info</div>
-                    </div>
-                </button>
-            </div>
-
-            {/* Footer Status */}
-            <div className="p-3 border-t border-terminal-green/10 text-[10px] font-mono text-terminal-green/30 text-center">
-                CONFIG_MODE_ACTIVE
             </div>
         </div>
     );

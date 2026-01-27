@@ -37,9 +37,9 @@ export function RestoreConfirmationView({
                 <button
                     onClick={onExecute}
                     disabled={isProcessing}
-                    className="w-full py-4 bg-terminal-green text-black font-space font-black text-[11px] tracking-[0.3em] hover:bg-terminal-green/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full py-4 bg-terminal-green text-black font-space font-black text-[12px] tracking-[0.4em] hover:bg-white hover:text-black transition-all shadow-[0_0_25px_rgba(34,197,94,0.4)] disabled:bg-zinc-950 disabled:text-zinc-500 disabled:border-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                    {isProcessing ? "RESTORING_DATA..." : "EXECUTE_BATCH_RESTORE"}
+                    {isProcessing ? "RESTORING_DATA..." : "EXECUTE_RESTORE"}
                 </button>
             </div>
         </div>

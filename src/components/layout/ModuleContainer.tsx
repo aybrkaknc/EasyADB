@@ -16,7 +16,7 @@ export function ModuleContainer({ activeModule, children }: ModuleContainerProps
         <div
             key={activeModule}
             className={cn(
-                "flex-1 flex flex-col overflow-hidden",
+                "h-full w-full flex flex-col overflow-hidden",
                 "animate-fade-in"
             )}
         >

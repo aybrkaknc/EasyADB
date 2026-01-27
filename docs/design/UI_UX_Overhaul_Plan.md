@@ -43,28 +43,28 @@ Bu plan, `docs/design/UI_UX_REPORT.md` analizine dayanarak oluşturulmuştur. Am
 ### Adım 1: İlerleme Göstergeleri (Progress Bars)
 *   [x] **Minimalist Progress Line:** Log paneli kapalıyken header altında 2px'lik neon hat (Animasyonlu).
 *   [x] **Backup Management:** Yedek listesinde hover ile erişilebilen "Sil" (Delete) özelliği.
-*   [ ] `LogPanel` içine entegre progress bar (Batch işlemleri için).
-*   [ ] Modül üzerinde dairesel progress (tekil işlemler için).
-*   [ ] İşlem bitişinde ses/bildirim (Opsiyonel).
+*   [x] `LogPanel` içine entegre progress bar (Batch işlemleri için).
+*   [x] Modül üzerinde dairesel progress (tekil işlemler için).
+*   [x] İşlem bitişinde ses/bildirim [TAMAMLANDI ✅].
 
-### Adım 2: Klavye Kısayolları (Power Users)
-*   [ ] `Ctrl+B` (Backup), `Ctrl+R` (Restore), `Ctrl+T` (Terminal).
-*   [ ] `Ctrl+F` (Arama odağı).
-*   [ ] `Esc` (Seçimi iptal et / Modaldan çık).
+### Adım 2: Klavye Kısayolları (Power Users)[PAS GEÇİLDİ ⏩]
+*   [-] `Ctrl+B` (Backup), `Ctrl+R` (Restore), `Ctrl+T` (Terminal).
+*   [-] `Ctrl+F` (Arama odağı).
+*   [-] `Esc` (Seçimi iptal et / Modaldan çık).
 
 ---
 
 ## 🏗️ FAZ 4: Profesyonel Dokunuşlar (Onboarding & About)
 **Amaç:** Güven oluşturmak ve yeni kullanıcı deneyimini iyileştirmek.
 
-### Adım 1: About & Info
-*   [ ] `SettingsModule` içine "About" sekmesi.
-*   [ ] Versiyon, Lisans, GitHub linki.
-*   [ ] Güncelleme kontrolü (Update checker).
+### Adım 1: About & Info [TAMAMLANDI ✅]
+*   [x] `SettingsModule` içine "About" sekmesi.
+*   [x] Versiyon, Lisans, GitHub linki.
+*   [x] Güncelleme kontrolü (Update checker placeholder).
 
-### Adım 2: İlk Kullanım (Onboarding)
-*   [ ] ADB bağlantısı yoksa "Nasıl bağlanırım?" rehberi (Resimli/Adımlı).
-*   [ ] Tooltip sistemi ("Bu buton ne işe yarar?").
+### Adım 2: İlk Kullanım (Onboarding) [PAS GEÇİLDİ ⏩]
+*   [-] ADB bağlantısı yoksa "Nasıl bağlanırım?" rehberi (Ertelendi).
+*   [-] Tooltip sistemi (Ertelendi).
 
 ---
 

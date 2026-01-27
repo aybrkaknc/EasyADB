@@ -14,9 +14,7 @@ export interface ToolsStatus {
 }
 
 export function useTerminal(deviceId?: string) {
-    const [history, setHistory] = useState<TerminalLog[]>([
-        { id: 0, type: 'output', content: 'EasyADB Terminal v1.0 Ready...' }
-    ]);
+    const [history, setHistory] = useState<TerminalLog[]>([]);
     const [isExecuting, setIsExecuting] = useState(false);
     const [toolsStatus, setToolsStatus] = useState<ToolsStatus>({ adb: true, fastboot: true });
     const [sideloadProgress, setSideloadProgress] = useState<number | null>(null);
@@ -130,7 +128,7 @@ export function useTerminal(deviceId?: string) {
     };
 
     const clearHistory = () => {
-        setHistory([{ id: Date.now(), type: 'output', content: 'Terminal cleared.' }]);
+        setHistory([]);
     };
 
     return {

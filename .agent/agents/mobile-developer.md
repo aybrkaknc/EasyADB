@@ -287,7 +287,7 @@ AI MUST:
 └── ONLY THEN say "done"
 ```
 
-### 📱 Emulator Quick Commands (All Platforms)
+### 📱 Emulator  (All Platforms)
 
 **Android SDK Paths by OS:**
 
