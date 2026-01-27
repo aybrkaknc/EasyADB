@@ -17,6 +17,16 @@ export interface HWInfo {
     serial: string;
 }
 
+export interface DeviceIntegrity {
+    status: string;           // STRONG, BASIC, FAIL
+    bootloader_locked: boolean;
+    verified_boot: string;    // green, yellow, orange, red
+    selinux_enforcing: boolean;
+    debuggable: boolean;
+    secure: boolean;
+    details: string[];
+}
+
 export interface Metrics {
     batteryLevel: number;
     batteryTemp: number;
@@ -24,6 +34,7 @@ export interface Metrics {
     ramUsage: number;
     uptime: string;
     hwInfo?: HWInfo;
+    integrity?: DeviceIntegrity;
 }
 
 export function usePerformanceMetrics(deviceId: string | undefined) {
@@ -129,10 +140,17 @@ export function usePerformanceMetrics(deviceId: string | undefined) {
             const tempMatch = batteryRes.match(/temperature: (\d+)/);
             const uptimeRes = await invoke<string>('run_adb_command', { deviceId, command: 'shell uptime' });
 
-            // HW Info Check
+            // HW Info Check (one-time)
             let newHwInfo: HWInfo | undefined = undefined;
+            let newIntegrity: DeviceIntegrity | undefined = undefined;
             if (fetchedHWInfoIdRef.current !== deviceId && !isFetchingHWRef.current) {
                 newHwInfo = await fetchHWInfo(deviceId);
+                // Also fetch integrity once
+                try {
+                    newIntegrity = await invoke<DeviceIntegrity>('check_device_integrity', { deviceId });
+                } catch (intErr) {
+                    console.error("Integrity check failed:", intErr);
+                }
             }
 
             setMetrics(prev => ({
@@ -142,7 +160,8 @@ export function usePerformanceMetrics(deviceId: string | undefined) {
                 cpuUsage: Math.floor(Math.random() * 20) + 5,
                 ramUsage: Math.floor(Math.random() * 30) + 40,
                 uptime: uptimeRes.split('up')[1]?.split(',')[0]?.trim() || prev.uptime,
-                hwInfo: newHwInfo || prev.hwInfo
+                hwInfo: newHwInfo || prev.hwInfo,
+                integrity: newIntegrity || prev.integrity
             }));
 
             setError(null);

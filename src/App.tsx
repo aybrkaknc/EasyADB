@@ -6,7 +6,6 @@ import { IconRail } from "./components/layout/IconRail";
 import { ModuleContainer } from "./components/layout/ModuleContainer";
 import { BackupModule } from "./components/modules/BackupModule";
 import { RestoreModule } from "./components/modules/RestoreModule";
-import { SettingsModule } from "./components/modules/SettingsModule";
 import { TerminalSidebar, TerminalView } from "./components/modules/TerminalModule";
 import { DebloaterView } from './components/modules/DebloaterModule';
 import { PerformanceView } from "./components/modules/PerformanceModule";
@@ -50,7 +49,6 @@ function App() {
     { id: 1, message: "System initialized...", type: "info", timestamp: new Date().toLocaleTimeString() }
   ]);
   const [isLogOpen, setIsLogOpen] = useState(false);
-  const [settingsTab, setSettingsTab] = useState<'general' | 'about'>('general');
 
 
   const [selectedPackages, setSelectedPackages] = useState<PackageInfo[]>([]);
@@ -347,12 +345,7 @@ function App() {
       case 'performance':
         return null;
       case 'settings':
-        return (
-          <SettingsModule
-            activeTab={settingsTab}
-            onTabChange={setSettingsTab}
-          />
-        );
+        return null;
       default:
         return null;
     }
@@ -402,7 +395,7 @@ function App() {
     }
 
     if (activeModule === 'settings') {
-      return <SettingsView activeTab={settingsTab} />;
+      return <SettingsView />;
     }
 
     if (!isConnected) {
@@ -455,7 +448,7 @@ function App() {
 
         <div className="flex-1 flex overflow-hidden bg-black relative">
           {/* Sidebar Area (Conditional) */}
-          {activeModule !== 'debloater' && activeModule !== 'backup' && activeModule !== 'terminal' && activeModule !== 'performance' && (
+          {activeModule !== 'debloater' && activeModule !== 'backup' && activeModule !== 'terminal' && activeModule !== 'performance' && activeModule !== 'settings' && (
             <div className="w-64 border-r border-terminal-green/10 bg-black/40 hidden md:block shrink-0">
               <ModuleContainer activeModule={activeModule}>
                 {renderModuleSidebar()}

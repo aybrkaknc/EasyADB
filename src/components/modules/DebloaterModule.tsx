@@ -53,205 +53,217 @@ export function DebloaterView({
     return (
         <div className="flex flex-col h-full bg-black relative">
             {/* Standard Header Style (3-Row HUD) */}
-            <div className="p-4 border-b border-terminal-green/20 bg-zinc-950/20 space-y-4 shrink-0">
+            <div className="p-6 border-b border-terminal-green/20 bg-zinc-950/20 space-y-4 shrink-0">
                 {/* Row 1: Brand & Stats */}
                 <div className="flex items-start justify-between">
                     <div className="flex flex-col">
-                        <h2 className="text-xs font-space font-black text-terminal-green tracking-[0.2em] flex items-center gap-2 uppercase text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.2)]">
-                            <Trash2 className="w-3.5 h-3.5 text-terminal-green" />
-                            DEBLOATER
-                        </h2>
-                        <div className="flex items-center gap-2 mt-1.5 font-mono text-[9px] tracking-widest uppercase">
-                            <span className="text-zinc-500 font-bold">{totalCount} PACKAGES TO DEBLOAT</span>
+                        <div className="flex items-center gap-3 mb-2">
+                            <Trash2 className="w-6 h-6 text-terminal-green" />
+                            <h2 className="text-2xl font-space font-black text-white tracking-[0.2em] uppercase drop-shadow-[0_0_8px_rgba(255,255,255,0.2)]">
+                                DEBLOATER
+                            </h2>
+                        </div>
+                        <div className="flex items-center gap-2 mt-1.5 font-mono text-[10px] tracking-widest uppercase">
+                            <span className="text-white/80 font-bold">{totalCount} PACKAGES TO DEBLOAT</span>
                             <div className="w-1 h-1 bg-terminal-green/30 rounded-full" />
                             <span className="text-terminal-green/60">CONNECTED</span>
                         </div>
                     </div>
 
-                    <button
-                        onClick={onRefresh}
-                        disabled={disabled || isLoading}
-                        className="group relative p-2 border border-terminal-green/20 hover:border-terminal-green/60 hover:bg-terminal-green/5 transition-all outline-none"
-                        title="REFRESH LIST"
-                    >
-                        <RefreshCw className={cn(
-                            "w-3.5 h-3.5 text-terminal-green/40 group-hover:text-terminal-green transition-all",
-                            isLoading && "animate-spin text-terminal-green"
-                        )} />
-                    </button>
                 </div>
 
-                {/* Row 2: Category Filters Tabs */}
-                <div className="flex items-center gap-1">
-                    <FilterTab
-                        active={filter === 'all'}
-                        label="ALL"
-                        icon={Box}
-                        onClick={() => onFilterChange('all')}
-                        disabled={disabled}
-                    />
-                    <FilterTab
-                        active={filter === 'user'}
-                        label="USER"
-                        icon={Layers}
-                        onClick={() => onFilterChange('user')}
-                        disabled={disabled}
-                    />
-                    <FilterTab
-                        active={filter === 'system'}
-                        label="SYSTEM"
-                        icon={ShieldAlert}
-                        variant="danger"
-                        onClick={() => onFilterChange('system')}
-                        disabled={disabled}
-                    />
-                    <FilterTab
-                        active={filter === 'disabled'}
-                        label="DISABLED"
-                        icon={Ban}
-                        onClick={() => onFilterChange('disabled')}
-                        disabled={disabled}
-                    />
-                    <FilterTab
-                        active={filter === 'uninstalled'}
-                        label="UNINSTALLED"
-                        icon={Trash2}
-                        onClick={() => onFilterChange('uninstalled')}
-                        disabled={disabled}
-                    />
-                </div>
 
-                {/* Row 3: Search & Local Actions */}
-                <div className="flex items-center gap-4">
-                    <div className="relative group/search flex-1">
-                        <div className="absolute inset-0 bg-terminal-green/5 blur-sm opacity-0 group-focus-within/search:opacity-100 transition-opacity pointer-events-none" />
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-terminal-green/40 group-focus-within/search:text-terminal-green transition-colors pointer-events-none" />
-                        <input
-                            type="text"
-                            placeholder="FILTER BY NAME OR PACKAGE ID..."
-                            value={search}
-                            onChange={(e) => onSearchChange(e.target.value)}
+                {/* Row 2: Category Filters Tabs & Search/Actions */}
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                    {/* Left: Filter Tabs */}
+                    <div className="flex items-center gap-1">
+                        <FilterTab
+                            active={filter === 'all'}
+                            label="ALL"
+                            icon={Box}
+                            onClick={() => onFilterChange('all')}
                             disabled={disabled}
-                            className="w-full pl-9 pr-4 py-2 bg-zinc-950/50 border border-terminal-green/20 rounded-none text-xs font-mono text-terminal-green placeholder:text-terminal-green/20 focus:outline-none focus:border-terminal-green/60 transition-all uppercase tracking-widest relative z-10"
+                        />
+                        <FilterTab
+                            active={filter === 'user'}
+                            label="USER"
+                            icon={Layers}
+                            onClick={() => onFilterChange('user')}
+                            disabled={disabled}
+                        />
+                        <FilterTab
+                            active={filter === 'system'}
+                            label="SYSTEM"
+                            icon={ShieldAlert}
+                            variant="danger"
+                            onClick={() => onFilterChange('system')}
+                            disabled={disabled}
+                        />
+                        <FilterTab
+                            active={filter === 'disabled'}
+                            label="DISABLED"
+                            icon={Ban}
+                            onClick={() => onFilterChange('disabled')}
+                            disabled={disabled}
+                        />
+                        <FilterTab
+                            active={filter === 'uninstalled'}
+                            label="UNINSTALLED"
+                            icon={Trash2}
+                            onClick={() => onFilterChange('uninstalled')}
+                            disabled={disabled}
                         />
                     </div>
 
-                    <div className="flex items-center gap-4 shrink-0">
-                        {/* Selected Stats */}
-                        <div className="flex items-center gap-2 text-[10px] font-mono whitespace-nowrap">
-                            <span className="text-terminal-green font-bold">{packages.length} VIEWER</span>
-                            <div className="h-3 w-px bg-terminal-green/20" />
-                            <span className={cn(selectedPackages.size > 0 ? "text-terminal-green animate-pulse" : "text-zinc-600")}>
-                                {selectedPackages.size} SELECTED
-                            </span>
+                    {/* Right: Search & Actions */}
+                    <div className="flex items-center gap-3">
+                        <div className="relative group/search w-48 xl:w-64">
+                            <div className="absolute inset-0 bg-terminal-green/5 blur-sm opacity-0 group-focus-within/search:opacity-100 transition-opacity pointer-events-none" />
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-terminal-green/40 group-focus-within/search:text-terminal-green transition-colors pointer-events-none" />
+                            <input
+                                type="text"
+                                placeholder="FILTER..."
+                                value={search}
+                                onChange={(e) => onSearchChange(e.target.value)}
+                                disabled={disabled}
+                                className="w-full pl-9 pr-4 py-2.5 bg-zinc-950/50 border border-terminal-green/20 rounded-none text-[10px] font-mono text-terminal-green placeholder:text-terminal-green/20 focus:outline-none focus:border-terminal-green/60 transition-all uppercase tracking-widest relative z-10"
+                            />
                         </div>
 
-                        {/* Bulk / Select All */}
-                        <button
-                            onClick={onToggleSelectAll}
-                            disabled={disabled || isLoading}
-                            className="flex items-center gap-2 text-[10px] font-mono text-zinc-400 hover:text-white transition-colors whitespace-nowrap border border-zinc-700 hover:border-terminal-green/40 px-3 py-1.5"
-                        >
-                            {selectedPackages.size === packages.length && packages.length > 0 ? (
-                                <>
-                                    <CheckSquare className="w-3.5 h-3.5 text-terminal-green" /> DESELECT
-                                </>
-                            ) : (
-                                <>
-                                    <Square className="w-3.5 h-3.5" /> SELECT ALL
-                                </>
-                            )}
-                        </button>
+                        <div className="flex items-center gap-4 shrink-0">
+                            {/* Selected Stats */}
+                            <div className="flex items-center gap-2 text-[10px] font-mono whitespace-nowrap">
+                                <span className="text-terminal-green font-bold">{packages.length} VIEWER</span>
+                                <div className="h-3 w-px bg-terminal-green/20" />
+                                <span className={cn(selectedPackages.size > 0 ? "text-terminal-green animate-pulse" : "text-zinc-600")}>
+                                    {selectedPackages.size} SELECTED
+                                </span>
+                            </div>
 
-                        {/* Actions */}
-                        {selectedPackages.size > 0 && !isProcessing && (
-                            <div className="flex items-center gap-1 animate-in fade-in slide-in-from-right-2 duration-300">
-                                {filter === 'disabled' ? (
-                                    <button onClick={onEnable} className="px-3 py-1.5 bg-terminal-green text-black font-space font-black text-[9px] tracking-[0.2em] hover:bg-white hover:text-black transition-all uppercase shadow-[0_0_15px_rgba(34,197,94,0.3)]">
-                                        ENABLE
-                                    </button>
-                                ) : filter === 'uninstalled' ? (
-                                    <button onClick={onReinstall} className="px-3 py-1.5 bg-terminal-green text-black font-space font-black text-[9px] tracking-[0.2em] hover:bg-white hover:text-black transition-all uppercase shadow-[0_0_15px_rgba(34,197,94,0.3)]">
-                                        REINSTALL
-                                    </button>
+                            {/* Bulk / Select All */}
+                            <button
+                                onClick={onToggleSelectAll}
+                                disabled={disabled || isLoading}
+                                className="flex items-center gap-2 text-[10px] font-mono text-zinc-400 hover:text-white transition-colors whitespace-nowrap border border-zinc-700 hover:border-terminal-green/40 px-3 py-2.5"
+                            >
+                                {selectedPackages.size === packages.length && packages.length > 0 ? (
+                                    <>
+                                        <CheckSquare className="w-3.5 h-3.5 text-terminal-green" /> DESELECT
+                                    </>
                                 ) : (
                                     <>
-                                        <button onClick={onDisable} className="px-3 py-1.5 bg-zinc-800 text-white border border-zinc-600 font-space font-black text-[9px] tracking-[0.2em] hover:bg-zinc-100 hover:text-black transition-all uppercase">
-                                            DISABLE
-                                        </button>
-                                        <button onClick={onUninstall} className="px-3 py-1.5 bg-red-600 text-white border border-red-500 font-space font-black text-[9px] tracking-[0.2em] hover:bg-white hover:text-black transition-all uppercase shadow-[0_0_15px_rgba(239,68,68,0.3)]">
-                                            UNINSTALL
-                                        </button>
+                                        <Square className="w-3.5 h-3.5" /> SELECT ALL
                                     </>
                                 )}
-                            </div>
-                        )}
+                            </button>
+
+                            {/* Refresh Button */}
+                            <button
+                                onClick={onRefresh}
+                                disabled={disabled || isLoading}
+                                className="group relative px-3 py-2.5 border border-zinc-700 hover:border-terminal-green/40 transition-all outline-none"
+                                title="REFRESH LIST"
+                            >
+                                <RefreshCw className={cn(
+                                    "w-3.5 h-3.5 text-zinc-400 group-hover:text-terminal-green transition-all",
+                                    isLoading && "animate-spin text-terminal-green"
+                                )} />
+                            </button>
+
+                            {/* Actions */}
+                            {selectedPackages.size > 0 && !isProcessing && (
+                                <div className="flex items-center gap-1 animate-in fade-in slide-in-from-right-2 duration-300">
+                                    {filter === 'disabled' ? (
+                                        <button onClick={onEnable} className="px-3 py-2.5 bg-terminal-green text-black font-space font-black text-[9px] tracking-[0.2em] hover:bg-white hover:text-black transition-all uppercase shadow-[0_0_15px_rgba(34,197,94,0.3)]">
+                                            ENABLE
+                                        </button>
+                                    ) : filter === 'uninstalled' ? (
+                                        <button onClick={onReinstall} className="px-3 py-2.5 bg-terminal-green text-black font-space font-black text-[9px] tracking-[0.2em] hover:bg-white hover:text-black transition-all uppercase shadow-[0_0_15px_rgba(34,197,94,0.3)]">
+                                            REINSTALL
+                                        </button>
+                                    ) : (
+                                        <>
+                                            <button onClick={onDisable} className="px-3 py-2.5 bg-zinc-800 text-white border border-zinc-600 font-space font-black text-[9px] tracking-[0.2em] hover:bg-zinc-100 hover:text-black transition-all uppercase">
+                                                DISABLE
+                                            </button>
+                                            <button onClick={onUninstall} className="px-3 py-2.5 bg-red-600 text-white border border-red-500 font-space font-black text-[9px] tracking-[0.2em] hover:bg-white hover:text-black transition-all uppercase shadow-[0_0_15px_rgba(239,68,68,0.3)]">
+                                                UNINSTALL
+                                            </button>
+                                        </>
+                                    )}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
 
-            {/* Error Banner */}
-            {error && (
-                <div className="bg-red-950/40 border-b border-red-500/50 p-2 flex items-center gap-2">
-                    <AlertTriangle className="w-3.5 h-3.5 text-red-500" />
-                    <span className="text-[10px] font-mono text-red-200 uppercase tracking-widest">{error}</span>
-                </div>
-            )}
 
+            {/* Error Banner */}
+            {
+                error && (
+                    <div className="bg-red-950/40 border-b border-red-500/50 p-2 flex items-center gap-2">
+                        <AlertTriangle className="w-3.5 h-3.5 text-red-500" />
+                        <span className="text-[10px] font-mono text-red-200 uppercase tracking-widest">{error}</span>
+                    </div>
+                )
+            }
             {/* List */}
             <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-terminal-green/10 p-2">
-                {isLoading ? (
-                    <div className="flex flex-col items-center justify-center h-full text-terminal-green/40 gap-4">
-                        <RefreshCw className="w-8 h-8 animate-spin" />
-                        <span className="text-xs font-mono animate-pulse">FETCHING PACKAGE LIST...</span>
-                    </div>
-                ) : packages.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-full text-zinc-600 gap-4">
-                        <Box className="w-12 h-12 opacity-20" />
-                        <span className="text-xs font-mono uppercase">NO PACKAGES FOUND IN THIS CATEGORY</span>
-                    </div>
-                ) : (
-                    packages.map(pkg => (
-                        <div
-                            key={pkg.name}
-                            onClick={() => !disabled && onTogglePackage(pkg.name)}
-                            className={cn(
-                                "flex items-center p-3 mb-1 border border-transparent hover:border-terminal-green/20 hover:bg-white/5 transition-all cursor-pointer group select-none",
-                                selectedPackages.has(pkg.name) && "bg-terminal-green/5 border-terminal-green/30"
-                            )}
-                        >
-                            <div className={cn(
-                                "w-4 h-4 border mr-4 flex items-center justify-center transition-all",
-                                selectedPackages.has(pkg.name) ? "border-terminal-green bg-terminal-green" : "border-zinc-700 group-hover:border-terminal-green/50"
-                            )}>
-                                {selectedPackages.has(pkg.name) && <Check className="w-3 h-3 text-black" />}
-                            </div>
+                {
+                    isLoading ? (
+                        <div className="flex flex-col items-center justify-center h-full text-terminal-green/40 gap-4" >
+                            <RefreshCw className="w-8 h-8 animate-spin" />
+                            <span className="text-xs font-mono animate-pulse">FETCHING PACKAGE LIST...</span>
+                        </div>
+                    ) : packages.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center h-full text-zinc-600 gap-4">
+                            <Box className="w-12 h-12 opacity-20" />
+                            <span className="text-xs font-mono uppercase">NO PACKAGES FOUND IN THIS CATEGORY</span>
+                        </div>
+                    ) : (
+                        packages.map(pkg => (
+                            <div
+                                key={pkg.name}
+                                onClick={() => !disabled && onTogglePackage(pkg.name)}
+                                className={cn(
+                                    "flex items-center p-3 mb-1 border border-transparent hover:border-terminal-green/20 hover:bg-white/5 transition-all cursor-pointer group select-none",
+                                    selectedPackages.has(pkg.name) && "bg-terminal-green/5 border-terminal-green/30"
+                                )}
+                            >
+                                <div className={cn(
+                                    "w-4 h-4 border mr-4 flex items-center justify-center transition-all",
+                                    selectedPackages.has(pkg.name) ? "border-terminal-green bg-terminal-green" : "border-zinc-700 group-hover:border-terminal-green/50"
+                                )}>
+                                    {selectedPackages.has(pkg.name) && <Check className="w-3 h-3 text-black" />}
+                                </div>
 
-                            <div className="flex-1 min-w-0">
-                                <div className="flex items-center justify-between gap-3">
-                                    <div className="flex flex-col min-w-0">
-                                        <span
-                                            className="text-sm font-mono truncate transition-colors font-bold"
-                                            style={{ color: selectedPackages.has(pkg.name) ? '#FFFFFF' : (pkg.is_system ? '#FF6E00' : '#E0F7FA') }}
-                                        >
-                                            {pkg.label || smartFormatPackage(pkg.name)}
-                                        </span>
-                                        <span className={cn(
-                                            "text-[10px] font-mono truncate transition-colors",
-                                            selectedPackages.has(pkg.name) ? "text-white/50" : "text-zinc-600 group-hover:text-zinc-500"
-                                        )}>
-                                            {pkg.name}
-                                        </span>
-                                    </div>
-                                    {/* Tags */}
-                                    <div className="flex gap-2 shrink-0">
-                                        {pkg.is_disabled && <span className="text-[9px] px-1.5 py-0.5 bg-zinc-800 text-zinc-400 border border-zinc-700 font-mono tracking-tight">DISABLED</span>}
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center justify-between gap-3">
+                                        <div className="flex flex-col min-w-0">
+                                            <span
+                                                className="text-sm font-mono truncate transition-colors font-bold"
+                                                style={{ color: selectedPackages.has(pkg.name) ? '#FFFFFF' : (pkg.is_system ? '#FF6E00' : '#E0F7FA') }}
+                                            >
+                                                {pkg.label || smartFormatPackage(pkg.name)}
+                                            </span>
+                                            <span className={cn(
+                                                "text-[10px] font-mono truncate transition-colors",
+                                                selectedPackages.has(pkg.name) ? "text-white/50" : "text-zinc-600 group-hover:text-zinc-500"
+                                            )}>
+                                                {pkg.name}
+                                            </span>
+                                        </div>
+                                        {/* Tags */}
+                                        <div className="flex gap-2 shrink-0">
+                                            {pkg.is_disabled && <span className="text-[9px] px-1.5 py-0.5 bg-zinc-800 text-zinc-400 border border-zinc-700 font-mono tracking-tight">DISABLED</span>}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    ))
-                )}
+                        ))
+                    )
+                }
             </div>
         </div>
     );

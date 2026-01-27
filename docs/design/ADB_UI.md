@@ -1,6 +1,6 @@
-# ADB_UI Specification (v1.8) ⚡
+# ADB_UI Specification (v2.0) ⚡
 
-> **Kod Adı:** TECHNICAL_COMMAND_HUD
+> **Kod Adı:** TECHNICAL_COMMAND_HUD (v2.0)
 > **Vizyon:** Android ekosistemi için tasarlanmış, askeri sınıf HUD (Heads-Up Display) estetiği ile modern teknik verimliliği birleştiren profesyonel bir tasarım dili.
 
 ---
@@ -11,7 +11,7 @@ ADB_UI, "Safe Harbor" (Güvenli Liman) tasarımlarını (yuvarlak köşeler, pas
 - **Teknik Hassasiyet:** Her piksel bir veri noktasıdır.
 - **Acımasız Verimlilik:** Görsellik her zaman işlevselliği ve veri görünürlüğünü destekler.
 - **İçgüdüsel Geri Bildirim (Visceral Feedback):** Sistem durumu renk ve hareketle anında kullanıcıya hissettirilir.
-- **Unified Headers:** Arama kutusu, sayaçlar ve aksiyon butonları tek bir kompakt "Unified Command Header" satırında birleştirilir.
+- **Unified Headers:** Tüm modüller standartlaştırılmış Typography ve Layout kullanır. Sol taraftan hizalama (`p-6`) ile görsel tutarlılık sağlanır.
 
 ---
 
@@ -25,6 +25,8 @@ ADB_UI, "Safe Harbor" (Güvenli Liman) tasarımlarını (yuvarlak köşeler, pas
 | **Uyarı** | Heat Orange | `#FFD700` | Yüksek sıcaklık, orta riskli işlemler. |
 | **Arka Plan** | Pure Black | `#000000` | Ana gövde. |
 | **Derinlik** | Slate 950 | `#020617` | Kartlar ve panel içi alanlar. |
+| **Metin (Başlık)** | Pure White | `#FFFFFF` | Ana başlıklar (drop-shadow efektli). |
+| **Metin (Sub)** | White/80 | `rgba(255,255,255,0.8)` | Alt başlıklar, açıklamalar. |
 
 ---
 
@@ -35,7 +37,7 @@ ADB_UI standart "kart" görünümünü de-fragmante eder.
 - **Köşeler:** Standart `border-radius` kullanımı kesinlikle yasaktır (0px).
 - **Clipped Corners:** Panel ve butonlarda sağ üst ve sol alt köşeler `calc(100% - 12px)` oranında 45 derece kesilir.
 - **Grid System:** Tüm arayüz 40x40 piksellik bir teknik ızgara üzerine oturur.
-- **Borders:** Çerçeveler 1px kalınlığında ve `%20-30` opaklığında olmalıdır. Hover anında opaklık `%100`'e çıkar.
+- **Layout Consistency:** Tüm ana modüller (Settings, Monitor, Backup, vb.) içeriklerine sol kenardan `24px` (`p-6`) mesafede başlar.
 
 ---
 
@@ -46,7 +48,15 @@ ADB_UI standart "kart" görünümünü de-fragmante eder.
 | **JetBrains Mono** | Teknik Veri / Kod | Tabular-nums desteği, yüksek okunabilirlik. |
 | **Space Grotesk** | Arayüz Etiketleri | Geometrik, modern ve net. |
 
-- **Yazım Kuralı:** Tüm başlıklar ve etiketler `UPPERCASE` ve `tracking-widest` (geniş karakter aralığı) ile yazılır.
+### Global Header Standardı
+Tüm modül başlıkları (BACKUP, TERMINAL, SETTINGS vb.) aşağıdaki standartları takip eder:
+- **Font:** `font-space`
+- **Weight:** `font-black`
+- **Size:** `text-2xl`
+- **Tracking:** `tracking-[0.2em]`
+- **Effect:** `drop-shadow-[0_0_8px_rgba(255,255,255,0.2)]`
+- **Color:** `text-white`
+- **Metin:** `UPPERCASE`
 
 ---
 
@@ -68,78 +78,22 @@ ADB_UI standart "kart" görünümünü de-fragmante eder.
 
 ## 6. Bileşen Kütüphanesi (Component Library)
 
-### A. HUD_Panel (Main Container)
-Main content area container.
-- **Background:** `bg-zinc-950/30`
-- **Border:** `border-terminal-green/20`
-- **Clip Path:** Yok (Full width) veya sağ alt köşe kesik.
+### A. HUD_Header (Global Module Header)
+Modüllerin en üstünde yer alan standart başlık alanı.
+- **Container:** `p-6 border-b border-terminal-green/20`
+- **Yapı:** Sol tarafta ikon + başlık, hemen altında açıklayıcı alt metin (subtitle).
+- **Subtitle:** `text-[10px] text-white/80 font-mono tracking-widest uppercase`
+- **Sağ Alan:** Modüle özgü aksiyonlar veya "About" kartı.
 
----
+### B. Settings_Dashboard
+Tek parça, sidebar'sız yapılandırma ekranı.
+- **Layout:** Bento Grid (`grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6`).
+- **Kartlar:** `border border-terminal-green/20 bg-black/40`.
+- **Köşeler:** `clip-path` ile kesilmiş köşeler.
 
-### B. Filter_Button (Sidebar Navigation)
+### C. Filter_Button (Sidebar Navigation)
 Yan menülerde veri filtrelemek için kullanılan, **states (durum)** tabanlı poligonel buton.
-
-**Clip-Path Geometrisi:**
-```css
-clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
-/* Sol alt ve sağ üst köşeler 8px içeri kesilir */
-```
-
-**Varyasyonlar (Variants):**
-
-#### 1. Standard Variant (User Apps / All / Disabled)
-Güvenli ve standart işlemler için kullanılır.
-- **Base Style:** `bg-transparent border-transparent text-zinc-500`
-- **Hover State:** `hover:bg-white/5 hover:border-white/10 hover:text-zinc-300`
-- **Active State:** 
-  - Bg/Border: `bg-terminal-green/10 border-terminal-green/50`
-  - Text: `text-white`
-  - Icon: `text-terminal-green`
-  - Count Badge: `text-terminal-green`
-  - **Effect:** Buton içinde `%10` opaklıkta, yukarıdan aşağı akan yeşil `bg-terminal-green` scanline overlay.
-
-#### 2. Danger Variant (System Apps)
-Riskli sistem bileşenlerini filtrelerken kullanıcıyı uyarmak için kullanılır.
-- **Active State:**
-  - Bg/Border: `bg-red-950/30 border-red-500/50`
-  - Text: `text-red-100`
-  - Icon: `text-red-500`
-  - Count Badge: `text-red-400`
-  - **Effect:** Buton içinde `%10` opaklıkta, yukarıdan aşağı akan kırmızı `bg-red-500` scanline overlay.
-
-**Micro-Interactions:**
-- **Icon Hover:** Buton tamamına değil, sadece üzerine gelindiğinde ikonun rengi `zinc-600` > `zinc-400` geçişi yapar (pasif durumlarda).
-- **Click:** Tıklandığı an `border-opacity` anlık olarak `%100` olur.
-
----
-
-### C. Unified_Command_Header
-Listelerin üzerinde yer alan, 3 bölümlü kompakt kontrol satırı.
-
-- **Yapı:** `flex items-center justify-between p-4 border-b border-terminal-green/20 bg-zinc-950/20`
-- **Sol (Stats):** Modül ikonu + Başlık + Sayaç (Örn: `TOTAL PKGS 145`).
-- **Sağ (Actions):** `Select All` butonu (Checkbox) + `Refresh` butonu.
-
----
-
-### D. System_Warning_Modal
-Kritik işlemler için tam ekran kalkanı.
-
-- **Overlay:** `absolute inset-0 z-50 bg-black/80 backdrop-blur-sm`
-- **Card:** `bg-zinc-950 border border-red-500/50 p-6 shadow-[0_0_50px_rgba(239,68,68,0.2)]`
-- **Top Bar:** Kartın en üstünde 4px kalınlığında `bg-red-500` şeridi.
-- **Animation:** `animate-in fade-in duration-200` + İkon üzerinde `animate-pulse`.
-
----
-
-### E. List_Item (Package/File Row)
-Veri listelemek için kullanılan satır bileşeni.
-
-- **Container:** `flex items-center p-3 mb-1 border border-transparent hover:border-terminal-green/20 hover:bg-white/5 transition-all cursor-pointer group select-none`
-- **Selected State:** `bg-terminal-green/5 border-terminal-green/30`
-- **Checkbox:** 
-  - Pasif: `border-zinc-700 group-hover:border-terminal-green/50`
-  - Aktif: `border-terminal-green bg-terminal-green` (İçinde siyah tik işareti).
+*Detaylar v1.8 ile aynı, sadece padding ve hizalama 24px grid ile uyumlu hale getirildi.*
 
 ---
 
@@ -152,9 +106,9 @@ Tasarım dilini uygulamak için sık kullanılan özel sınıflar:
 | `font-space` | Space Grotesk font ailesi (Başlıklar). |
 | `font-mono` | JetBrains Mono font ailesi (Veriler). |
 | `tracking-widest` | 0.25em harf aralığı (Etiketler). |
-| `scrollbar-thin` | İnce kaydırma çubuğu. |
+| `p-6` | Global içerik padding standardı (24px). |
 | `selection:bg-terminal-green/20` | Metin seçildiğinde neon yeşil vurgu. |
-| `drop-shadow-[0_0_8px_rgba(0,255,65,0.6)]` | Neon glow efekti. |
+| `drop-shadow-[0_0_8px_rgba(255,255,255,0.2)]` | Header beyaz glow efekti. |
 
 ---
-*Bu döküman EasyADB kod tabanı için v1.8 standartlarını tanımlar.*
+*Bu döküman EasyADB kod tabanı için v2.0 standartlarını tanımlar.*

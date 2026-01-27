@@ -3,7 +3,7 @@ import { usePackages } from '../../hooks/usePackages';
 import { useBackups } from '../../hooks/useBackups';
 import { cn } from '../../lib/utils';
 import { PackageInfo, BackupFile } from '../../types/adb';
-import { RefreshCw, Package, CheckSquare, Check, Square, Layers, ShieldAlert, Box, Search, RotateCcw, Trash2 } from 'lucide-react';
+import { RefreshCw, Package, CheckSquare, Check, Square, Layers, ShieldAlert, Box, Search, RotateCcw, Trash2, Download } from 'lucide-react';
 import { smartFormatPackage } from '../../data/package-db';
 
 interface PackageItemProps {
@@ -170,136 +170,147 @@ export function BackupModule({
     return (
         <div className="flex flex-col h-full bg-black relative overflow-hidden">
             {/* Unified Command Center HUD */}
-            <div className="p-4 border-b border-terminal-green/20 bg-zinc-950/20 space-y-4 shrink-0">
+            <div className="p-6 border-b border-terminal-green/20 bg-zinc-950/20 space-y-4 shrink-0">
                 {/* Row 1: Brand & Stats */}
                 <div className="flex items-start justify-between">
                     <div className="flex flex-col">
-                        <h2 className="text-xs font-space font-black text-terminal-green tracking-[0.2em] flex items-center gap-2 uppercase text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.2)]">
-                            <Package className="w-3.5 h-3.5 text-terminal-green" />
-                            COMMAND CENTER
-                        </h2>
-                        <div className="flex items-center gap-2 mt-1.5 font-mono text-[9px] tracking-widest uppercase">
-                            <span className="text-zinc-500 font-bold">
+                        <div className="flex items-center gap-3 mb-2">
+                            <Package className="w-6 h-6 text-terminal-green" />
+                            <h2 className="text-2xl font-space font-black text-white tracking-[0.2em] uppercase drop-shadow-[0_0_8px_rgba(255,255,255,0.2)]">
+                                BACKUP
+                            </h2>
+                        </div>
+                        <div className="flex items-center gap-2 mt-1.5 font-mono text-[10px] tracking-widest uppercase">
+                            <span className="text-white/80 font-bold">
                                 {filter === 'restore' ? `${backups.length} BACKUPS IN ARCHIVE` : `${packages.length} APPS INSTALLED`}
                             </span>
                             <div className="w-1 h-1 bg-terminal-green/30 rounded-full" />
                             <span className="text-terminal-green/60">READY</span>
                         </div>
                     </div>
-
-                    <button
-                        onClick={onRefresh}
-                        disabled={loading}
-                        className="group relative p-2 border border-terminal-green/20 hover:border-terminal-green/60 hover:bg-terminal-green/5 transition-all outline-none"
-                    >
-                        <RefreshCw className={cn("w-3.5 h-3.5 text-terminal-green/40 group-hover:text-terminal-green transition-all", loading && "animate-spin text-terminal-green")} />
-                    </button>
                 </div>
 
-                {/* Row 2: Category Filters Tabs */}
-                <div className="flex items-center gap-1">
-                    <FilterTab
-                        active={filter === 'all'}
-                        label="ALL"
-                        icon={Box}
-                        onClick={() => setFilter('all')}
-                    />
-                    <FilterTab
-                        active={filter === 'user'}
-                        label="USER"
-                        icon={Layers}
-                        onClick={() => setFilter('user')}
-                    />
-                    <FilterTab
-                        active={filter === 'system'}
-                        label="SYSTEM"
-                        icon={ShieldAlert}
-                        variant="danger"
-                        onClick={() => setFilter('system')}
-                    />
-                    <div className="w-px h-6 bg-terminal-green/20 mx-2" />
-                    <FilterTab
-                        active={filter === 'restore'}
-                        label="RE-INSTALL"
-                        icon={RotateCcw}
-                        variant="default"
-                        onClick={() => setFilter('restore')}
-                    />
-                </div>
-
-                {/* Row 3: Search & Actions */}
-                <div className="flex items-center gap-4">
-                    <div className="relative group/search flex-1">
-                        <div className="absolute inset-0 bg-terminal-green/5 blur-sm opacity-0 group-focus-within/search:opacity-100 transition-opacity pointer-events-none" />
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-terminal-green/40 group-focus-within/search:text-terminal-green transition-colors pointer-events-none" />
-                        <input
-                            type="text"
-                            placeholder={filter === 'restore' ? "SEARCH ARCHIVE..." : "FILTER APPS TO BACKUP..."}
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            className="w-full pl-9 pr-4 py-2 bg-zinc-950/50 border border-terminal-green/20 rounded-none text-xs font-mono text-terminal-green focus:outline-none focus:border-terminal-green/60 transition-all uppercase tracking-widest relative z-10"
+                {/* Row 2: Category Filters Tabs & Search/Actions */}
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                    {/* Left: Filter Tabs */}
+                    <div className="flex items-center gap-1">
+                        <FilterTab
+                            active={filter === 'all'}
+                            label="ALL"
+                            icon={Box}
+                            onClick={() => setFilter('all')}
+                        />
+                        <FilterTab
+                            active={filter === 'user'}
+                            label="USER"
+                            icon={Layers}
+                            onClick={() => setFilter('user')}
+                        />
+                        <FilterTab
+                            active={filter === 'system'}
+                            label="SYSTEM"
+                            icon={ShieldAlert}
+                            variant="danger"
+                            onClick={() => setFilter('system')}
+                        />
+                        <div className="w-px h-6 bg-terminal-green/20 mx-2" />
+                        <FilterTab
+                            active={filter === 'restore'}
+                            label="RE-INSTALL"
+                            icon={RotateCcw}
+                            variant="default"
+                            onClick={() => setFilter('restore')}
                         />
                     </div>
 
-                    {filter !== 'restore' ? (
-                        <button
-                            onClick={() => onToggleSelectAll(filteredPackages)}
-                            disabled={loading || filteredPackages.length === 0}
-                            className="flex items-center gap-2 text-[10px] font-mono text-zinc-400 hover:text-white transition-colors border border-zinc-700 hover:border-terminal-green/40 px-3 py-1.5 shrink-0"
-                        >
-                            {allPackagesSelected ? <CheckSquare className="w-3.5 h-3.5 text-terminal-green" /> : <Square className="w-3.5 h-3.5" />}
-                            {allPackagesSelected ? "DESELECT" : "SELECT ALL"}
-                        </button>
-                    ) : (
-                        <button
-                            onClick={() => onToggleSelectAllBackups?.(filteredBackups)}
-                            disabled={loading || filteredBackups.length === 0}
-                            className="flex items-center gap-2 text-[10px] font-mono text-zinc-400 hover:text-white transition-colors border border-zinc-700 hover:border-terminal-green/40 px-3 py-1.5 shrink-0"
-                        >
-                            {allBackupsSelected ? <CheckSquare className="w-3.5 h-3.5 text-terminal-green" /> : <Square className="w-3.5 h-3.5" />}
-                            {allBackupsSelected ? "DESELECT" : "SELECT ALL"}
-                        </button>
-                    )}
-
-                    {filter === 'restore' && selectedBackups.length > 0 && (
-                        <div className="flex items-center gap-2 shrink-0 animate-in fade-in slide-in-from-right-2 duration-300">
-                            <button
-                                onClick={() => onBatchDeleteBackups?.(selectedBackups)}
-                                disabled={isProcessing}
-                                className="flex items-center gap-2 px-3 py-1.5 bg-red-950/40 text-red-400 border border-red-900 font-space font-bold text-[9px] tracking-widest hover:bg-neutral-100 hover:text-black transition-all uppercase disabled:opacity-50"
-                            >
-                                <Trash2 className="w-3.5 h-3.5" /> DELETE
-                            </button>
-                            <button
-                                onClick={onExecuteRestore}
-                                disabled={isProcessing}
-                                className="flex items-center gap-2 px-4 py-1.5 bg-terminal-green text-black font-space font-black text-[10px] tracking-[0.2em] hover:bg-white hover:text-black active:scale-95 shadow-[0_0_20px_rgba(34,197,94,0.4)] transition-all disabled:bg-zinc-950 disabled:text-zinc-500 disabled:border-zinc-800 disabled:opacity-50"
-                            >
-                                <RotateCcw className="w-3.5 h-3.5" /> RESTORE
-                            </button>
+                    {/* Right: Search & Actions */}
+                    <div className="flex items-center gap-3">
+                        {/* Compact Search */}
+                        <div className="relative group/search w-48 xl:w-64">
+                            <div className="absolute inset-0 bg-terminal-green/5 blur-sm opacity-0 group-focus-within/search:opacity-100 transition-opacity pointer-events-none" />
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-terminal-green/40 group-focus-within/search:text-terminal-green transition-colors pointer-events-none" />
+                            <input
+                                type="text"
+                                placeholder={filter === 'restore' ? "SEARCH..." : "FILTER..."}
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                className="w-full pl-9 pr-4 py-2.5 bg-zinc-950/50 border border-terminal-green/20 rounded-none text-[10px] font-mono text-terminal-green focus:outline-none focus:border-terminal-green/60 transition-all uppercase tracking-widest relative z-10"
+                            />
                         </div>
-                    )}
 
-                    {filter !== 'restore' && selectedPackages.length > 0 && (
+                        {filter !== 'restore' ? (
+                            <button
+                                onClick={() => onToggleSelectAll(filteredPackages)}
+                                disabled={loading || filteredPackages.length === 0}
+                                className="flex items-center gap-2 text-[10px] font-mono text-zinc-400 hover:text-white transition-colors border border-zinc-700 hover:border-terminal-green/40 px-3 py-2.5 shrink-0"
+                            >
+                                {allPackagesSelected ? <CheckSquare className="w-3.5 h-3.5 text-terminal-green" /> : <Square className="w-3.5 h-3.5" />}
+                                {allPackagesSelected ? "DESELECT" : "SELECT ALL"}
+                            </button>
+                        ) : (
+                            <button
+                                onClick={() => onToggleSelectAllBackups?.(filteredBackups)}
+                                disabled={loading || filteredBackups.length === 0}
+                                className="flex items-center gap-2 text-[10px] font-mono text-zinc-400 hover:text-white transition-colors border border-zinc-700 hover:border-terminal-green/40 px-3 py-2.5 shrink-0"
+                            >
+                                {allBackupsSelected ? <CheckSquare className="w-3.5 h-3.5 text-terminal-green" /> : <Square className="w-3.5 h-3.5" />}
+                                {allBackupsSelected ? "DESELECT" : "SELECT ALL"}
+                            </button>
+                        )}
+
+                        {/* Refresh Button */}
                         <button
-                            onClick={onExecuteBackup}
-                            disabled={isProcessing}
-                            className={cn(
-                                "flex items-center gap-2 px-4 py-1.5 font-space font-black text-[10px] tracking-[0.2em] transition-all relative overflow-hidden shrink-0",
-                                isProcessing
-                                    ? "bg-zinc-950 text-zinc-500 border border-zinc-800 cursor-not-allowed opacity-50"
-                                    : "bg-terminal-green text-black border border-terminal-green/50 hover:bg-white hover:text-black active:scale-95 shadow-[0_0_20px_rgba(34,197,94,0.4)]"
-                            )}
+                            onClick={onRefresh}
+                            disabled={loading}
+                            className="group relative px-3 py-2.5 border border-zinc-700 hover:border-terminal-green/40 transition-all outline-none"
+                            title="REFRESH LIST"
                         >
-                            <div className="flex flex-col items-start leading-none">
-                                <span className="uppercase">{isProcessing ? "PROCESSING..." : "START BACKUP"}</span>
-                                {!isProcessing && totalSize > 0 && (
-                                    <span className="text-[7px] opacity-70 mt-0.5">{(totalSize / 1024 / 1024).toFixed(2)} MB</span>
-                                )}
-                            </div>
+                            <RefreshCw className={cn("w-3.5 h-3.5 text-zinc-400 group-hover:text-terinal-green transition-all", loading && "animate-spin text-terminal-green")} />
                         </button>
-                    )}
+
+                        {filter === 'restore' && selectedBackups.length > 0 && (
+                            <div className="flex items-center gap-2 shrink-0 animate-in fade-in slide-in-from-right-2 duration-300">
+                                <button
+                                    onClick={() => onBatchDeleteBackups?.(selectedBackups)}
+                                    disabled={isProcessing}
+                                    className="flex items-center gap-2 px-3 py-2.5 bg-red-950/40 text-red-400 border border-red-900 font-space font-bold text-[9px] tracking-widest hover:bg-neutral-100 hover:text-black transition-all uppercase disabled:opacity-50"
+                                >
+                                    <Trash2 className="w-3.5 h-3.5" /> DELETE
+                                </button>
+                                <button
+                                    onClick={onExecuteRestore}
+                                    disabled={isProcessing}
+                                    className="flex items-center gap-2 px-4 py-2.5 bg-terminal-green text-black font-space font-black text-[10px] tracking-[0.2em] hover:bg-white hover:text-black active:scale-95 shadow-[0_0_20px_rgba(34,197,94,0.4)] transition-all disabled:bg-zinc-950 disabled:text-zinc-500 disabled:border-zinc-800 disabled:opacity-50"
+                                >
+                                    <RotateCcw className="w-3.5 h-3.5" /> RESTORE
+                                </button>
+                            </div>
+                        )}
+
+                        {filter !== 'restore' && selectedPackages.length > 0 && (
+                            <button
+                                onClick={onExecuteBackup}
+                                disabled={isProcessing}
+                                className={cn(
+                                    "flex items-center gap-2 px-4 py-0.75 font-space font-black text-[14px] tracking-[0.2em] transition-all relative overflow-hidden shrink-0",
+                                    isProcessing
+                                        ? "bg-zinc-950 text-zinc-500 border border-zinc-800 cursor-not-allowed opacity-50"
+                                        : "bg-terminal-green text-black border border-terminal-green/50 hover:bg-white hover:text-black active:scale-95 shadow-[0_0_20px_rgba(34,197,94,0.4)]"
+                                )}
+                            >
+                                <div className="flex flex-col items-start leading-none">
+                                    <span className="uppercase">{isProcessing ? "PROCESSING..." : "START BACKUP"}</span>
+                                    {!isProcessing && totalSize > 0 && (
+                                        <span className="text-[12px] opacity-70 mt-0.5">{(totalSize / 1024 / 1024).toFixed(2)} MB</span>
+                                    )}
+                                </div>
+                                <Download className={cn("w-3.5 h-3.5 ml-1", isProcessing && "animate-pulse")} />
+                            </button>
+                        )}
+                    </div>
                 </div>
+
+
             </div>
 
             <div className="flex-1 overflow-y-auto p-3 scrollbar-thin relative z-10 bg-zinc-950/5">

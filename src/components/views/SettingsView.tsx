@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { FolderOpen, Github, Heart, ExternalLink, Cpu, Bell, Volume2, X, Check, RefreshCw, Settings, HardDrive } from "lucide-react";
+import { FolderOpen, Github, Cpu, Bell, Volume2, X, Check, RefreshCw, Settings, HardDrive } from "lucide-react";
 import { useApp } from "../../context/AppContext";
 import { cn } from "../../lib/utils";
 import { invoke } from "@tauri-apps/api/core";
@@ -10,26 +10,11 @@ const APP_VERSION = "2.0.1";
 const GITHUB_URL = "https://github.com/aybrkaknc/EasyADB";
 const AUTHOR_URL = "https://github.com/aybrkaknc";
 
-interface SettingsViewProps {
-    activeTab?: 'general' | 'about';
-}
-
 /**
- * SettingsView: Ayarlar ana görünümü.
+ * SettingsView: Birleşik Ayarlar Sayfası
+ * Header'da About bilgisi, altta genişletilebilir ayar kartları.
  */
-export function SettingsView({ activeTab = 'general' }: SettingsViewProps) {
-    if (activeTab === 'about') {
-        return <AboutView />;
-    }
-
-    return <GeneralView />;
-}
-
-/**
- * GeneralView: Tüm ayarlar - Full Page Layout
- * Notifications, Sound, Backup Directory
- */
-function GeneralView() {
+export function SettingsView() {
     const { settings, updateSettings } = useApp();
     const [showPathModal, setShowPathModal] = useState(false);
     const [inputPath, setInputPath] = useState("");
@@ -79,32 +64,67 @@ function GeneralView() {
 
     return (
         <div className="flex-1 flex flex-col p-6 overflow-y-auto">
-            {/* Header */}
-            <div className="mb-8">
-                <div className="flex items-center gap-3 mb-2">
-                    <Settings className="w-6 h-6 text-terminal-green" />
-                    <h1 className="text-xl font-space font-black text-white tracking-[0.3em]">SYSTEM_CONFIG</h1>
+            {/* ══════════════════════════════════════════════════════════════ */}
+            {/* HEADER: Title Left, About Right */}
+            {/* ══════════════════════════════════════════════════════════════ */}
+            <div className="flex items-start justify-between mb-8 border-b border-terminal-green/20 pb-6 -mx-6 px-6">
+                {/* Left: Title & Subtitle */}
+                <div className="flex flex-col gap-2">
+                    <div className="flex items-center gap-3 mb-2">
+                        <Settings className="w-6 h-6 text-terminal-green" />
+                        <h1 className="text-2xl font-space font-black text-white tracking-[0.2em] drop-shadow-[0_0_8px_rgba(255,255,255,0.2)]">SETTINGS</h1>
+                    </div>
+                    <div className="text-[10px] text-white/80 font-mono tracking-widest uppercase">
+                        APPLICATION PREFERENCES AND STORAGE CONFIGURATION
+                    </div>
                 </div>
-                <div className="text-[10px] text-zinc-600 font-mono tracking-widest">
-                    APPLICATION PREFERENCES AND STORAGE SETTINGS
+
+                {/* Right: About Card (Compact) */}
+                <div className="flex items-center gap-4 bg-black/40 border border-terminal-green/20 px-4 py-3"
+                    style={{ clipPath: 'polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px))' }}
+                >
+                    <div className="text-2xl">⚡</div>
+                    <div className="flex flex-col">
+                        <button
+                            onClick={() => openUrl(GITHUB_URL)}
+                            className="text-left hover:text-terminal-green transition-colors"
+                            title="Visit Repository"
+                        >
+                            <span className="text-sm font-space font-black tracking-widest">EasyADB</span>
+                        </button>
+                        <div className="flex items-center gap-2">
+                            <Cpu className="w-2.5 h-2.5 text-terminal-green/60" />
+                            <span className="text-[9px] font-mono text-terminal-green/60 tracking-widest">v{APP_VERSION}</span>
+                        </div>
+                    </div>
+                    <div className="h-8 w-px bg-terminal-green/20 mx-2" />
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => openUrl(AUTHOR_URL)}
+                            className="p-2 border border-terminal-green/20 hover:border-terminal-green/50 hover:bg-terminal-green/5 transition-all"
+                            title="Desgined by Ayberk"
+                        >
+                            <Github className="w-4 h-4 text-terminal-green/60 hover:text-terminal-green" />
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            {/* Settings Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-4xl">
+            {/* ══════════════════════════════════════════════════════════════ */}
+            {/* SETTINGS GRID - Expandable Layout */}
+            {/* ══════════════════════════════════════════════════════════════ */}
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
 
-                {/* ══════════════════════════════════════════════════════════════ */}
-                {/* SECTION: NOTIFICATIONS & SOUND */}
-                {/* ══════════════════════════════════════════════════════════════ */}
+                {/* ─────────────────────────────────────────────────────────── */}
+                {/* CARD 1: FEEDBACK SYSTEM */}
+                {/* ─────────────────────────────────────────────────────────── */}
                 <div
                     className="relative border border-terminal-green/20 bg-black/40 overflow-hidden"
                     style={{ clipPath: 'polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px))' }}
                 >
-                    {/* Corner Accents */}
                     <div className="absolute top-0 left-0 w-3 h-3 border-t border-l border-terminal-green/40" />
                     <div className="absolute bottom-0 right-0 w-3 h-3 border-b border-r border-terminal-green/40" />
 
-                    {/* Section Header */}
                     <div className="px-5 py-4 border-b border-terminal-green/10">
                         <div className="flex items-center gap-2">
                             <Bell className="w-4 h-4 text-terminal-green/60" />
@@ -112,7 +132,6 @@ function GeneralView() {
                         </div>
                     </div>
 
-                    {/* Options */}
                     <div className="p-5 space-y-4">
                         {/* Notifications Toggle */}
                         <div
@@ -172,18 +191,16 @@ function GeneralView() {
                     </div>
                 </div>
 
-                {/* ══════════════════════════════════════════════════════════════ */}
-                {/* SECTION: STORAGE / BACKUP DIRECTORY */}
-                {/* ══════════════════════════════════════════════════════════════ */}
+                {/* ─────────────────────────────────────────────────────────── */}
+                {/* CARD 2: STORAGE CONFIG */}
+                {/* ─────────────────────────────────────────────────────────── */}
                 <div
                     className="relative border border-terminal-green/20 bg-black/40 overflow-hidden"
                     style={{ clipPath: 'polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px))' }}
                 >
-                    {/* Corner Accents */}
                     <div className="absolute top-0 left-0 w-3 h-3 border-t border-l border-terminal-green/40" />
                     <div className="absolute bottom-0 right-0 w-3 h-3 border-b border-r border-terminal-green/40" />
 
-                    {/* Section Header */}
                     <div className="px-5 py-4 border-b border-terminal-green/10">
                         <div className="flex items-center gap-2">
                             <HardDrive className="w-4 h-4 text-terminal-green/60" />
@@ -191,13 +208,11 @@ function GeneralView() {
                         </div>
                     </div>
 
-                    {/* Content */}
                     <div className="p-5">
                         <div className="text-[9px] text-zinc-600 font-mono mb-3 tracking-wider">
                             BACKUP_OUTPUT_DIRECTORY
                         </div>
 
-                        {/* Path Display */}
                         <div className="bg-black/60 border border-terminal-green/10 p-4 mb-4 flex items-center justify-between group hover:border-terminal-green/30 transition-colors">
                             <div className="flex items-center overflow-hidden flex-1">
                                 <FolderOpen className="w-5 h-5 text-terminal-green/50 mr-3 shrink-0" />
@@ -210,7 +225,6 @@ function GeneralView() {
                             )}
                         </div>
 
-                        {/* Change Path Button */}
                         <button
                             onClick={handleOpenModal}
                             className="w-full py-3 border border-terminal-green/40 text-terminal-green font-space font-bold text-[10px] tracking-[0.25em] hover:bg-terminal-green hover:text-black transition-all"
@@ -218,23 +232,36 @@ function GeneralView() {
                             MODIFY_PATH
                         </button>
 
-                        {/* Info */}
                         <div className="mt-4 text-[9px] text-zinc-600 font-mono leading-relaxed">
                             All encrypted backup archives (.easybckp) will be stored in this directory.
                         </div>
                     </div>
                 </div>
 
+                {/* ─────────────────────────────────────────────────────────── */}
+                {/* CARD 3: PLACEHOLDER FOR FUTURE SETTINGS */}
+                {/* Yeni ayar kartları buraya eklenebilir */}
+                {/* ─────────────────────────────────────────────────────────── */}
+                {/* 
+                <div className="relative border border-terminal-green/20 bg-black/40 overflow-hidden border-dashed opacity-30">
+                    <div className="p-8 flex flex-col items-center justify-center text-center">
+                        <div className="text-2xl mb-2">➕</div>
+                        <div className="text-[10px] font-mono text-zinc-600 tracking-widest">MORE_OPTIONS_COMING</div>
+                    </div>
+                </div>
+                */}
+
             </div>
 
-            {/* Path Selection Modal */}
+            {/* ══════════════════════════════════════════════════════════════ */}
+            {/* PATH SELECTION MODAL */}
+            {/* ══════════════════════════════════════════════════════════════ */}
             {showPathModal && (
                 <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                     <div
                         className="relative border border-terminal-green/40 bg-black/95 max-w-lg w-full shadow-[0_0_80px_rgba(34,197,94,0.1)] overflow-hidden"
                         style={{ clipPath: 'polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px))' }}
                     >
-                        {/* Header */}
                         <div className="flex items-center justify-between p-4 border-b border-terminal-green/20 bg-terminal-green/5">
                             <div className="flex items-center gap-3">
                                 <FolderOpen className="w-5 h-5 text-terminal-green" />
@@ -248,7 +275,6 @@ function GeneralView() {
                             </button>
                         </div>
 
-                        {/* Content */}
                         <div className="p-6">
                             <div className="text-[10px] text-zinc-500 font-mono mb-4">
                                 Specify target directory for backup storage. Folder will be created if it doesn't exist.
@@ -271,7 +297,6 @@ function GeneralView() {
                                 </button>
                             </div>
 
-                            {/* Quick Paths */}
                             <div className="text-[9px] text-zinc-600 font-mono mb-2 tracking-widest">QUICK_SELECT</div>
                             <div className="space-y-2 mb-4">
                                 <button
@@ -287,7 +312,6 @@ function GeneralView() {
                             </div>
                         </div>
 
-                        {/* Footer */}
                         <div className="flex items-center justify-between p-4 border-t border-terminal-green/20 bg-black/50">
                             <button
                                 onClick={handleResetToDefault}
@@ -314,83 +338,6 @@ function GeneralView() {
                     </div>
                 </div>
             )}
-        </div>
-    );
-}
-
-/**
- * AboutView: Uygulama hakkında bilgiler.
- */
-function AboutView() {
-    return (
-        <div className="flex-1 flex flex-col items-center justify-center p-8">
-            <div
-                className="relative border border-terminal-green/30 p-10 bg-black/60 max-w-lg w-full shadow-[0_0_50px_rgba(34,197,94,0.05)] overflow-hidden"
-                style={{ clipPath: 'polygon(0 0, calc(100% - 24px) 0, 100% 24px, 100% 100%, 24px 100%, 0 calc(100% - 24px))' }}
-            >
-                {/* Corner Accents */}
-                <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-terminal-green/40" />
-                <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-terminal-green/40" />
-
-                {/* Logo & Title */}
-                <div className="text-center mb-8">
-                    <div className="text-5xl mb-4">⚡</div>
-                    <h1 className="text-2xl font-space font-black text-white tracking-[0.3em] mb-2">
-                        EasyADB
-                    </h1>
-                    <div className="flex items-center justify-center gap-2">
-                        <Cpu className="w-3.5 h-3.5 text-terminal-green/60" />
-                        <span className="text-[11px] font-mono text-terminal-green/60 tracking-widest">
-                            VERSION {APP_VERSION}
-                        </span>
-                    </div>
-                </div>
-
-                {/* Description */}
-                <p className="text-[12px] text-zinc-400 font-mono text-center leading-relaxed mb-8">
-                    Professional Android Device Management Tool.<br />
-                    Built with Tauri 2.0 & Rust for maximum performance.
-                </p>
-
-                {/* Info Grid */}
-                <div className="grid grid-cols-2 gap-4 mb-8">
-                    <div className="border border-terminal-green/10 p-4 text-center">
-                        <div className="text-2xl mb-2">🦀</div>
-                        <div className="text-[10px] font-mono text-terminal-green/60">Rust Backend</div>
-                    </div>
-                    <div className="border border-terminal-green/10 p-4 text-center">
-                        <div className="text-2xl mb-2">⚛️</div>
-                        <div className="text-[10px] font-mono text-terminal-green/60">React Frontend</div>
-                    </div>
-                </div>
-
-                {/* Links */}
-                <div className="space-y-3">
-                    <button
-                        onClick={() => openUrl(GITHUB_URL)}
-                        className="flex items-center justify-center gap-3 p-4 border border-terminal-green/20 hover:border-terminal-green/50 hover:bg-terminal-green/5 transition-all group w-full"
-                    >
-                        <Github className="w-5 h-5 text-terminal-green/60 group-hover:text-terminal-green" />
-                        <span className="text-[11px] font-mono text-zinc-400 group-hover:text-white tracking-widest">
-                            VIEW_SOURCE_CODE
-                        </span>
-                        <ExternalLink className="w-3.5 h-3.5 text-terminal-green/30 group-hover:text-terminal-green" />
-                    </button>
-                </div>
-
-                {/* Footer */}
-                <div className="mt-8 pt-6 border-t border-terminal-green/10 flex items-center justify-center gap-2 text-[10px] text-zinc-600 font-mono">
-                    <span>Made with</span>
-                    <Heart className="w-3 h-3 text-red-500/60" />
-                    <span>by</span>
-                    <button
-                        onClick={() => openUrl(AUTHOR_URL)}
-                        className="text-terminal-green/80 hover:text-terminal-green transition-colors underline decoration-terminal-green/20 underline-offset-4 cursor-pointer"
-                    >
-                        Ayberk
-                    </button>
-                </div>
-            </div>
         </div>
     );
 }

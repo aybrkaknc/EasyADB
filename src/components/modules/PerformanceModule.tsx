@@ -1,6 +1,6 @@
-import { Activity, Battery, Cpu, Database, RefreshCw, Zap, Shield, Monitor, Layers, Terminal } from 'lucide-react';
+import { Activity, Battery, Cpu, Database, RefreshCw, Zap, Shield, Monitor, Layers, Terminal, Lock, Unlock, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { usePerformanceMetrics, HWInfo } from '../../hooks/usePerformanceMetrics';
+import { usePerformanceMetrics, HWInfo, DeviceIntegrity } from '../../hooks/usePerformanceMetrics';
 
 
 
@@ -22,38 +22,37 @@ function MetricCard({ title, value, unit, icon: Icon, color = "text-terminal-gre
     return (
         <div
             className={cn(
-                "relative bg-zinc-950/40 border border-terminal-green/20 p-5 transition-all duration-500 group overflow-hidden",
+                "relative bg-zinc-950/40 border border-terminal-green/20 p-4 h-[100px] flex flex-col justify-between transition-all duration-500 group overflow-hidden",
                 "hover:border-terminal-green/50 hover:bg-zinc-900/40 hover:shadow-[0_0_30px_rgba(0,255,65,0.05)]",
                 glitch && "animate-pulse shadow-[0_0_20px_rgba(239,68,68,0.15)] border-red-500/40"
             )}
             style={{
-                clipPath: 'polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px))'
+                clipPath: 'polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))'
             }}
         >
-            <div className="absolute top-0 left-0 w-3 h-3 border-t border-l border-terminal-green/30 group-hover:border-terminal-green" />
-            <div className="absolute bottom-0 right-0 w-3 h-3 border-b border-r border-terminal-green/30 group-hover:border-terminal-green" />
-            <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-terminal-green/10 to-transparent translate-y-[-100%] group-hover:translate-y-0 transition-transform duration-700" />
+            <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-terminal-green/30 group-hover:border-terminal-green" />
+            <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-terminal-green/30 group-hover:border-terminal-green" />
 
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between">
                 <div className="flex flex-col">
-                    <span className="text-[10px] font-space font-black text-terminal-green tracking-[0.25em] uppercase">
+                    <span className="text-[9px] font-space font-black text-terminal-green tracking-[0.25em] uppercase">
                         {title}
                     </span>
-                    <div className="h-[2px] w-6 bg-terminal-green/30 mt-1" />
+                    <div className="h-[1px] w-4 bg-terminal-green/30 mt-0.5" />
                 </div>
-                <Icon className={cn("w-5 h-5 opacity-40 group-hover:opacity-100 transition-all duration-500 transform group-hover:scale-110", color)} />
+                <Icon className={cn("w-4 h-4 opacity-40 group-hover:opacity-100 transition-all duration-500 transform group-hover:scale-110", color)} />
             </div>
 
-            <div className="flex items-baseline gap-1.5 mt-1">
-                <span className={cn("text-4xl font-mono font-black tracking-tighter tabular-nums drop-shadow-[0_0_10px_rgba(0,255,65,0.2)]", color)}>
+            <div className="flex items-baseline gap-1 mt-0.5">
+                <span className={cn("text-3xl font-mono font-black tracking-tighter tabular-nums drop-shadow-[0_0_10px_rgba(0,255,65,0.2)]", color)}>
                     {value}
                 </span>
-                {unit && <span className="text-xs text-zinc-500 font-mono font-black tracking-widest">{unit}</span>}
+                {unit && <span className="text-[10px] text-zinc-500 font-mono font-black tracking-widest">{unit}</span>}
             </div>
 
             {subtext && (
-                <div className="text-[9px] text-zinc-400 font-mono mt-3 flex items-center gap-2 uppercase tracking-widest">
-                    <div className={cn("w-1.5 h-1.5 rounded-full animate-pulse", color.replace('text-', 'bg-'))} />
+                <div className="text-[8px] text-zinc-400 font-mono flex items-center gap-1.5 uppercase tracking-widest">
+                    <div className={cn("w-1 h-1 rounded-full animate-pulse", color.replace('text-', 'bg-'))} />
                     {subtext}
                 </div>
             )}
@@ -110,84 +109,175 @@ function HardwareInfo({ info }: { info?: HWInfo }) {
     ];
 
     return (
-        <div className="lg:col-span-2 space-y-4">
-            <div className="relative bg-zinc-950/60 border border-terminal-green/20 p-8 overflow-hidden group">
-                {/* Aesthetic Detail Icons */}
-                <div className="absolute top-0 right-0 p-3 opacity-10 flex gap-4 grayscale group-hover:grayscale-0 transition-all duration-700">
-                    <Shield className="w-8 h-8 text-terminal-green/20 rotate-12" />
+        <div className="relative bg-zinc-950/60 border border-terminal-green/20 p-6 h-full overflow-hidden group">
+            {/* Aesthetic Detail Icons */}
+            <div className="absolute top-0 right-0 p-3 opacity-10 flex gap-4 grayscale group-hover:grayscale-0 transition-all duration-700">
+                <Shield className="w-8 h-8 text-terminal-green/20 rotate-12" />
+            </div>
+
+            <div className="flex items-center justify-between mb-6 shrink-0">
+                <div className="flex items-center gap-3 px-2">
+                    <div className="w-1.5 h-1.5 bg-terminal-green animate-pulse" />
+                    <h3 className="text-[10px] font-space font-black text-terminal-green tracking-[0.3em] uppercase">Hardware Inventory</h3>
                 </div>
+            </div>
 
-                <h3 className="text-xs font-space font-black text-terminal-green tracking-[0.3em] mb-10 flex items-center gap-3">
-                    <div className="w-2 h-2 bg-terminal-green animate-pulse" />
-                    HARDWARE INVENTORY
-                </h3>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-12 relative z-10">
-                    {groups.map((group) => (
-                        <div key={group.title} className="space-y-5">
-                            <div className="flex items-center gap-2.5 border-b border-terminal-green/5 pb-2">
-                                <group.icon className="w-3.5 h-3.5 text-terminal-green/50" />
-                                <span className="text-[10px] font-space font-black text-terminal-green tracking-[0.2em] uppercase">{group.title}</span>
-                            </div>
-                            <div className="space-y-5 pl-1">
-                                {group.items.map((item) => (
-                                    <div key={item.label} className="flex flex-col gap-1 hover:translate-x-1 transition-transform duration-300">
-                                        <span className="text-[9px] font-mono text-zinc-500 hover:text-zinc-400 font-bold tracking-widest uppercase">{item.label}</span>
-                                        <span className={cn(
-                                            "text-[11px] font-space font-black tracking-wider uppercase truncate",
-                                            item.highlight
-                                                ? "text-white drop-shadow-[0_0_12px_rgba(255,255,255,0.4)]"
-                                                : "text-terminal-green drop-shadow-[0_0_5px_rgba(0,255,65,0.15)]"
-                                        )}>
-                                            {item.val || 'N/A'}
-                                        </span>
-                                    </div>
-                                ))}
-                            </div>
+            <div className="grid grid-cols-1 gap-4 relative z-10">
+                {groups.map((group) => (
+                    <div key={group.title} className="h-[100px] flex flex-col justify-center border-l border-terminal-green/10 pl-4 hover:border-terminal-green transition-colors">
+                        <div className="flex items-center gap-2 mb-2">
+                            <group.icon className="w-3 h-3 text-terminal-green/50" />
+                            <span className="text-[9px] font-space font-black text-terminal-green/80 tracking-[0.2em] uppercase">{group.title}</span>
                         </div>
-                    ))}
-                </div>
+                        <div className="space-y-1.5 pl-1">
+                            {group.items.slice(0, 2).map((item) => (
+                                <div key={item.label} className="flex flex-col gap-0.5 hover:translate-x-1 transition-transform duration-300">
+                                    <span className="text-[8px] font-mono text-zinc-500 font-bold tracking-widest uppercase">{item.label}</span>
+                                    <span className={cn(
+                                        "text-[10px] font-mono font-black tracking-wider uppercase truncate",
+                                        item.highlight ? "text-white" : "text-terminal-green"
+                                    )}>
+                                        {item.val || 'N/A'}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                ))}
+            </div>
 
-                <div className="absolute bottom-[-15%] right-[-10%] rotate-[-20deg] opacity-[0.03] pointer-events-none select-none">
-                    <Cpu className="w-80 h-80 text-terminal-green" />
-                </div>
+            <div className="absolute bottom-[-10%] right-[-5%] rotate-[-20deg] opacity-[0.02] pointer-events-none select-none">
+                <Cpu className="w-64 h-64 text-terminal-green" />
             </div>
         </div>
     );
 }
 
-function TelemetrySpecs({ uptime }: { uptime: string }) {
+function IntegrityCard({ integrity }: { integrity?: DeviceIntegrity }) {
+    if (!integrity) {
+        return (
+            <div className="relative bg-zinc-950/40 border border-terminal-green/20 p-6 h-full flex flex-col items-center justify-center gap-4">
+                <RefreshCw className="w-8 h-8 text-terminal-green/20 animate-spin" />
+                <span className="text-[10px] font-space font-black text-terminal-green/40 animate-pulse uppercase tracking-[0.3em]">SCANNING...</span>
+            </div>
+        );
+    }
+
+    const statusConfig = {
+        STRONG: { color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', icon: CheckCircle, label: 'STRONG' },
+        BASIC: { color: 'text-yellow-400', bg: 'bg-yellow-500/10', border: 'border-yellow-500/30', icon: AlertTriangle, label: 'BASIC' },
+        FAIL: { color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/30', icon: XCircle, label: 'FAIL' }
+    };
+
+    const config = statusConfig[integrity.status as keyof typeof statusConfig] || statusConfig.FAIL;
+    const StatusIcon = config.icon;
+
+    // Extract individual checks from details array
+    const getCheckStatus = (keyword: string) => {
+        const detail = integrity.details.find(d => d.toLowerCase().includes(keyword.toLowerCase()));
+        return detail ? detail.includes('✓') : false;
+    };
+
+    const checks = [
+        {
+            label: 'BOOTLOADER',
+            pass: integrity.bootloader_locked,
+            icon: integrity.bootloader_locked ? Lock : Unlock,
+            value: integrity.bootloader_locked ? 'LOCKED' : 'UNLOCKED',
+            desc: integrity.bootloader_locked ? 'Factory sealed, tamper-proof' : 'Custom firmware allowed'
+        },
+        {
+            label: 'VERIFIED BOOT',
+            pass: integrity.verified_boot === 'green',
+            icon: Shield,
+            value: integrity.verified_boot.toUpperCase(),
+            desc: integrity.verified_boot === 'green' ? 'OEM signature verified' : 'Boot chain modified'
+        },
+        {
+            label: 'SELINUX',
+            pass: getCheckStatus('selinux'),
+            icon: Shield,
+            value: getCheckStatus('selinux') ? 'ENFORCING' : 'PERMISSIVE',
+            desc: getCheckStatus('selinux') ? 'Mandatory access control active' : 'Security policies relaxed'
+        },
+        {
+            label: 'DEBUG MODE',
+            pass: !getCheckStatus('debug'),
+            icon: Terminal,
+            value: getCheckStatus('debug') ? 'ON' : 'OFF',
+            desc: !getCheckStatus('debug') ? 'Production environment' : 'Developer access enabled'
+        }
+    ];
+
     return (
-        <div className="bg-zinc-950/60 border border-terminal-green/20 p-8 flex flex-col justify-between group overflow-hidden relative">
-            <div className="absolute top-0 right-0 w-16 h-16 bg-terminal-green/5 blur-3xl rounded-full" />
-            <div>
-                <h3 className="text-[10px] font-space font-black text-terminal-green tracking-[0.25em] mb-8 uppercase">SYSTEM UPTIME</h3>
-                <div className="text-4xl font-mono font-black text-terminal-green tracking-tighter drop-shadow-[0_0_15px_rgba(0,255,65,0.3)] tabular-nums">
-                    {uptime}
+        <div className={cn(
+            "relative border p-6 h-full flex flex-col transition-all duration-500 group overflow-hidden",
+            config.bg,
+            config.border
+        )}>
+            <div className="absolute top-0 left-0 w-3 h-3 border-t border-l border-current opacity-30" />
+            <div className="absolute bottom-0 right-0 w-3 h-3 border-b border-r border-current opacity-30" />
+
+            {/* Header with Status Badge Right-Aligned */}
+            <div className="flex items-center justify-between mb-6 shrink-0">
+                <div className="flex items-center gap-3 px-2">
+                    <Shield className={cn("w-4 h-4", config.color)} />
+                    <h3 className="text-[10px] font-space font-black text-terminal-green tracking-[0.3em] uppercase">Device Integrity</h3>
                 </div>
-                <p className="text-[10px] text-zinc-400 font-mono mt-6 leading-relaxed uppercase tracking-tight">
-                    Link integrity verified. Data routing is <span className="text-terminal-green">OPTIMAL</span>. No system errors detected.
-                </p>
+                <div className={cn(
+                    "flex items-center gap-1.5 px-2 py-1 border",
+                    config.bg,
+                    config.border
+                )}>
+                    <StatusIcon className={cn("w-3.5 h-3.5", config.color)} />
+                    <span className={cn("text-[9px] font-space font-black tracking-wider", config.color)}>{config.label}</span>
+                </div>
             </div>
 
-            <div className="mt-12 space-y-3">
-                {[
-                    { label: 'STATUS', val: 'CONNECTED', icon: Terminal },
-                    { label: 'ARCHITECTURE', val: 'LNX_AARCH64', icon: Cpu },
-                    { label: 'SECURITY', val: 'ENCRYPTED', icon: Shield }
-                ].map(spec => (
-                    <div key={spec.label} className="flex justify-between items-center text-[10px] font-mono group/item">
-                        <div className="flex items-center gap-3">
-                            <spec.icon className="w-3 h-3 text-terminal-green/30 group-hover/item:text-terminal-green transition-colors" />
-                            <span className="text-zinc-500 font-bold tracking-widest">{spec.label}</span>
+            {/* 4 Check Boxes - Each aligned with corresponding row */}
+            <div className="grid grid-cols-1 gap-4 flex-1">
+                {checks.map((check, idx) => {
+                    const CheckIcon = check.icon;
+                    return (
+                        <div
+                            key={idx}
+                            className={cn(
+                                "h-[100px] flex items-center gap-3 px-4 border transition-all hover:translate-x-1",
+                                "bg-zinc-950/40",
+                                check.pass ? "border-emerald-500/20" : "border-red-500/20"
+                            )}
+                            style={{
+                                clipPath: 'polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))'
+                            }}
+                        >
+                            <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-terminal-green/30" />
+                            <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-terminal-green/30" />
+
+                            <CheckIcon className={cn(
+                                "w-5 h-5 shrink-0",
+                                check.pass ? "text-emerald-400" : "text-red-400"
+                            )} />
+                            <div className="flex flex-col gap-0.5">
+                                <span className="text-[8px] font-mono text-zinc-500 font-bold tracking-widest uppercase">{check.label}</span>
+                                <span className={cn(
+                                    "text-base font-mono font-black tracking-wider",
+                                    check.pass ? "text-emerald-400" : "text-red-400"
+                                )}>
+                                    {check.value}
+                                </span>
+                            </div>
+                            <div className="ml-auto flex flex-col items-end gap-1">
+                                <div className={cn(
+                                    "w-1.5 h-1.5 rounded-full animate-pulse",
+                                    check.pass ? "bg-emerald-400" : "bg-red-400"
+                                )} />
+                                <span className="text-[8px] font-mono text-white/80 uppercase tracking-wider text-right max-w-[110px] leading-tight">
+                                    {check.desc}
+                                </span>
+                            </div>
                         </div>
-                        <span className="text-terminal-green font-black">{spec.val}</span>
-                    </div>
-                ))}
-                <div className="w-full h-px bg-terminal-green/10 my-4" />
-                <div className="text-[9px] font-mono text-terminal-green/40 text-center animate-pulse tracking-[0.3em] font-black uppercase">
-                    DEVICE LINK ACTIVE
-                </div>
+                    );
+                })}
             </div>
         </div>
     );
@@ -219,42 +309,57 @@ export function PerformanceView({ deviceId }: { deviceId?: string }) {
                 <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,65,0.05)_1px,transparent_1px)] bg-[size:100%_4px]" />
             </div>
 
-            <div className="flex-1 p-8 overflow-y-auto min-h-0 scrollbar-thin scrollbar-thumb-terminal-green/10 z-10 relative">
-                <div className="max-w-7xl mx-auto w-full">
-                    {/* Header HUD - Fixed Layout (No sticky overlap) */}
-                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-16 border-b border-terminal-green/20 pb-10 relative">
-                        <div className="flex flex-col gap-3">
-                            <h1 className="text-4xl font-space font-black text-white tracking-[0.2em] flex items-center gap-5 uppercase">
-                                <div className="relative">
-                                    <Activity className="w-10 h-10 text-terminal-green drop-shadow-[0_0_12px_#00ff41]" />
-                                    <div className="absolute inset-0 bg-terminal-green/30 blur-2xl animate-pulse" />
+            <div className="flex-1 p-6 overflow-y-auto min-h-0 scrollbar-thin scrollbar-thumb-terminal-green/10 z-10 relative">
+                {/* Header HUD - Compact Layout */}
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 border-b border-terminal-green/20 pb-6 relative -mx-6 px-6">
+                    <div className="flex flex-col gap-2">
+                        <div className="flex items-center gap-3 mb-2">
+                            <Activity className="w-6 h-6 text-terminal-green" />
+                            <h1 className="text-2xl font-space font-black text-white tracking-[0.2em] drop-shadow-[0_0_8px_rgba(255,255,255,0.2)]">SYSTEM MONITOR</h1>
+                        </div>
+                        <div className="text-[10px] text-white/80 font-mono tracking-widest uppercase">
+                            REAL-TIME DEVICE METRICS AND INTEGRITY STATUS
+                        </div>
+                    </div>
+
+                    <div className="mt-4 md:mt-0">
+                        <button onClick={refresh} className="p-3 border border-terminal-green/30 bg-zinc-950/80 hover:border-terminal-green hover:bg-terminal-green/10 text-terminal-green transition-all overflow-hidden group relative shadow-2xl">
+                            <div className="absolute inset-0 bg-terminal-green/5 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
+                            <RefreshCw className={cn("w-5 h-5 relative z-10 drop-shadow-[0_0_8px_rgba(0,255,65,0.5)]", isLoading && "animate-spin")} />
+                        </button>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
+                    <div className="h-full">
+                        <div className="relative bg-zinc-950/60 border border-terminal-green/20 p-6 h-full overflow-hidden group">
+                            <div className="absolute top-0 left-0 w-3 h-3 border-t border-l border-terminal-green/30 group-hover:border-terminal-green transition-colors" />
+                            <div className="absolute bottom-0 right-0 w-3 h-3 border-b border-r border-terminal-green/30 group-hover:border-terminal-green transition-colors" />
+
+                            <div className="flex items-center justify-between mb-6 shrink-0">
+                                <div className="flex items-center gap-3 px-2">
+                                    <Activity className="w-4 h-4 text-terminal-green" />
+                                    <h3 className="text-[10px] font-space font-black text-terminal-green tracking-[0.3em] uppercase">System Status</h3>
                                 </div>
-                                System Monitor
-                            </h1>
-                            <div className="flex items-center gap-4 font-mono text-[10px] tracking-[0.2em]">
-                                <span className="text-white bg-terminal-green/20 px-2 py-0.5 border border-terminal-green/40 font-black">CONNECTED</span>
-                                <span className="text-zinc-500 uppercase font-black">ID://{deviceId}</span>
+                            </div>
+
+                            <div className="grid grid-cols-1 gap-4">
+                                <MetricCard title="Battery" value={metrics.batteryLevel} unit="%" icon={Battery} subtext="STAT: CONNECTED" color={metrics.batteryLevel < 20 ? "text-red-500" : "text-terminal-green"} />
+                                <MetricCard title="Temperature" value={metrics.batteryTemp} unit="°C" icon={Zap} subtext="STATUS: OK" color={metrics.batteryTemp > 45 ? "text-orange-500" : "text-emerald-400"} />
+                                <MetricCard title="CPU Load" value={metrics.cpuUsage} unit="%" icon={Cpu} subtext="ACTIVE" />
+                                <MetricCard title="RAM Usage" value={metrics.ramUsage} unit="%" icon={Database} subtext="MAP: DYNAMIC" />
                             </div>
                         </div>
-
-                        <div className="mt-6 md:mt-0">
-                            <button onClick={refresh} className="p-4 border border-terminal-green/30 bg-zinc-950/80 hover:border-terminal-green hover:bg-terminal-green/10 text-terminal-green transition-all overflow-hidden group relative shadow-2xl">
-                                <div className="absolute inset-0 bg-terminal-green/5 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
-                                <RefreshCw className={cn("w-6 h-6 relative z-10 drop-shadow-[0_0_8px_rgba(0,255,65,0.5)]", isLoading && "animate-spin")} />
-                            </button>
-                        </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-                        <MetricCard title="Battery" value={metrics.batteryLevel} unit="%" icon={Battery} subtext="STAT: CONNECTED" color={metrics.batteryLevel < 20 ? "text-red-500" : "text-terminal-green"} />
-                        <MetricCard title="CPU Temperature" value={metrics.batteryTemp} unit="°C" icon={Zap} subtext="STATUS: OK" color={metrics.batteryTemp > 45 ? "text-orange-500" : "text-emerald-400"} />
-                        <MetricCard title="CPU Load" value={metrics.cpuUsage} unit="%" icon={Cpu} subtext="ACTIVE" />
-                        <MetricCard title="RAM Usage" value={metrics.ramUsage} unit="%" icon={Database} subtext="MAP: DYNAMIC" />
-                    </div>
-
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+                    {/* Column 2: Hardware Info */}
+                    <div className="h-full">
                         <HardwareInfo info={metrics.hwInfo} />
-                        <TelemetrySpecs uptime={metrics.uptime} />
+                    </div>
+
+                    {/* Column 3: Device Integrity */}
+                    <div className="h-full">
+                        <IntegrityCard integrity={metrics.integrity} />
                     </div>
                 </div>
             </div>

@@ -104,8 +104,8 @@ export function RestoreModule({
                             <Archive className="w-3.5 h-3.5 text-terminal-green" />
                             RESTORE
                         </h2>
-                        <div className="flex items-center gap-2 mt-1.5 font-mono text-[9px] tracking-widest uppercase">
-                            <span className="text-zinc-500 font-bold">{filteredBackups.length} TOTAL</span>
+                        <div className="flex items-center gap-2 mt-1.5 font-mono text-[10px] tracking-widest uppercase">
+                            <span className="text-white/80 font-bold">{filteredBackups.length} TOTAL</span>
                             <div className="w-1 h-1 bg-terminal-green/30 rounded-full" />
                             <span className="text-terminal-green/60">READY</span>
                         </div>
