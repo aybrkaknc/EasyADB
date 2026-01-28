@@ -1,10 +1,57 @@
 import { useState, useMemo } from 'react';
-import { usePackages } from '../../hooks/usePackages';
-import { useBackups } from '../../hooks/useBackups';
 import { cn } from '../../lib/utils';
 import { PackageInfo, BackupFile } from '../../types/adb';
 import { RefreshCw, Package, CheckSquare, Check, Square, Layers, ShieldAlert, Box, Search, RotateCcw, Trash2, Download } from 'lucide-react';
 import { smartFormatPackage } from '../../data/package-db';
+
+// ============================================================
+// ORTAK COMPONENT: SelectableListItem
+// Checkbox + hover efekti + seçim durumu - TEK YERDE
+// ============================================================
+
+interface SelectableListItemProps {
+    selected: boolean;
+    onClick: () => void;
+    children: React.ReactNode;
+    /** Sağ tarafta gösterilecek aksiyon butonu (opsiyonel) */
+    action?: React.ReactNode;
+}
+
+/**
+ * Seçilebilir liste öğesi - Ortak checkbox ve hover davranışı.
+ * PackageItem ve ArchiveItem bu componenti kullanır.
+ */
+function SelectableListItem({ selected, onClick, children, action }: SelectableListItemProps) {
+    return (
+        <div
+            onClick={onClick}
+            className={cn(
+                "flex items-center p-3 mb-1 border border-transparent hover:border-terminal-green/20 hover:bg-white/5 transition-all cursor-pointer group select-none",
+                selected && "bg-terminal-green/5 border-terminal-green/30"
+            )}
+        >
+            {/* Checkbox - Ortak */}
+            <div className={cn(
+                "w-4 h-4 border mr-4 flex items-center justify-center transition-all shrink-0",
+                selected ? "border-terminal-green bg-terminal-green" : "border-zinc-700 group-hover:border-terminal-green/50"
+            )}>
+                {selected && <Check className="w-3 h-3 text-black" />}
+            </div>
+
+            {/* İçerik - Her item farklı */}
+            <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-3">
+                    {children}
+                    {action}
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// ============================================================
+// PackageItem - Uygulama listesi öğesi
+// ============================================================
 
 interface PackageItemProps {
     pkg: PackageInfo;
@@ -16,105 +63,98 @@ function PackageItem({ pkg, selected, onToggle }: PackageItemProps) {
     const displayName = pkg.label || smartFormatPackage(pkg.name);
 
     return (
-        <div
-            onClick={() => onToggle(pkg)}
-            className={cn(
-                "flex items-center p-3 mb-1 border border-transparent hover:border-terminal-green/20 hover:bg-white/5 transition-all cursor-pointer group select-none",
-                selected && "bg-terminal-green/5 border-terminal-green/30"
-            )}
-        >
-            <div className={cn(
-                "w-4 h-4 border mr-4 flex items-center justify-center transition-all",
-                selected ? "border-terminal-green bg-terminal-green" : "border-zinc-700 group-hover:border-terminal-green/50"
-            )}>
-                {selected && <Check className="w-3 h-3 text-black" />}
+        <SelectableListItem selected={selected} onClick={() => onToggle(pkg)}>
+            <div className="flex flex-col min-w-0">
+                <span
+                    className="text-sm font-mono truncate transition-colors font-bold"
+                    style={{ color: selected ? '#FFFFFF' : (pkg.is_system ? '#cedc00' : '#E0F7FA') }}
+                >
+                    {displayName}
+                </span>
+                <span className={cn(
+                    "text-[10px] font-mono truncate transition-colors",
+                    selected ? "text-white/50" : "text-zinc-600 group-hover:text-zinc-500"
+                )}>
+                    {pkg.name}
+                </span>
             </div>
-
-            <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-3">
-                    <div className="flex flex-col min-w-0">
-                        <span
-                            className="text-sm font-mono truncate transition-colors font-bold"
-                            style={{ color: selected ? '#FFFFFF' : (pkg.is_system ? '#cedc00' : '#E0F7FA') }}
-                        >
-                            {displayName}
-                        </span>
-                        <span className={cn(
-                            "text-[10px] font-mono truncate transition-colors",
-                            selected ? "text-white/50" : "text-zinc-600 group-hover:text-zinc-500"
-                        )}>
-                            {pkg.name}
-                        </span>
-                    </div>
-                </div>
-            </div>
-        </div>
+        </SelectableListItem>
     );
 }
 
-function ArchiveItem({ file, selected, onToggle, onDelete }: { file: BackupFile, selected: boolean, onToggle: (f: BackupFile) => void, onDelete?: (f: BackupFile) => void }) {
+// ============================================================
+// ArchiveItem - Yedek listesi öğesi
+// ============================================================
+
+interface ArchiveItemProps {
+    file: BackupFile;
+    selected: boolean;
+    onToggle: (f: BackupFile) => void;
+    onDelete?: (f: BackupFile) => void;
+}
+
+function ArchiveItem({ file, selected, onToggle, onDelete }: ArchiveItemProps) {
+    const deleteButton = onDelete ? (
+        <button
+            onClick={(e) => {
+                e.stopPropagation();
+                onDelete(file);
+            }}
+            className="opacity-0 group-hover:opacity-100 p-2 hover:bg-red-500/20 text-red-500 transition-all border border-transparent hover:border-red-500/40"
+        >
+            <Trash2 className="w-4 h-4" />
+        </button>
+    ) : null;
+
     return (
-        <div
-            onClick={() => onToggle(file)}
-            className={cn(
-                "flex items-center p-3 mb-1 border border-transparent hover:border-terminal-green/20 hover:bg-white/5 transition-all cursor-pointer group select-none",
-                selected && "bg-terminal-green/5 border-terminal-green/30"
-            )}
-        >
-            <div className={cn(
-                "w-4 h-4 border mr-4 flex items-center justify-center transition-all",
-                selected ? "border-terminal-green bg-terminal-green" : "border-zinc-700 group-hover:border-terminal-green/50"
-            )}>
-                {selected && <Check className="w-3 h-3 text-black" />}
-            </div>
-
-            <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-3">
-                    <div className="flex flex-col min-w-0">
-                        <span className={cn(
-                            "text-sm font-mono truncate transition-colors",
-                            selected ? "text-white" : "text-zinc-400 group-hover:text-zinc-200"
-                        )}>
-                            {file.name}
-                        </span>
-                        <div className="flex items-center space-x-4 text-[9px] font-mono mt-1 opacity-60">
-                            <span className="uppercase">{file.date.split(' ')[0]}</span>
-                            <div className="w-[1px] h-3 bg-terminal-green/20" />
-                            <span>{(file.size / 1024 / 1024).toFixed(1)} MB</span>
-                        </div>
-                    </div>
-                    {/* Delete Action */}
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            if (onDelete) onDelete(file);
-                        }}
-                        className="opacity-0 group-hover:opacity-100 p-2 hover:bg-red-500/20 text-red-500 transition-all border border-transparent hover:border-red-500/40"
-                    >
-                        <Trash2 className="w-4 h-4" />
-                    </button>
+        <SelectableListItem selected={selected} onClick={() => onToggle(file)} action={deleteButton}>
+            <div className="flex flex-col min-w-0">
+                <span className={cn(
+                    "text-sm font-mono truncate transition-colors",
+                    selected ? "text-white" : "text-zinc-400 group-hover:text-zinc-200"
+                )}>
+                    {file.name}
+                </span>
+                <div className="flex items-center space-x-4 text-[9px] font-mono mt-1 opacity-60">
+                    <span className="uppercase">{file.date.split(' ')[0]}</span>
+                    <div className="w-[1px] h-3 bg-terminal-green/20" />
+                    <span>{(file.size / 1024 / 1024).toFixed(1)} MB</span>
                 </div>
             </div>
-        </div>
+        </SelectableListItem>
     );
 }
+
 
 interface BackupModuleProps {
-    deviceId?: string;
+    // Data (useBackupOperations'tan geliyor)
+    packages: PackageInfo[];
+    backups: BackupFile[];
+    packagesLoading: boolean;
+    backupsLoading: boolean;
+    packagesError: string | null;
+    backupsError: string | null;
+
+    // Selections
     selectedPackages: PackageInfo[];
+    selectedBackups: BackupFile[];
+
+    // Package Actions
     onTogglePackage: (pkg: PackageInfo) => void;
     onToggleSelectAll: (pkgs: PackageInfo[]) => void;
-    onRefresh?: () => void;
-    refreshTrigger?: number;
-    // Restore specific props
-    selectedBackups: BackupFile[];
+
+    // Backup Actions
     onToggleBackup: (backup: BackupFile) => void;
     onDeleteBackup?: (backup: BackupFile) => void;
-    customBackupPath?: string;
+    onToggleSelectAllBackups?: (files: BackupFile[]) => void;
+
+    // Operations
+    onRefresh?: () => void;
     onExecuteBackup?: () => void;
     onExecuteRestore?: () => void;
     onBatchDeleteBackups?: (files: BackupFile[]) => void;
-    onToggleSelectAllBackups?: (files: BackupFile[]) => void;
+
+    // State
     isProcessing?: boolean;
     totalSize?: number;
 }
@@ -122,31 +162,38 @@ interface BackupModuleProps {
 type BackupFilter = 'restore' | 'all' | 'system' | 'user';
 
 export function BackupModule({
-    deviceId,
+    // Data
+    packages,
+    backups,
+    packagesLoading,
+    backupsLoading,
+    packagesError,
+    backupsError,
+    // Selections
     selectedPackages,
+    selectedBackups,
+    // Package Actions
     onTogglePackage,
     onToggleSelectAll,
-    onRefresh,
-    refreshTrigger = 0,
-    selectedBackups,
+    // Backup Actions
     onToggleBackup,
     onDeleteBackup,
-    customBackupPath,
+    onToggleSelectAllBackups,
+    // Operations
+    onRefresh,
     onExecuteBackup,
     onExecuteRestore,
     onBatchDeleteBackups,
-    onToggleSelectAllBackups,
+    // State
     isProcessing,
     totalSize = 0
 }: BackupModuleProps) {
-    const { packages, loading: packagesLoading, error: packagesError } = usePackages(deviceId, refreshTrigger);
-    const { backups, loading: backupsLoading, error: backupsError } = useBackups(refreshTrigger, customBackupPath);
-
     const [search, setSearch] = useState('');
     const [filter, setFilter] = useState<BackupFilter>('all');
 
     const loading = filter === 'restore' ? backupsLoading : packagesLoading;
     const error = filter === 'restore' ? backupsError : packagesError;
+
 
     const filteredPackages = useMemo(() =>
         packages.filter(p => {
@@ -352,7 +399,25 @@ export function BackupModule({
     );
 }
 
-function FilterTab({ active, label, icon: Icon, onClick, variant = 'default' }: any) {
+/**
+ * FilterTab için prop tipleri.
+ * Bu interface sayesinde yanlış prop geçirmeye çalışırsan
+ * kod çalışmadan ÖNCE hata alırsın.
+ */
+interface FilterTabProps {
+    /** Tab'ın aktif olup olmadığı */
+    active: boolean;
+    /** Tab'da gösterilecek metin */
+    label: string;
+    /** Lucide icon componenti */
+    icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
+    /** Tıklama handler'ı */
+    onClick: () => void;
+    /** Renk varyantı (opsiyonel) */
+    variant?: 'default' | 'danger' | 'cyan';
+}
+
+function FilterTab({ active, label, icon: Icon, onClick, variant = 'default' }: FilterTabProps) {
     return (
         <button
             onClick={onClick}
@@ -373,3 +438,4 @@ function FilterTab({ active, label, icon: Icon, onClick, variant = 'default' }: 
         </button>
     );
 }
+

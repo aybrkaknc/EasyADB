@@ -179,20 +179,29 @@ function App() {
     if (activeModule === 'backup') {
       return (
         <BackupModule
-          deviceId={devices[0]?.id}
+          // Data
+          packages={backup.packages}
+          backups={backup.backups}
+          packagesLoading={backup.packagesLoading}
+          backupsLoading={backup.backupsLoading}
+          packagesError={backup.packagesError}
+          backupsError={backup.backupsError}
+          // Selections
           selectedPackages={backup.selectedPackages}
+          selectedBackups={backup.selectedBackups}
+          // Package Actions
           onTogglePackage={backup.togglePackage}
           onToggleSelectAll={backup.toggleSelectAllPackages}
-          onRefresh={handleRefresh}
-          refreshTrigger={0}
-          selectedBackups={backup.selectedBackups}
+          // Backup Actions
           onToggleBackup={backup.toggleBackup}
           onDeleteBackup={backup.deleteBackup}
-          customBackupPath={settings.backupPath || undefined}
+          onToggleSelectAllBackups={backup.toggleSelectAllBackups}
+          // Operations
+          onRefresh={handleRefresh}
           onExecuteBackup={backup.executeBackup}
           onExecuteRestore={backup.executeRestore}
           onBatchDeleteBackups={backup.batchDeleteBackups}
-          onToggleSelectAllBackups={backup.toggleSelectAllBackups}
+          // State
           isProcessing={backup.isProcessing}
           totalSize={backup.totalSize}
         />
