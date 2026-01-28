@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { cn } from '../../lib/utils';
-import { PackageInfo, BackupFile } from '../../types/adb';
+import { PackageInfo, BackupFile, isSystemPackage } from '../../types/adb';
 import { RefreshCw, Package, CheckSquare, Check, Square, Layers, ShieldAlert, Box, Search, RotateCcw, Trash2, Download } from 'lucide-react';
 import { smartFormatPackage } from '../../data/package-db';
 
@@ -67,7 +67,7 @@ function PackageItem({ pkg, selected, onToggle }: PackageItemProps) {
             <div className="flex flex-col min-w-0">
                 <span
                     className="text-sm font-mono truncate transition-colors font-bold"
-                    style={{ color: selected ? '#FFFFFF' : (pkg.is_system ? '#cedc00' : '#E0F7FA') }}
+                    style={{ color: selected ? '#FFFFFF' : (isSystemPackage(pkg) ? '#cedc00' : '#E0F7FA') }}
                 >
                     {displayName}
                 </span>
@@ -199,8 +199,8 @@ export function BackupModule({
         packages.filter(p => {
             const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase());
             let matchesFilter = true;
-            if (filter === 'system') matchesFilter = p.is_system === true;
-            if (filter === 'user') matchesFilter = p.is_system === false;
+            if (filter === 'system') matchesFilter = isSystemPackage(p);
+            if (filter === 'user') matchesFilter = !isSystemPackage(p);
             return matchesSearch && matchesFilter;
         }), [packages, search, filter]);
 

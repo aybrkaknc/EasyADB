@@ -17,6 +17,17 @@ export interface PackageInfo {
 }
 
 /**
+ * Paketin sistem uygulaması olup olmadığını güvenli şekilde kontrol eder.
+ * undefined durumunda false döner (user app olarak kabul edilir).
+ * 
+ * @param pkg - Kontrol edilecek paket
+ * @returns true ise sistem uygulaması, false ise kullanıcı uygulaması
+ */
+export function isSystemPackage(pkg: PackageInfo): boolean {
+    return pkg.is_system === true;
+}
+
+/**
  * Yedek dosyası bilgisi.
  */
 export interface BackupFile {
