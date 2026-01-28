@@ -35,7 +35,7 @@ interface SyncResult {
  * 3. Değişiklik varsa UI'ı günceller
  */
 export function useDebloater(deviceId: string | undefined, refreshTrigger: number = 0) {
-    const { settings } = useApp();
+    const { settings, addLog } = useApp();
     const [packages, setPackages] = useState<DebloaterPackage[]>([]);
     const [selectedPackages, setSelectedPackages] = useState<Set<string>>(new Set());
     const [filter, setFilter] = useState<DebloaterFilter>('user');
@@ -45,6 +45,22 @@ export function useDebloater(deviceId: string | undefined, refreshTrigger: numbe
     const [isProcessing, setIsProcessing] = useState(false);
     const [showSystemWarning, setShowSystemWarning] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    // Global Error State (AlertDialog için)
+    const [errorState, setErrorState] = useState({ isOpen: false, title: "", message: "" });
+    const dismissError = useCallback(() => setErrorState(prev => ({ ...prev, isOpen: false })), []);
+
+    // Global Confirm State (AlertDialog için)
+    const [confirmState, setConfirmState] = useState<{
+        isOpen: boolean;
+        title: string;
+        message: string;
+        variant: 'error' | 'warning' | 'info';
+        onConfirm?: () => void;
+    }>({ isOpen: false, title: "", message: "", variant: 'warning' });
+
+    const dismissConfirm = useCallback(() => setConfirmState(prev => ({ ...prev, isOpen: false })), []);
+
     const isMountedRef = useRef(true);
 
     /**
@@ -219,12 +235,21 @@ export function useDebloater(deviceId: string | undefined, refreshTrigger: numbe
      * Tümünü seç/bırak.
      */
     const toggleSelectAll = useCallback(() => {
-        if (selectedPackages.size === filteredPackages.length) {
-            setSelectedPackages(new Set());
-        } else {
-            setSelectedPackages(new Set(filteredPackages.map(p => p.name)));
-        }
-    }, [filteredPackages, selectedPackages.size]);
+        const allSelected = filteredPackages.length > 0 && filteredPackages.every(p => selectedPackages.has(p.name));
+
+        setSelectedPackages(prev => {
+            const next = new Set(prev);
+
+            if (allSelected) {
+                // Seçimi kaldır (Sadece filtredekileri)
+                filteredPackages.forEach(p => next.delete(p.name));
+            } else {
+                // Seç (Hepsini, diğerlerini koruyarak)
+                filteredPackages.forEach(p => next.add(p.name));
+            }
+            return next;
+        });
+    }, [filteredPackages, selectedPackages]);
 
     /**
      * Toplu işlemi yürütür.
@@ -248,16 +273,60 @@ export function useDebloater(deviceId: string | undefined, refreshTrigger: numbe
 
             setSelectedPackages(new Set());
         } catch (err: unknown) {
-            setError(err instanceof Error ? err.message : String(err));
+            const errorMessage = err instanceof Error ? err.message : String(err);
+
+            // Global Log
+            addLog(`Action Failed: ${errorMessage}`, 'error');
+            setError(null);
+
+            // Eski logic temizlendi
+
+            // Popup (Alert Dialog) iptal edildi - Kullanıcı isteği
+            // setErrorState(...)
         } finally {
             setIsProcessing(false);
         }
-    }, [deviceId, selectedPackages, fetchPackages, settings]);
+    }, [deviceId, selectedPackages, fetchPackages, settings, addLog]);
 
-    const disableSelected = () => performBatchAction('disable_pkg');
-    const enableSelected = () => performBatchAction('enable_pkg');
-    const uninstallSelected = () => performBatchAction('uninstall_pkg');
-    const reinstallSelected = () => performBatchAction('reinstall_pkg');
+    /**
+     * Güvenli işlem isteği. Sistem paketi varsa uyarır.
+     */
+    const requestConfirmation = useCallback((actionName: string, backendCommand: string) => {
+        if (selectedPackages.size === 0) return;
+
+        // Sistem paketi kontrolü
+        let hasSystemPackage = false;
+        const selectedList = Array.from(selectedPackages);
+
+        // Mevcut paket listesinden sistem paketlerini bul
+        for (const pkgName of selectedList) {
+            const pkg = packages.find(p => p.name === pkgName);
+            if (pkg?.is_system) {
+                hasSystemPackage = true;
+                break;
+            }
+        }
+
+        const isSystemCritical = hasSystemPackage && (actionName === 'UNINSTALL' || actionName === 'DISABLE');
+
+        setConfirmState({
+            isOpen: true,
+            title: isSystemCritical ? `SYSTEM SAFETY WARNING: ${actionName}` : `CONFIRM ${actionName}`,
+            message: isSystemCritical
+                ? `WARNING: You are about to ${actionName.toLowerCase()} ${selectedPackages.size} package(s), including SYSTEM packages. This may cause bootloops or device instability. Proceed with caution.`
+                : `Are you sure you want to ${actionName.toLowerCase()} ${selectedPackages.size} package(s)?`,
+            variant: isSystemCritical ? 'error' : 'warning',
+            onConfirm: () => {
+                setConfirmState(prev => ({ ...prev, isOpen: false }));
+                performBatchAction(backendCommand);
+            }
+        });
+    }, [packages, selectedPackages, performBatchAction]);
+
+    const disableSelected = () => requestConfirmation('DISABLE', 'disable_pkg');
+    const enableSelected = () => requestConfirmation('ENABLE', 'enable_pkg');
+    const uninstallSelected = () => requestConfirmation('UNINSTALL', 'uninstall_pkg');
+    const reinstallSelected = () => requestConfirmation('REINSTALL', 'reinstall_pkg');
 
     /**
      * Filtre değiştiğinde seçimleri sıfırla.
@@ -288,5 +357,13 @@ export function useDebloater(deviceId: string | undefined, refreshTrigger: numbe
         reinstallSelected,
         refresh: fetchPackages,
         dismissSystemWarning: () => setShowSystemWarning(false),
+
+        // Error Dialog
+        errorState,
+        dismissError,
+
+        // Confirm Dialog
+        confirmState,
+        dismissConfirm
     };
 }

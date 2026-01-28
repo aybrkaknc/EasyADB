@@ -1,8 +1,10 @@
 import { useState, useMemo } from 'react';
+import { Virtuoso } from 'react-virtuoso';
 import { cn } from '../../lib/utils';
 import { PackageInfo, BackupFile, isSystemPackage } from '../../types/adb';
-import { RefreshCw, Package, CheckSquare, Check, Square, Layers, ShieldAlert, Box, Search, RotateCcw, Trash2, Download } from 'lucide-react';
+import { RefreshCw, Package, Check, Layers, ShieldAlert, Box, Search, RotateCcw, Trash2, Download } from 'lucide-react';
 import { smartFormatPackage } from '../../data/package-db';
+import { SelectionHeader } from '../SelectionHeader';
 
 // ============================================================
 // ORTAK COMPONENT: SelectableListItem
@@ -305,25 +307,7 @@ export function BackupModule({
                             />
                         </div>
 
-                        {filter !== 'restore' ? (
-                            <button
-                                onClick={() => onToggleSelectAll(filteredPackages)}
-                                disabled={loading || filteredPackages.length === 0}
-                                className="flex items-center gap-2 text-[10px] font-mono text-zinc-400 hover:text-white transition-colors border border-zinc-700 hover:border-terminal-green/40 px-3 py-2.5 shrink-0"
-                            >
-                                {allPackagesSelected ? <CheckSquare className="w-3.5 h-3.5 text-terminal-green" /> : <Square className="w-3.5 h-3.5" />}
-                                {allPackagesSelected ? "DESELECT" : "SELECT ALL"}
-                            </button>
-                        ) : (
-                            <button
-                                onClick={() => onToggleSelectAllBackups?.(filteredBackups)}
-                                disabled={loading || filteredBackups.length === 0}
-                                className="flex items-center gap-2 text-[10px] font-mono text-zinc-400 hover:text-white transition-colors border border-zinc-700 hover:border-terminal-green/40 px-3 py-2.5 shrink-0"
-                            >
-                                {allBackupsSelected ? <CheckSquare className="w-3.5 h-3.5 text-terminal-green" /> : <Square className="w-3.5 h-3.5" />}
-                                {allBackupsSelected ? "DESELECT" : "SELECT ALL"}
-                            </button>
-                        )}
+                        {/* Select All Buttons removed - Moved to SelectionHeader */}
 
                         {/* Refresh Button */}
                         <button
@@ -366,7 +350,25 @@ export function BackupModule({
 
             </div>
 
-            <div className="flex-1 overflow-y-auto p-3 scrollbar-thin relative z-10 bg-zinc-950/5">
+            {/* Selection Header - Unified */}
+            {!loading && !error && (
+                <SelectionHeader
+                    isAllSelected={filter === 'restore' ? allBackupsSelected : allPackagesSelected}
+                    onToggle={() => filter === 'restore'
+                        ? onToggleSelectAllBackups?.(filteredBackups)
+                        : onToggleSelectAll(filteredPackages)
+                    }
+                    selectedCount={filter === 'restore' ? selectedBackups.length : selectedPackages.length}
+                    label={filter === 'restore'
+                        ? `SELECT ALL (${selectedBackups.length})`
+                        : `SELECT ALL (${selectedPackages.length})`
+                    }
+                    title={filter === 'restore' ? "ARCHIVE NAME" : "PACKAGE IDENTIFIER"}
+                    statusTitle={filter === 'restore' ? "SIZE" : ""}
+                />
+            )}
+
+            <div className="flex-1 overflow-hidden p-3 relative z-10 bg-zinc-950/5">
                 {loading ? (
                     <div className="flex flex-col items-center justify-center h-64 space-y-5">
                         <div className="w-12 h-12 border-2 border-terminal-green/20 border-t-terminal-green rounded-full animate-spin shadow-[0_0_15px_rgba(0,255,65,0.2)]" />
@@ -382,17 +384,39 @@ export function BackupModule({
                         <div className="text-center text-terminal-green text-[10px] font-space font-black uppercase tracking-[0.4em]">No items found</div>
                     </div>
                 ) : (
-                    <div className="space-y-2 pb-10">
-                        {filter === 'restore' ? (
-                            filteredBackups.map(file => (
-                                <ArchiveItem key={file.path} file={file} selected={isBackupSelected(file)} onToggle={onToggleBackup} onDelete={onDeleteBackup} />
-                            ))
-                        ) : (
-                            filteredPackages.map(pkg => (
-                                <PackageItem key={pkg.name} pkg={pkg} selected={isPackageSelected(pkg)} onToggle={onTogglePackage} />
-                            ))
-                        )}
-                    </div>
+                    <Virtuoso
+                        style={{ height: '100%', width: '100%' }}
+                        data={filter === 'restore' ? filteredBackups : filteredPackages}
+                        className="scrollbar-thin scrollbar-thumb-terminal-green/10"
+                        itemContent={(_, item) => {
+                            if (filter === 'restore') {
+                                const file = item as BackupFile;
+                                return (
+                                    <div className="pb-2 px-1">
+                                        <ArchiveItem
+                                            key={file.path}
+                                            file={file}
+                                            selected={isBackupSelected(file)}
+                                            onToggle={onToggleBackup}
+                                            onDelete={onDeleteBackup}
+                                        />
+                                    </div>
+                                );
+                            } else {
+                                const pkg = item as PackageInfo;
+                                return (
+                                    <div className="pb-2 px-1">
+                                        <PackageItem
+                                            key={pkg.name}
+                                            pkg={pkg}
+                                            selected={isPackageSelected(pkg)}
+                                            onToggle={onTogglePackage}
+                                        />
+                                    </div>
+                                );
+                            }
+                        }}
+                    />
                 )}
             </div>
         </div >

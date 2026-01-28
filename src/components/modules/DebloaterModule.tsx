@@ -1,8 +1,10 @@
 import { Trash2, AlertTriangle, RefreshCw, Layers, ShieldAlert, Ban, Box, Check, CheckSquare, Square, Search } from 'lucide-react';
+import { Virtuoso } from 'react-virtuoso';
 import { cn } from '../../lib/utils';
 import { DebloaterPackage } from '../../types/adb';
 import { DebloaterFilter } from '../../hooks/useDebloater';
 import { smartFormatPackage } from '../../data/package-db';
+import { SelectionHeader } from '../SelectionHeader';
 
 /* -------------------------------------------------------------------------------------------------
  * MAIN VIEW COMPONENT (Sidebar-integrated Header)
@@ -208,8 +210,19 @@ export function DebloaterView({
                     </div>
                 )
             }
-            {/* List */}
-            <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-terminal-green/10 p-2">
+            {/* Package List Header (Select All) */}
+            <SelectionHeader
+                isAllSelected={packages.length > 0 && packages.every(p => selectedPackages.has(p.name))}
+                onToggle={onToggleSelectAll}
+                selectedCount={selectedPackages.size}
+                label={`SELECT ALL (${selectedPackages.size} ACROSS TABS)`}
+                title="PACKAGE IDENTIFIER"
+                statusTitle="STATUS"
+                disabled={disabled}
+            />
+
+            {/* Package List Container (Virtualized) */}
+            <div className="flex-1 overflow-hidden p-2">
                 {
                     isLoading ? (
                         <div className="flex flex-col items-center justify-center h-full text-terminal-green/40 gap-4" >
@@ -222,52 +235,72 @@ export function DebloaterView({
                             <span className="text-xs font-mono uppercase">NO PACKAGES FOUND IN THIS CATEGORY</span>
                         </div>
                     ) : (
-                        packages.map(pkg => (
-                            <div
-                                key={pkg.name}
-                                onClick={() => !disabled && onTogglePackage(pkg.name)}
-                                className={cn(
-                                    "flex items-center p-3 mb-1 border border-transparent hover:border-terminal-green/20 hover:bg-white/5 transition-all cursor-pointer group select-none",
-                                    selectedPackages.has(pkg.name) && "bg-terminal-green/5 border-terminal-green/30"
-                                )}
-                            >
-                                <div className={cn(
-                                    "w-4 h-4 border mr-4 flex items-center justify-center transition-all",
-                                    selectedPackages.has(pkg.name) ? "border-terminal-green bg-terminal-green" : "border-zinc-700 group-hover:border-terminal-green/50"
-                                )}>
-                                    {selectedPackages.has(pkg.name) && <Check className="w-3 h-3 text-black" />}
-                                </div>
-
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center justify-between gap-3">
-                                        <div className="flex flex-col min-w-0">
-                                            <span
-                                                className="text-sm font-mono truncate transition-colors font-bold"
-                                                style={{ color: selectedPackages.has(pkg.name) ? '#FFFFFF' : (pkg.is_system ? '#cedc00' : '#E0F7FA') }}
-                                            >
-                                                {pkg.label || smartFormatPackage(pkg.name)}
-                                            </span>
-                                            <span className={cn(
-                                                "text-[10px] font-mono truncate transition-colors",
-                                                selectedPackages.has(pkg.name) ? "text-white/50" : "text-zinc-600 group-hover:text-zinc-500"
-                                            )}>
-                                                {pkg.name}
-                                            </span>
-                                        </div>
-                                        {/* Tags */}
-                                        <div className="flex gap-2 shrink-0">
-                                            {pkg.is_disabled && <span className="text-[9px] px-1.5 py-0.5 bg-zinc-800 text-zinc-400 border border-zinc-700 font-mono tracking-tight">DISABLED</span>}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        ))
+                        <Virtuoso
+                            style={{ height: '100%', width: '100%' }}
+                            data={packages}
+                            className="scrollbar-thin scrollbar-thumb-terminal-green/10"
+                            itemContent={(_, pkg) => (
+                                <PackageRow
+                                    pkg={pkg}
+                                    selectedPackages={selectedPackages}
+                                    disabled={disabled}
+                                    onToggle={onTogglePackage}
+                                />
+                            )}
+                        />
                     )
                 }
             </div>
         </div>
     );
 }
+
+// Virtualized Row Component
+const PackageRow = ({ pkg, selectedPackages, disabled, onToggle }: { pkg: DebloaterPackage, selectedPackages: Set<string>, disabled: boolean, onToggle: (name: string) => void }) => {
+    const isSelected = selectedPackages.has(pkg.name);
+    return (
+        <div className="px-1 py-0.5">
+            <div
+                onClick={() => !disabled && onToggle(pkg.name)}
+                className={cn(
+                    "flex items-center p-3 border border-transparent hover:border-terminal-green/20 hover:bg-white/5 transition-all cursor-pointer group select-none",
+                    isSelected ? "bg-terminal-green/5 border-terminal-green/30" : "bg-black/20"
+                )}
+            >
+                <div className={cn(
+                    "w-4 h-4 border mr-4 flex items-center justify-center transition-all shrink-0",
+                    isSelected ? "border-terminal-green bg-terminal-green" : "border-zinc-700 group-hover:border-terminal-green/50"
+                )}>
+                    {isSelected && <Check className="w-3 h-3 text-black" />}
+                </div>
+
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-3">
+                        <div className="flex flex-col min-w-0">
+                            <span
+                                className="text-sm font-mono truncate transition-colors font-bold"
+                                style={{ color: isSelected ? '#FFFFFF' : (pkg.is_system ? '#cedc00' : '#E0F7FA') }}
+                            >
+                                {pkg.label || smartFormatPackage(pkg.name)}
+                            </span>
+                            <span className={cn(
+                                "text-[10px] font-mono truncate transition-colors",
+                                isSelected ? "text-white/50" : "text-zinc-600 group-hover:text-zinc-500"
+                            )}>
+                                {pkg.name}
+                            </span>
+                        </div>
+                        {/* Tags */}
+                        <div className="flex gap-2 shrink-0">
+                            {pkg.is_disabled && <span className="text-[9px] px-1.5 py-0.5 bg-zinc-800 text-zinc-400 border border-zinc-700 font-mono tracking-tight">DISABLED</span>}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 
 function FilterTab({ active, label, icon: Icon, onClick, disabled, variant = 'default' }: any) {
     return (

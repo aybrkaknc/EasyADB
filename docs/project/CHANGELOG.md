@@ -62,6 +62,76 @@ Versiyon numaralandırması [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.1.2] - 2026-01-28
+
+### 🐛 Bug Fixes (Restore Modülü)
+
+- **P0 #1: Custom Path Restore**
+  - Settings'den seçilen özel klasör artık Restore modülünde kullanılıyor
+  - `App.tsx`: `customPath` prop RestoreModule'a geçiriliyor
+
+- **P0 #2: Refresh Butonu**
+  - Restore listesinde refresh butonu artık çalışıyor
+  - `refreshTrigger` dinamik state olarak export ediliyor
+
+- **P0 #3: Hata Yönetimi**
+  - Restore hataları artık kullanıcıya gösteriliyor
+  - `failedItems` takibi eklendi
+  - Bildirimler başarı/hata durumuna göre ayrıştırıldı
+
+- **P1 #4: Root Data Extraction**
+  - tar extract path düzeltildi
+  - Çift iç içe klasör sorunu giderildi
+
+- **P1 #5: Permission Fix**
+  - Root restore sonrası `chown` komutu eklendi
+  - SELinux context için `restorecon` eklendi
+
+- **P1 #6: Overlay Kapanma**
+  - Hatalı tamamlanmalarda da overlay kapanıyor
+  - "Completed with X error(s)" kontrolü eklendi
+
+- **P2 #8: Ölü Kod Temizliği**
+  - Kullanılmayan `RestoreConfirmationView.tsx` silindi
+
+- **P2 #9: Delete Hata Bildirimi**
+  - Backup silme hatası artık kullanıcıya gösteriliyor
+
+- **P3 #10: Tip Senkronizasyonu**
+  - Frontend ve Backend `BackupFile` tanımlarına sync uyarıları eklendi
+
+- **P3 #11: Magic Numbers Refactor**
+  - `adb.rs` içindeki `1024` sabiti `MIN_VALID_APK_SIZE` olarak tanımlandı
+
+- **P3 #12: Dokümantasyon**
+  - `restore_package` fonksiyonuna Rustdoc eklendi
+
+### ✨ UI Improvements
+
+- **Global Error Dialog (Cyberpunk Style)**
+  - Standart `alert()` yerine custom `AlertDialog` bileşeni eklendi
+  - Hata mesajları artık sistem temasına uygun gösteriliyor
+
+### 🔒 Debloater Security & VX
+- **Safety Confirmation:** Kritik (Sistem) uygulama işlemleri için Kırmızı Uyarı eklendi.
+- **Batch Error Handling:** Debloater hataları artık global dialog ile gösteriliyor.
+- **AlertDialog Upgrade:** `onConfirm` callback desteği ile "İki Butonlu" mod eklendi.
+
+### 📁 Dosya Değişiklikleri
+
+| Dosya | Değişiklik |
+|-------|------------|
+| `src/App.tsx` | ✨ Debloater Dialog Entegrasyonu |
+| `src/hooks/useDebloater.ts` | ✨ confirmState + errorState entegrasyonu |
+| `src/components/views/AlertDialog.tsx` | ♻️ Warning Modu + Confirm Butonları |
+| `src/hooks/useBackupOperations.ts` | 🐛 Hata yönetimi + refreshTrigger export + delete alert |
+| `src/types/adb.ts` | ➕ `failedItems` property + Sync comment |
+| `src-tauri/src/adb.rs` | 🐛 chown/restorecon + 📝 Rustdoc + ♻️ Constants |
+| `src-tauri/src/lib.rs` | 📝 Sync comment |
+| `src/components/views/BackupOverlay.tsx` | 🐛 Hata gösterimi + isFinished genişletildi |
+
+---
+
 ## [0.1.0] - 2026-01-XX (Initial Release)
 
 ### ✨ Features

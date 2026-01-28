@@ -19,8 +19,21 @@ export function useTerminal(deviceId?: string) {
     const [toolsStatus, setToolsStatus] = useState<ToolsStatus>({ adb: true, fastboot: true });
     const [sideloadProgress, setSideloadProgress] = useState<number | null>(null);
 
+    // Command History (Input History)
+    const [commandHistory, setCommandHistory] = useState<string[]>([]);
+
     useEffect(() => {
         checkTools();
+
+        // Load Command History
+        const savedHistory = localStorage.getItem('terminal_cmd_history');
+        if (savedHistory) {
+            try {
+                setCommandHistory(JSON.parse(savedHistory));
+            } catch (e) {
+                console.error("Failed to parse terminal history", e);
+            }
+        }
 
         const unlisten = listen<{ percentage: number; message: string }>('sideload-progress', (event) => {
             setSideloadProgress(event.payload.percentage);
@@ -30,6 +43,15 @@ export function useTerminal(deviceId?: string) {
             unlisten.then(f => f());
         };
     }, []);
+
+    const addToHistory = (cmd: string) => {
+        setCommandHistory(prev => {
+            // Remove duplicates, add to top, limit to 50
+            const newHistory = [cmd, ...prev.filter(c => c !== cmd)].slice(0, 50);
+            localStorage.setItem('terminal_cmd_history', JSON.stringify(newHistory));
+            return newHistory;
+        });
+    };
 
     const addLog = (type: TerminalLog['type'], content: string) => {
         setHistory(prev => [...prev, { id: Date.now(), type, content }]);
@@ -82,6 +104,7 @@ export function useTerminal(deviceId?: string) {
 
         if (!isMacro) {
             addLog('command', `> ${cmd}`);
+            addToHistory(cleanCmd);
         } else {
             addLog('command', `> [MACRO] ${cleanCmd}`);
         }
@@ -138,6 +161,7 @@ export function useTerminal(deviceId?: string) {
         clearHistory,
         toolsStatus,
         installTools,
-        sideloadProgress
+        sideloadProgress,
+        commandHistory
     };
 }

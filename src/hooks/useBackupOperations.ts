@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import { useApp } from '../context/AppContext';
 import { usePackages } from './usePackages';
 import { useBackups } from './useBackups';
 import { PackageInfo, BackupFile, ProgressState } from '../types/adb';
@@ -46,6 +47,11 @@ export interface BackupOperationsResult {
     refresh: () => void;
     clearSelections: () => void;
     setProgress: React.Dispatch<React.SetStateAction<ProgressState>>;
+    refreshTrigger: number;
+
+    // UI Dialogs
+    errorState: { isOpen: boolean; title: string; message: string; };
+    dismissError: () => void;
 }
 
 interface UseBackupOperationsOptions {
@@ -66,6 +72,7 @@ export function useBackupOperations(
     options: UseBackupOperationsOptions = {}
 ): BackupOperationsResult {
     const { soundEnabled = true, notificationsEnabled = true } = options;
+    const { addLog } = useApp();
 
     // Refresh trigger
     const [refreshTrigger, setRefreshTrigger] = useState(0);
@@ -90,6 +97,10 @@ export function useBackupOperations(
     // Size Tracking
     const [totalSize, setTotalSize] = useState(0);
     const [sizeCache, setSizeCache] = useState<Record<string, number>>({});
+
+    // Global Error State
+    const [errorState, setErrorState] = useState({ isOpen: false, title: "", message: "" });
+    const dismissError = useCallback(() => setErrorState(prev => ({ ...prev, isOpen: false })), []);
 
     // Previous connection state ref
     const prevDeviceIdRef = useRef<string | undefined>(undefined);
@@ -261,7 +272,8 @@ export function useBackupOperations(
                     completedItems: [...(prev.completedItems || []), pkg.name]
                 }));
             } catch (error) {
-                console.error(`Backup failed for ${pkg.name}:`, error);
+                const msg = error instanceof Error ? error.message : String(error);
+                addLog(`Backup failed for ${pkg.name}: ${msg}`, 'error');
             }
         }
 
@@ -280,13 +292,15 @@ export function useBackupOperations(
 
     /**
      * Toplu geri yükleme işlemi.
+     * P0 #3: Hata yönetimi eklendi - hatalar kullanıcıya gösteriliyor.
      */
     const executeRestore = useCallback(async () => {
         if (!deviceId || selectedBackups.length === 0) return;
 
         setIsProcessing(true);
         const total = selectedBackups.length;
-        setProgress({ isActive: true, currentTask: "Preparing restore...", total, current: 0, completedItems: [] });
+        let failedCount = 0;
+        setProgress({ isActive: true, currentTask: "Preparing restore...", total, current: 0, completedItems: [], failedItems: [] });
 
         for (let i = 0; i < total; i++) {
             const file = selectedBackups[i];
@@ -307,11 +321,29 @@ export function useBackupOperations(
                     completedItems: [...(prev.completedItems || []), file.name]
                 }));
             } catch (error) {
-                console.error(`Restore failed for ${file.name}:`, error);
+                const errorMessage = error instanceof Error ? error.message : String(error);
+                addLog(`Restore failed for ${file.name}: ${errorMessage}`, 'error');
+                failedCount++;
+                setProgress(prev => ({
+                    ...prev,
+                    detail: `ERROR: ${errorMessage}`,
+                    failedItems: [...(prev.failedItems || []), file.name]
+                }));
             }
         }
 
-        setProgress(prev => ({ ...prev, currentTask: "Sequence Complete" }));
+        // İşlem tamamlandı - sonuç mesajı
+        const successCount = total - failedCount;
+        const finalMessage = failedCount > 0
+            ? `Completed with ${failedCount} error(s)`
+            : "Sequence Complete";
+
+        setProgress(prev => ({
+            ...prev,
+            currentTask: finalMessage,
+            detail: `${successCount}/${total} files restored successfully`
+        }));
+
         setIsProcessing(false);
         setSelectedBackups([]);
         refresh();
@@ -319,12 +351,16 @@ export function useBackupOperations(
         // Feedback
         if (soundEnabled) playSuccessSound();
         if (notificationsEnabled) {
-            sendOSNotification("EasyADB: Restore Complete", `Successfully restored ${total} files.`);
+            const notifMessage = failedCount > 0
+                ? `Restored ${successCount}/${total} files. ${failedCount} failed.`
+                : `Successfully restored ${total} files.`;
+            sendOSNotification("EasyADB: Restore Complete", notifMessage);
         }
     }, [deviceId, selectedBackups, soundEnabled, notificationsEnabled, refresh]);
 
     /**
      * Tek bir backup'ı sil.
+     * P2 #9: Hata durumunda kullanıcıya bildirim gösteriliyor.
      */
     const deleteBackup = useCallback(async (backup: BackupFile) => {
         try {
@@ -332,7 +368,11 @@ export function useBackupOperations(
             setSelectedBackups(prev => prev.filter(b => b.path !== backup.path));
             refresh();
         } catch (error) {
-            console.error("Failed to delete backup:", error);
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            addLog(`Failed to delete backup: ${errorMessage}`, 'error');
+
+            // Popup yerine log
+            /* setErrorState(...) */
         }
     }, [refresh]);
 
@@ -347,7 +387,9 @@ export function useBackupOperations(
             try {
                 await invoke("delete_backup", { path: file.path });
             } catch (error) {
-                console.error(`Failed to delete ${file.name}:`, error);
+                const errorMessage = error instanceof Error ? error.message : String(error);
+                addLog(`Failed to delete ${file.name}: ${errorMessage}`, 'error');
+                // Popup iptal
             }
         }
 
@@ -393,6 +435,11 @@ export function useBackupOperations(
         // Utility
         refresh,
         clearSelections,
-        setProgress
+        setProgress,
+        refreshTrigger, // P0 #2: Dışarıya export ediliyor
+
+        // UI Dialogs
+        errorState,
+        dismissError
     };
 }

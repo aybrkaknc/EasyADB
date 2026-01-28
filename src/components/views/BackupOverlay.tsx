@@ -11,7 +11,9 @@ interface BackupOverlayProps {
 }
 
 export function BackupOverlay({ progress, onClose }: BackupOverlayProps) {
-    const isFinished = progress.currentTask === "Sequence Complete";
+    // P1 #6: Hem başarılı hem hatalı tamamlanmalarda isFinished true olmalı
+    const isFinished = progress.currentTask === "Sequence Complete"
+        || progress.currentTask.startsWith("Completed with");
     const [countdown, setCountdown] = useState(10);
 
     // Countdown Timer Logic
@@ -222,6 +224,17 @@ export function BackupOverlay({ progress, onClose }: BackupOverlayProps) {
                                             </p>
                                         ))}
 
+                                        {/* Failed Items - HATA GÖSTERIMI */}
+                                        {(progress.failedItems || []).map((item, idx) => (
+                                            <p key={`fail-${item}-${idx}`} className="text-red-500 flex items-center justify-between">
+                                                <span className="flex items-center gap-2">
+                                                    <span className="text-red-500/40">!!</span>
+                                                    <span className="font-bold">{item}</span>
+                                                </span>
+                                                <span className="text-[10px]">✗</span>
+                                            </p>
+                                        ))}
+
                                         {/* Current Task */}
                                         {!isFinished && (
                                             <p className="text-terminal-green flex items-center justify-between animate-pulse">
@@ -234,28 +247,42 @@ export function BackupOverlay({ progress, onClose }: BackupOverlayProps) {
                                         )}
 
                                         {isFinished && (
-                                            <p className="text-terminal-green font-bold mt-2">
-                                                {">"} ALL TASKS COMPLETED SUCCESSFULLY.
+                                            <p className={`font-bold mt-2 ${(progress.failedItems?.length || 0) > 0 ? 'text-red-500' : 'text-terminal-green'}`}>
+                                                {">"} {(progress.failedItems?.length || 0) > 0
+                                                    ? `COMPLETED WITH ${progress.failedItems?.length} ERROR(S)`
+                                                    : 'ALL TASKS COMPLETED SUCCESSFULLY.'}
                                             </p>
                                         )}
                                     </>
                                 ) : (
                                     // SINGLE MODE: Technical Log view
                                     <>
-                                        <p className="text-terminal-green/80 flex items-start gap-2">
+                                        {/* Status Line - Hata varsa kırmızı */}
+                                        <p className={`flex items-start gap-2 ${(progress.failedItems?.length || 0) > 0 ? 'text-red-500' : 'text-terminal-green/80'}`}>
                                             <span className="text-terminal-green/20">01</span>
-                                            <span className={isFinished ? "text-terminal-green" : "animate-pulse"}>
-                                                {isFinished ? "> STATUS: SEQUENCE_TERMINATED_SUCCESS" : `> CMD: PULL_STREAM :: ${progress.currentTask}`}
+                                            <span className={isFinished ? "" : "animate-pulse"}>
+                                                {isFinished
+                                                    ? ((progress.failedItems?.length || 0) > 0
+                                                        ? "> STATUS: OPERATION_FAILED"
+                                                        : "> STATUS: SEQUENCE_TERMINATED_SUCCESS")
+                                                    : `> CMD: PULL_STREAM :: ${progress.currentTask}`}
                                             </span>
                                         </p>
-                                        <p className="text-terminal-green/60 flex items-start gap-2 italic">
+
+                                        {/* Detail Line - Hata mesajı burada */}
+                                        <p className={`flex items-start gap-2 italic ${progress.detail?.startsWith('ERROR') ? 'text-red-500 font-bold' : 'text-terminal-green/60'}`}>
                                             <span className="text-terminal-green/20">02</span>
                                             <span className="truncate">{progress.detail || "Allocating virtual bridge nodes..."}</span>
                                         </p>
+
                                         <p className="text-terminal-green/40 flex items-start gap-2">
                                             <span className="text-terminal-green/20">03</span>
                                             <span>
-                                                {isFinished ? "INTEGRITY_LEVEL: 100% SECURE" : `UNIT_STATE: ${progress.current} / ${progress.total} SECTORS`}
+                                                {isFinished
+                                                    ? ((progress.failedItems?.length || 0) > 0
+                                                        ? "INTEGRITY_LEVEL: COMPROMISED"
+                                                        : "INTEGRITY_LEVEL: 100% SECURE")
+                                                    : `UNIT_STATE: ${progress.current} / ${progress.total} SECTORS`}
                                             </span>
                                         </p>
                                         <p className="text-terminal-green/30 flex items-start gap-2">

@@ -15,6 +15,7 @@ struct SideloadProgress {
 }
 
 #[derive(Serialize, Debug, Clone)]
+/// IMPORTANT: Keep this in sync with `src/types/adb.ts` -> `BackupFile`
 pub struct BackupFile {
     pub name: String,
     pub path: String,

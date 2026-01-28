@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import { useApp } from '../context/AppContext';
 
 export interface HWInfo {
     model: string;
@@ -47,6 +48,7 @@ export function usePerformanceMetrics(deviceId: string | undefined) {
     });
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const { addLog } = useApp();
 
     // Track hardware info fetch status
     const fetchedHWInfoIdRef = useRef<string | null>(null);
@@ -123,7 +125,8 @@ export function usePerformanceMetrics(deviceId: string | undefined) {
             fetchedHWInfoIdRef.current = id;
             return info;
         } catch (err) {
-            console.error("HWInfo fetch fatal error:", err);
+            const msg = err instanceof Error ? err.message : String(err);
+            addLog(`HWInfo Fetch Error: ${msg}`, 'error');
             return undefined;
         } finally {
             isFetchingHWRef.current = false;
@@ -149,7 +152,8 @@ export function usePerformanceMetrics(deviceId: string | undefined) {
                 try {
                     newIntegrity = await invoke<DeviceIntegrity>('check_device_integrity', { deviceId });
                 } catch (intErr) {
-                    console.error("Integrity check failed:", intErr);
+                    const msg = intErr instanceof Error ? intErr.message : String(intErr);
+                    addLog(`Integrity check warning: ${msg}`, 'warning');
                 }
             }
 

@@ -11,6 +11,7 @@ use std::process::{Command, Stdio};
 use zip::write::FileOptions;
 
 const CREATE_NO_WINDOW: u32 = 0x08000000;
+const MIN_VALID_APK_SIZE: u64 = 1024; // P3 #11: Magic number extracted to constant
 
 #[derive(Serialize, Debug, Clone)]
 pub struct DeviceInfo {
@@ -422,9 +423,10 @@ pub fn get_package_size(device_id: &str, path: &str) -> Result<u64, String> {
     // -rw-r--r-- 1 system system 20117036 2023-11-20 18:27 /data/app/~~.../base.apk
     for part in parts {
         if let Ok(size) = part.parse::<u64>() {
-            // Basic heuristic: APKs are rarely smaller than 10KB (10240 bytes)
+            // Basic heuristic: APKs are rarely smaller than 10KB
             // and timestamps look like numbers too but usually smaller or huge if unix epoch
-            if size > 1024 {
+            if size > MIN_VALID_APK_SIZE {
+                // P3 #11: Use constant
                 return Ok(size);
             }
         }
@@ -433,6 +435,27 @@ pub fn get_package_size(device_id: &str, path: &str) -> Result<u64, String> {
     Err("Could not determine file size".to_string())
 }
 
+/// Restores an application from a backup (.easybckp) file.
+///
+/// This function performs a comprehensive restore process:
+/// 1. Extracts the backup archive to a temporary directory.
+/// 2. Installs the APK (handles both split APKs and legacy single APKs).
+/// 3. Restores OBB files if present.
+/// 4. Restores application data (requires root access).
+///
+/// # Arguments
+///
+/// * `device_id` - The serial number of the target Android device.
+/// * `backup_path` - The absolute path to the `.easybckp` file.
+///
+/// # Returns
+///
+/// * `Result<String, String>` - Success message or error description.
+///
+/// # Security
+///
+/// * Data restore requires root access (`su`).
+/// * Automatically fixes permissions (`chown`) and SELinux context (`restorecon`) after data restore.
 pub fn restore_package(device_id: &str, backup_path: PathBuf) -> Result<String, String> {
     // 1. Prepare temp dir for extraction
     let file_name = backup_path
@@ -580,17 +603,24 @@ pub fn restore_package(device_id: &str, backup_path: PathBuf) -> Result<String, 
                 remote_tar_path,
             ])?;
 
-            // Extract with parsing owners (tar inside android usually needs busybox or simple tar)
-            // But usually native tar on android is weak.
-            // Let's assume basic tar works or use 'cp' if we had a folder.
-            // Since we put it on sdcard, we need root to move it to /data/data
-            let cmd = format!(
-                "tar -xzf {} -C /data/data/{}",
-                remote_tar_path, package_name
-            );
-            run_command(&["-s", device_id, "shell", "su", "-c", &cmd])?;
+            // P1 #4: tar extract - backup'ta klasör yapısı {package_name}/... şeklinde
+            // /data/data/{package_name} hedefine açıyoruz
+            let extract_cmd = format!("tar -xzf {} -C /data/data", remote_tar_path);
+            run_command(&["-s", device_id, "shell", "su", "-c", &extract_cmd])?;
 
-            // Cleanup remote
+            // P1 #5: Permission ve SELinux context düzeltmesi
+            // Ownership'i uygulamanın UID'sine ayarla
+            let chown_cmd = format!(
+                "chown -R $(stat -c '%u:%g' /data/data/{0}/.) /data/data/{0}",
+                package_name
+            );
+            let _ = run_command(&["-s", device_id, "shell", "su", "-c", &chown_cmd]);
+
+            // SELinux context'i düzelt (Android 5.0+ için gerekli)
+            let restorecon_cmd = format!("restorecon -R /data/data/{}", package_name);
+            let _ = run_command(&["-s", device_id, "shell", "su", "-c", &restorecon_cmd]);
+
+            // Cleanup remote temp file
             run_command(&["-s", device_id, "shell", "rm", remote_tar_path])?;
         }
     }
@@ -977,7 +1007,9 @@ pub fn uninstall_package(device_id: &str, package_name: &str) -> Result<String, 
 /// Önceden uninstall edilmiş bir paketi yeniden yükler.
 /// Sadece --user 0 ile kaldırılmış paketler için çalışır.
 pub fn reinstall_package(device_id: &str, package_name: &str) -> Result<String, String> {
-    run_command(&[
+    // Attempt 1: cmd package install-existing (Standard for newer Android)
+    // We ignore the error here to try the fallback
+    let output1 = run_command(&[
         "-s",
         device_id,
         "shell",
@@ -985,6 +1017,31 @@ pub fn reinstall_package(device_id: &str, package_name: &str) -> Result<String, 
         "package",
         "install-existing",
         package_name,
-    ])?;
-    Ok(format!("Package '{}' reinstalled.", package_name))
+    ]);
+
+    if output1.is_ok() {
+        return Ok(format!(
+            "Package '{}' reinstalled successfully.",
+            package_name
+        ));
+    }
+
+    // Attempt 2: pm install-existing (Legacy / Alternative)
+    match run_command(&[
+        "-s",
+        device_id,
+        "shell",
+        "pm",
+        "install-existing",
+        package_name,
+    ]) {
+        Ok(_) => Ok(format!(
+            "Package '{}' reinstalled (legacy method).",
+            package_name
+        )),
+        Err(e) => {
+            // If both failed, return a descriptive error
+            Err(format!("Failed to reinstall '{}'. NOTE: User (Downloaded) apps cannot be restored via ADB if fully uninstalled. You must reinstall them from Play Store. Original Error: {}", package_name, e))
+        }
+    }
 }

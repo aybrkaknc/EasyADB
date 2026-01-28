@@ -32,7 +32,7 @@ interface AppState {
     };
 
     // Log sistemi
-    logs: Array<{ message: string; type: 'info' | 'success' | 'error'; timestamp: Date }>;
+    logs: Array<{ id: number; message: string; type: 'info' | 'success' | 'warning' | 'error'; timestamp: string }>;
 
     // İşlem durumu
     isProcessing: boolean;
@@ -56,7 +56,7 @@ interface AppContextActions {
     setBackupSearch: (search: string) => void;
     setBackups: (backups: BackupFile[]) => void;
     toggleBackup: (backup: BackupFile) => void;
-    addLog: (message: string, type: 'info' | 'success' | 'error') => void;
+    addLog: (message: string, type: 'info' | 'success' | 'warning' | 'error') => void;
     clearLogs: () => void;
     setIsProcessing: (processing: boolean) => void;
     clearSelectedPackages: () => void;
@@ -193,10 +193,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }, []);
 
     // Log sistemi
-    const addLog = useCallback((message: string, type: 'info' | 'success' | 'error') => {
+    const addLog = useCallback((message: string, type: 'info' | 'success' | 'warning' | 'error') => {
         setState(prev => ({
             ...prev,
-            logs: [...prev.logs, { message, type, timestamp: new Date() }],
+            logs: [...prev.logs, { id: Date.now(), message, type, timestamp: new Date().toLocaleTimeString() }],
         }));
     }, []);
 

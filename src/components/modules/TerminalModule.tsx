@@ -61,6 +61,8 @@ interface TerminalTab {
     name: string;
     history: TerminalLog[];
     input: string;
+    historyPointer: number;
+    tempInput: string;
 }
 
 interface MacroButtonProps {
@@ -138,12 +140,13 @@ interface TerminalViewProps {
     onClear?: () => void;
     sideloadProgress?: number | null;
     toolsStatus?: ToolsStatus;
+    commandHistory: string[];
 }
 
-export function TerminalView({ history: initialHistory, onExecute, isExecuting, disabled, onClear, sideloadProgress, toolsStatus: _toolsStatus }: TerminalViewProps) {
+export function TerminalView({ history: initialHistory, onExecute, isExecuting, disabled, onClear, sideloadProgress, toolsStatus: _toolsStatus, commandHistory }: TerminalViewProps) {
     // Tab State Management
     const [tabs, setTabs] = useState<TerminalTab[]>([
-        { id: 'main', name: 'MAIN TERMINAL', history: initialHistory, input: '' }
+        { id: 'main', name: 'MAIN TERMINAL', history: initialHistory, input: '', historyPointer: -1, tempInput: '' }
     ]);
     const [activeTabId, setActiveTabId] = useState('main');
 
@@ -160,7 +163,7 @@ export function TerminalView({ history: initialHistory, onExecute, isExecuting, 
 
     const handleAddTab = () => {
         const newId = `term-${Date.now()}`;
-        setTabs([...tabs, { id: newId, name: `TERMINAL ${tabs.length + 1}`, history: [], input: '' }]);
+        setTabs([...tabs, { id: newId, name: `TERMINAL ${tabs.length + 1}`, history: [], input: '', historyPointer: -1, tempInput: '' }]);
         setActiveTabId(newId);
     };
 
@@ -206,8 +209,56 @@ export function TerminalView({ history: initialHistory, onExecute, isExecuting, 
     }, [activeTab.history]);
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === 'ArrowDown' && fullSuggestion) {
+        // Force refresh state check
+        // HISTORY NAVIGATION: UP
+        if (e.key === 'ArrowUp') {
             e.preventDefault();
+            const currentPointer = activeTab.historyPointer;
+            if (currentPointer < commandHistory.length - 1) {
+                const newPointer = currentPointer + 1;
+                const historyCmd = commandHistory[newPointer];
+
+                // If starting navigation, save current input draft
+                let newState: Partial<TerminalTab> = {
+                    historyPointer: newPointer,
+                    input: historyCmd
+                };
+
+                if (currentPointer === -1) {
+                    newState.tempInput = activeTab.input;
+                }
+
+                updateActiveTab(newState);
+            }
+            return;
+        }
+
+        // HISTORY NAVIGATION: DOWN
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            const currentPointer = activeTab.historyPointer;
+
+            if (currentPointer > -1) {
+                const newPointer = currentPointer - 1;
+                let newInput = '';
+
+                if (newPointer === -1) {
+                    newInput = activeTab.tempInput || '';
+                } else {
+                    newInput = commandHistory[newPointer];
+                }
+
+                updateActiveTab({
+                    historyPointer: newPointer,
+                    input: newInput
+                });
+            }
+            return;
+        }
+
+        // AUTOCOMPLETION: TAB or ARROW RIGHT
+        if ((e.key === 'Tab' || (e.key === 'ArrowRight' && activeTab.input.length === (e.target as HTMLInputElement).selectionStart)) && fullSuggestion) {
+            e.preventDefault(); // Prevent focus change on Tab
 
             // Word-by-word completion logic using fullSuggestion
             const currentInput = activeTab.input;
@@ -251,7 +302,8 @@ export function TerminalView({ history: initialHistory, onExecute, isExecuting, 
                         });
                     }, 100);
                 }
-                updateActiveTab({ input: '' });
+                // Reset input and history pointer
+                updateActiveTab({ input: '', historyPointer: -1, tempInput: '' });
             }
         }
     };

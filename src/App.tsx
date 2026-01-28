@@ -11,6 +11,7 @@ import { PerformanceView } from "./components/modules/PerformanceModule";
 import { AppReadyView, AppDisconnectedView } from "./components/views/ConnectionViews";
 import { SettingsView } from "./components/views/SettingsView";
 import { BackupOverlay } from "./components/views/BackupOverlay";
+import { AlertDialog } from "./components/views/AlertDialog";
 import { useDeviceStatus } from "./hooks/useDeviceStatus";
 import { useTerminal } from "./hooks/useTerminal";
 import { useDebloater } from "./hooks/useDebloater";
@@ -18,22 +19,21 @@ import { useBackupOperations } from "./hooks/useBackupOperations";
 import { ModuleType } from "./context/AppContext";
 import { useApp } from "./context/AppContext";
 
-interface LogEntry {
-  id: number;
-  message: string;
-  type: "info" | "success" | "warning" | "error";
-  timestamp: string;
-}
+
 
 function App() {
   const { isConnected, devices } = useDeviceStatus();
-  const { settings } = useApp();
+  const { settings, logs, addLog, clearLogs } = useApp();
   const [activeModule, setActiveModule] = useState<ModuleType>('backup');
+
+  // Log Panel Local State (Open/Close)
+  const [isLogOpen, setIsLogOpen] = useState(false);
 
   // Terminal Logic Hook
   const terminal = useTerminal(isConnected ? devices[0]?.id : undefined);
 
   // Debloater Logic Hook
+  // Debloater Logic Hook (Uses Global Context for logging)
   const debloater = useDebloater(isConnected ? devices[0]?.id : undefined, 0);
 
   // Backup Operations Hook (P1 Refactoring - Tüm backup logic'i burada)
@@ -46,11 +46,7 @@ function App() {
     }
   );
 
-  // Log Panel State
-  const [logs, setLogs] = useState<LogEntry[]>([
-    { id: 1, message: "System initialized...", type: "info", timestamp: new Date().toLocaleTimeString() }
-  ]);
-  const [isLogOpen, setIsLogOpen] = useState(false);
+
 
   const prevConnectedRef = useRef(false);
 
@@ -71,15 +67,7 @@ function App() {
     backup.clearSelections();
   }, [activeModule]);
 
-  /**
-   * Log paneline mesaj ekler.
-   */
-  const addLog = (message: string, type: LogEntry['type'] = "info") => {
-    setLogs(prev => [
-      ...prev,
-      { id: Date.now(), message, type, timestamp: new Date().toLocaleTimeString() }
-    ]);
-  };
+
 
   /**
    * Global refresh - Debloater ve diğer modüller için.
@@ -100,7 +88,8 @@ function App() {
             selectedBackups={backup.selectedBackups}
             onToggleBackup={backup.toggleBackup}
             onRefresh={handleRefresh}
-            refreshTrigger={0}
+            refreshTrigger={backup.refreshTrigger} // P0 #2: Artık dinamik
+            customPath={settings.backupPath || undefined} // P0 #1: Settings klasörü kullanılıyor
             onDeleteBackup={backup.deleteBackup}
           />
         );
@@ -135,6 +124,7 @@ function App() {
           disabled={!isConnected}
           onClear={terminal.clearHistory}
           sideloadProgress={terminal.sideloadProgress}
+          commandHistory={terminal.commandHistory}
         />
       );
     }
@@ -251,15 +241,13 @@ function App() {
             </div>
 
             {/* Global Log Panel (Integrated - Under Main View Only) */}
-            {(activeModule === 'backup' || activeModule === 'debloater') && (
-              <LogPanel
-                logs={logs}
-                isOpen={isLogOpen}
-                onToggle={() => setIsLogOpen(!isLogOpen)}
-                onClear={() => setLogs([])}
-                progress={backup.progress}
-              />
-            )}
+            <LogPanel
+              logs={logs}
+              isOpen={isLogOpen}
+              onToggle={() => setIsLogOpen(!isLogOpen)}
+              onClear={clearLogs}
+              progress={backup.progress}
+            />
           </div>
         </div>
       </div>
@@ -268,6 +256,29 @@ function App() {
       <BackupOverlay
         progress={backup.progress}
         onClose={() => backup.setProgress(p => ({ ...p, isActive: false }))}
+      />
+
+      {/* GLOBAL ERROR DIALOGS */}
+      <AlertDialog
+        isOpen={backup.errorState.isOpen}
+        title={backup.errorState.title}
+        message={backup.errorState.message}
+        onClose={backup.dismissError}
+      />
+      <AlertDialog
+        isOpen={debloater.errorState.isOpen}
+        title={debloater.errorState.title}
+        message={debloater.errorState.message}
+        onClose={debloater.dismissError}
+      />
+      {/* DEBLOATER CONFIRMATION */}
+      <AlertDialog
+        isOpen={debloater.confirmState.isOpen}
+        title={debloater.confirmState.title}
+        message={debloater.confirmState.message}
+        variant={debloater.confirmState.variant}
+        onClose={debloater.dismissConfirm}
+        onConfirm={debloater.confirmState.onConfirm}
       />
     </div>
   );

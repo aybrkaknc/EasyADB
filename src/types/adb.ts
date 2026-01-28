@@ -29,6 +29,7 @@ export function isSystemPackage(pkg: PackageInfo): boolean {
 
 /**
  * Yedek dosyası bilgisi.
+ * IMPORTANT: Keep this in sync with `src-tauri/src/lib.rs` -> `BackupFile`
  */
 export interface BackupFile {
     name: string;
@@ -59,4 +60,5 @@ export interface ProgressState {
     total: number;
     isIndeterminate?: boolean;
     completedItems?: string[];
+    failedItems?: string[]; // P0 #3: Hatalı işlemler için
 }
