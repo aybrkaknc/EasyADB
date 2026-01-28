@@ -71,13 +71,22 @@ fn get_package_size(device_id: String, package: adb::AppPackage) -> Result<u64, 
 }
 
 #[tauri::command]
-fn list_backups() -> Result<Vec<BackupFile>, String> {
-    let download_dir =
-        dirs::download_dir().ok_or_else(|| "Could not find Downloads directory".to_string())?;
+fn list_backups(custom_path: Option<String>) -> Result<Vec<BackupFile>, String> {
+    // custom_path verilmişse onu kullan, yoksa Downloads klasörü
+    let backup_dir = if let Some(path) = custom_path {
+        let p = std::path::PathBuf::from(&path);
+        if !p.exists() {
+            // Klasör yoksa boş liste dön (hata değil)
+            return Ok(Vec::new());
+        }
+        p
+    } else {
+        dirs::download_dir().ok_or_else(|| "Could not find Downloads directory".to_string())?
+    };
 
     let mut backups = Vec::new();
 
-    if let Ok(entries) = fs::read_dir(download_dir) {
+    if let Ok(entries) = fs::read_dir(&backup_dir) {
         for entry in entries.flatten() {
             let path = entry.path();
             if path.is_file() {

@@ -5,7 +5,13 @@ import { BackupFile } from "../types/adb";
 // Re-export for backward compatibility
 export type { BackupFile };
 
-export function useBackups(refreshTrigger: number, _customPath?: string) {
+/**
+ * Yedek dosyalarını listeleyen hook.
+ * 
+ * @param refreshTrigger - Yenileme tetikleyicisi
+ * @param customPath - Özel yedekleme klasörü yolu (opsiyonel)
+ */
+export function useBackups(refreshTrigger: number, customPath?: string) {
     const [backups, setBackups] = useState<BackupFile[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -14,7 +20,10 @@ export function useBackups(refreshTrigger: number, _customPath?: string) {
         const fetchBackups = async () => {
             setLoading(true);
             try {
-                const list = await invoke<BackupFile[]>("list_backups");
+                // customPath'i backend'e gönder (null ise Downloads kullanılır)
+                const list = await invoke<BackupFile[]>("list_backups", {
+                    customPath: customPath || null
+                });
                 setBackups(list);
                 setError(null);
             } catch (err: unknown) {
@@ -26,7 +35,8 @@ export function useBackups(refreshTrigger: number, _customPath?: string) {
         };
 
         fetchBackups();
-    }, [refreshTrigger]);
+    }, [refreshTrigger, customPath]); // customPath dependency eklendi
 
     return { backups, loading, error };
 }
+
