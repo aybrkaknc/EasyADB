@@ -28,6 +28,11 @@ export default {
                     dim: "#4a3200",
                     20: "rgba(255, 176, 0, 0.2)",
                 },
+                "terminal-cyan": {
+                    DEFAULT: "#cedc00",
+                    dim: "#2d3400",
+                    20: "rgba(206, 220, 0, 0.2)",
+                },
                 primary: {
                     DEFAULT: "hsl(var(--primary))",
                     foreground: "hsl(var(--primary-foreground))",

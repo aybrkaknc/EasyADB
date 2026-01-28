@@ -1,17 +1,17 @@
 import { useRef, useEffect, useState } from 'react';
-import { RefreshCw, Smartphone, ShieldAlert, Wifi, List, Activity, Zap, Cpu, Battery, Terminal, Pin, ChevronUp, Plus, X } from 'lucide-react';
+import { RefreshCw, Smartphone, ShieldAlert, Wifi, List, Activity, Zap, Cpu, Battery, Terminal, ChevronUp, Plus, X, Trash2 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { TerminalLog, ToolsStatus } from '../../hooks/useTerminal';
 
 const MACROS = [
     // System Actions
-    { id: 'reboot', label: 'REBOOT SYSTEM', command: 'reboot', icon: RefreshCw, group: 'SYSTEM', variant: 'amber' },
-    { id: 'recovery', label: 'REBOOT RECOVERY', command: 'reboot recovery', icon: ShieldAlert, group: 'SYSTEM', variant: 'amber' },
-    { id: 'bootloader', label: 'REBOOT BOOTLOADER', command: 'reboot bootloader', icon: Smartphone, group: 'SYSTEM', variant: 'amber' },
+    { id: 'reboot', label: 'REBOOT SYSTEM', command: 'reboot', icon: RefreshCw, group: 'SYSTEM', variant: 'cyan' },
+    { id: 'recovery', label: 'REBOOT RECOVERY', command: 'reboot recovery', icon: ShieldAlert, group: 'SYSTEM', variant: 'cyan' },
+    { id: 'bootloader', label: 'REBOOT BOOTLOADER', command: 'reboot bootloader', icon: Smartphone, group: 'SYSTEM', variant: 'cyan' },
 
     // Fastboot Actions
     { id: 'fb_devices', label: 'FASTBOOT DEVICES', command: 'fastboot devices', icon: Zap, danger: false, group: 'FASTBOOT' },
-    { id: 'fb_reboot', label: 'FASTBOOT REBOOT', command: 'fastboot reboot', icon: RefreshCw, group: 'FASTBOOT', variant: 'amber' },
+    { id: 'fb_reboot', label: 'FASTBOOT REBOOT', command: 'fastboot reboot', icon: RefreshCw, group: 'FASTBOOT', variant: 'cyan' },
 
     // Info & Diagnostics
     { id: 'ip', label: 'SHOW IP ADDRESS', command: 'shell ip -f inet addr show wlan0', icon: Wifi, danger: false, group: 'DIAGNOSTICS' },
@@ -22,6 +22,37 @@ const MACROS = [
     // Package Management
     { id: 'packages', label: 'ALL PACKAGES', command: 'shell pm list packages', icon: List, danger: false, group: 'PACKAGES' },
     { id: 'packages_3rd', label: 'THIRD PARTY APPS', command: 'shell pm list packages -3', icon: List, danger: false, group: 'PACKAGES' },
+];
+
+const COMMAND_SUGGESTIONS = [
+    // ADB Core Commands
+    'adb devices', 'adb devices -l', 'adb shell', 'adb install', 'adb install -r', 'adb uninstall',
+    'adb push', 'adb pull', 'adb logcat', 'adb logcat -C', 'adb logcat *:V', 'adb logcat *:D',
+    'adb logcat *:I', 'adb logcat *:W', 'adb logcat *:E', 'adb reboot', 'adb reboot recovery',
+    'adb reboot bootloader', 'adb reboot fastboot', 'adb sideload', 'adb connect', 'adb disconnect',
+    'adb kill-server', 'adb start-server', 'adb tcpip 5555', 'adb reverse', 'adb forward',
+    'adb wait-for-device', 'adb get-state', 'adb get-serialno',
+
+    // ADB Shell System Commands
+    'adb shell dumpsys', 'adb shell dumpsys battery', 'adb shell dumpsys wifi', 'adb shell dumpsys activity',
+    'adb shell pm list packages', 'adb shell pm list packages -3', 'adb shell pm list packages -s',
+    'adb shell pm clear', 'adb shell pm path', 'adb shell pm install',
+    'adb shell am start', 'adb shell am force-stop', 'adb shell am kill-all',
+    'adb shell uptime', 'adb shell ip addr', 'adb shell ip addr show wlan0', 'adb shell getprop',
+    'adb shell setprop', 'adb shell wm size', 'adb shell wm density', 'adb shell screencap -p',
+    'adb shell screenrecord', 'adb shell input tap', 'adb shell input swipe', 'adb shell input text',
+    'adb shell cat /proc/cpuinfo', 'adb shell cat /proc/meminfo', 'adb shell df -h',
+    'adb shell top', 'adb shell ps', 'adb shell ls -la /sdcard/',
+
+    // Fastboot Commands
+    'fastboot devices', 'fastboot reboot', 'fastboot reboot-bootloader', 'fastboot flash',
+    'fastboot flash boot', 'fastboot flash recovery', 'fastboot flash system', 'fastboot flash vendor',
+    'fastboot erase', 'fastboot erase cache', 'fastboot erase userdata', 'fastboot format',
+    'fastboot getvar all', 'fastboot oem unlock', 'fastboot oem lock', 'fastboot flashing unlock',
+    'fastboot flashing lock', 'fastboot oem device-info', 'fastboot boot', 'fastboot continue',
+
+    // Common Shell/Local Aliases
+    'reboot', 'reboot recovery', 'reboot bootloader', 'shell', 'clear', 'exit', 'ls', 'cd', 'cat', 'pwd'
 ];
 
 // New Interface for Terminal Tab
@@ -46,14 +77,14 @@ function MacroButton({ macro, disabled, onClick }: MacroButtonProps) {
             className={cn(
                 "w-full flex items-center px-3 py-2.5 text-left border border-transparent transition-all group relative overflow-hidden rounded-lg mb-1",
                 disabled ? "opacity-25 cursor-not-allowed" : "hover:bg-white/5 hover:border-white/5",
-                macro.variant === 'amber' && !disabled ? "hover:bg-amber-500/10 hover:border-amber-500/20" :
+                macro.variant === 'cyan' && !disabled ? "hover:bg-terminal-cyan/10 hover:border-terminal-cyan/20" :
                     macro.danger && !disabled ? "hover:bg-red-500/10 hover:border-red-500/20" :
                         "active:bg-white/10"
             )}
         >
             <macro.icon className={cn(
                 "w-4 h-4 mr-3 shrink-0 transition-all duration-300",
-                macro.variant === 'amber' ? "text-zinc-500 group-hover:text-amber-400" :
+                macro.variant === 'cyan' ? "text-zinc-500 group-hover:text-terminal-cyan" :
                     macro.danger ? "text-zinc-500 group-hover:text-red-400" :
                         "text-zinc-500 group-hover:text-terminal-green"
             )} />
@@ -109,7 +140,7 @@ interface TerminalViewProps {
     toolsStatus?: ToolsStatus;
 }
 
-export function TerminalView({ history: initialHistory, onExecute, isExecuting, disabled, sideloadProgress, toolsStatus: _toolsStatus }: TerminalViewProps) {
+export function TerminalView({ history: initialHistory, onExecute, isExecuting, disabled, onClear, sideloadProgress, toolsStatus: _toolsStatus }: TerminalViewProps) {
     // Tab State Management
     const [tabs, setTabs] = useState<TerminalTab[]>([
         { id: 'main', name: 'MAIN TERMINAL', history: initialHistory, input: '' }
@@ -145,24 +176,27 @@ export function TerminalView({ history: initialHistory, onExecute, isExecuting, 
     };
 
     const [showMacros, setShowMacros] = useState(false);
-    const [isPinned, setIsPinned] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
     const sidebarRef = useRef<HTMLDivElement>(null);
 
+    const handleClearTerminal = () => {
+        if (activeTabId === 'main') {
+            onClear?.();
+        } else {
+            updateActiveTab({ history: [] });
+        }
+    };
+
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            if (!isPinned && showMacros && sidebarRef.current && !sidebarRef.current.contains(event.target as Node)) {
-                // Check if click was on the trigger button (agenda tab)
-                const trigger = document.getElementById('macro-trigger');
-                if (trigger && trigger.contains(event.target as Node)) return;
-
+            if (showMacros && sidebarRef.current && !sidebarRef.current.contains(event.target as Node)) {
                 setShowMacros(false);
             }
         };
 
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, [isPinned, showMacros]);
+    }, [showMacros]);
 
     // Scroll to bottom on activity
     useEffect(() => {
@@ -172,6 +206,33 @@ export function TerminalView({ history: initialHistory, onExecute, isExecuting, 
     }, [activeTab.history]);
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'ArrowDown' && fullSuggestion) {
+            e.preventDefault();
+
+            // Word-by-word completion logic using fullSuggestion
+            const currentInput = activeTab.input;
+
+            // If the very next character is a space, we want to complete that space AND the next word
+            let nextSpaceIndex;
+            if (fullSuggestion[currentInput.length] === ' ') {
+                nextSpaceIndex = fullSuggestion.indexOf(' ', currentInput.length + 1);
+            } else {
+                nextSpaceIndex = fullSuggestion.indexOf(' ', currentInput.length);
+            }
+
+            let nextInput;
+            if (nextSpaceIndex === -1) {
+                // No more spaces, complete the whole suggestion
+                nextInput = fullSuggestion;
+            } else {
+                // Complete up to the next space (including the space)
+                nextInput = fullSuggestion.substring(0, nextSpaceIndex + 1);
+            }
+
+            updateActiveTab({ input: nextInput });
+            return;
+        }
+
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             if (activeTab.input.trim()) {
@@ -195,40 +256,62 @@ export function TerminalView({ history: initialHistory, onExecute, isExecuting, 
         }
     };
 
+    // Calculate suggestion
+    const fullSuggestion = activeTab.input.trim()
+        ? COMMAND_SUGGESTIONS.find(s => s.startsWith(activeTab.input.toLowerCase()))
+        : '';
+
+    // Ghost text should only show the current/next word
+    let suggestion = '';
+    if (fullSuggestion) {
+        // Find the index of the space that marks the end of the word we are CURRENTLY completing
+        // We use .trimEnd() to ignore trailing spaces when finding the boundary
+        const nextSpaceIndex = fullSuggestion.indexOf(' ', activeTab.input.length);
+
+        if (nextSpaceIndex === -1) {
+            suggestion = fullSuggestion;
+        } else {
+            // If the input already reaches a space, we should show the NEXT word too
+            if (nextSpaceIndex === activeTab.input.length || fullSuggestion[activeTab.input.length - 1] === ' ') {
+                const followingSpaceIndex = fullSuggestion.indexOf(' ', activeTab.input.length + 1);
+                suggestion = followingSpaceIndex === -1 ? fullSuggestion : fullSuggestion.substring(0, followingSpaceIndex);
+            } else {
+                suggestion = fullSuggestion.substring(0, nextSpaceIndex);
+            }
+        }
+    }
+
     return (
         <div className="flex h-full bg-black font-mono text-sm relative w-full overflow-hidden">
             {/* Main Page Pane (Header + Terminal) */}
-            <div className={cn(
-                "flex-1 flex flex-col min-w-0 h-full transition-all duration-300 relative overflow-hidden",
-                isPinned && showMacros ? "mr-0" : "" // Margin handled by relative flex layout next to it if we use it, but here we'll use conditional relative sidebar
-            )}>
-                {/* Unified Command Center HUD Header */}
-                <div className="p-6 border-b border-terminal-green/20 bg-zinc-950/20 space-y-4 shrink-0 relative z-30">
-                    <div className="flex items-start justify-between">
-                        <div className="flex flex-col">
-                            <div className="flex items-center gap-3 mb-2">
-                                <Terminal className="w-6 h-6 text-terminal-green" />
-                                <h2 className="text-2xl font-space font-black text-white tracking-[0.2em] uppercase drop-shadow-[0_0_8px_rgba(255,255,255,0.2)]">
-                                    {activeTab.name}
-                                </h2>
-                            </div>
-                            <div className="flex items-center gap-2 mt-1.5 font-mono text-[10px] tracking-widest uppercase">
-                                <div className="flex items-center gap-2">
-                                    <Activity className="w-3 h-3 text-terminal-green/60" />
-                                    <span className="text-white/80 font-bold">LIVE SHELL SESSION</span>
-                                </div>
-                                <div className="w-1 h-1 bg-terminal-green/30 rounded-full" />
-                                <span className="text-terminal-green/60">READY</span>
-                            </div>
-                        </div>
-
-                        <div className="flex items-center gap-3">
-                        </div>
+            <div className="flex-1 flex flex-col min-w-0 h-full transition-all duration-300 relative overflow-hidden">
+                {/* Main Content Area: Terminal with Floating HUD */}
+                <div className="flex-1 flex overflow-hidden relative z-10 w-full group/terminal">
+                    {/* Floating HUD Controls (Top Right) */}
+                    <div className="absolute top-4 right-6 z-50 flex items-center gap-2 animate-in fade-in slide-in-from-top-4 duration-500">
+                        <button
+                            onClick={handleClearTerminal}
+                            className="p-2.5 bg-black/60 backdrop-blur-xl border border-white/10 hover:border-terminal-green/40 text-zinc-500 hover:text-terminal-green transition-all shadow-2xl rounded-lg group/hud-btn"
+                            title="CLEAR TERMINAL"
+                        >
+                            <Trash2 className="w-4 h-4 group-hover/hud-btn:scale-110 transition-transform" strokeWidth={2.5} />
+                        </button>
+                        <button
+                            onClick={() => setShowMacros(!showMacros)}
+                            className={cn(
+                                "p-2.5 backdrop-blur-xl border transition-all shadow-2xl rounded-lg group/hud-btn",
+                                showMacros
+                                    ? "bg-terminal-green/10 border-terminal-green/50 text-terminal-green"
+                                    : "bg-black/60 border-white/10 text-zinc-500 hover:text-white"
+                            )}
+                            title="MACRO COMMANDS"
+                        >
+                            <Zap className="w-4 h-4 group-hover/hud-btn:scale-110 transition-transform" strokeWidth={2.5} />
+                        </button>
                     </div>
-                </div>
 
-                {/* Main Content Area: Terminal */}
-                <div className="flex-1 flex overflow-hidden relative z-10">
+
+
                     {/* CRUNCHY GRID BACKGROUND */}
                     <div className="absolute inset-0 pointer-events-none opacity-[0.03] z-0">
                         <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,65,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,65,0.1)_1px,transparent_1px)] bg-[size:30px_30px]" />
@@ -236,7 +319,7 @@ export function TerminalView({ history: initialHistory, onExecute, isExecuting, 
 
                     <div
                         ref={scrollRef}
-                        className="flex-1 pt-[26px] px-[18px] pb-10 overflow-y-auto min-h-0 scrollbar-thin scrollbar-thumb-terminal-green/10 relative z-10 w-full"
+                        className="flex-1 pt-12 pl-12 pr-[18px] pb-10 overflow-y-auto min-h-0 scrollbar-thin scrollbar-thumb-terminal-green/10 relative z-10 w-full"
                         onClick={() => {
                             // Focus input when clicking anywhere in terminal
                             const inputElement = document.querySelector('input[type="text"]') as HTMLInputElement;
@@ -254,23 +337,36 @@ export function TerminalView({ history: initialHistory, onExecute, isExecuting, 
                             </div>
                         )}
 
-                        {/* Active Input Line - Integrated into flow */}
+                        {/* Active Input Line - Native Terminal Style at BOTTOM */}
                         {!disabled && !isExecuting && (
-                            <div className="flex items-center w-full mt-2 group">
-                                <span className="text-terminal-green mr-3 font-black text-[13px] select-none shrink-0 group-focus-within:drop-shadow-[0_0_8px_rgba(0,255,65,0.6)] transition-all">{">"}</span>
-                                <input
-                                    type="text"
-                                    value={activeTab.input}
-                                    onChange={(e) => updateActiveTab({ input: e.target.value })}
-                                    onKeyDown={handleKeyDown}
-                                    disabled={activeTabId === 'main' && (isExecuting || disabled)}
-                                    className="flex-1 bg-transparent text-white font-mono text-[13px] focus:outline-none placeholder:text-zinc-800 transition-colors tracking-wide caret-terminal-green selection:bg-terminal-green/30"
-                                    autoFocus
-                                    spellCheck={false}
-                                    autoComplete="off"
-                                />
+                            <div className="flex items-center w-full mt-2 group relative">
+                                <span className="text-terminal-green mr-3 font-black text-[14px] select-none shrink-0 group-focus-within:drop-shadow-[0_0_8px_rgba(0,255,65,0.6)] transition-all">{">"}</span>
+                                <div className="flex-1 relative isolate">
+                                    {/* Suggestion Overlay */}
+                                    {suggestion && (
+                                        <div className="absolute inset-0 flex items-center pointer-events-none text-[14px] font-mono tracking-wide">
+                                            <span className="opacity-0 whitespace-pre">{activeTab.input}</span>
+                                            <span className="text-white/20 whitespace-pre">
+                                                {suggestion.substring(activeTab.input.length).replace(/ /g, '\u00a0')}
+                                            </span>
+                                        </div>
+                                    )}
+                                    <input
+                                        type="text"
+                                        value={activeTab.input}
+                                        onChange={(e) => updateActiveTab({ input: e.target.value })}
+                                        onKeyDown={handleKeyDown}
+                                        disabled={activeTabId === 'main' && (isExecuting || disabled)}
+                                        className="w-full bg-transparent text-white font-mono text-[14px] focus:outline-none transition-colors tracking-wide caret-terminal-green selection:bg-terminal-green/30 relative z-10"
+                                        autoFocus
+                                        spellCheck={false}
+                                        autoComplete="off"
+                                    />
+                                </div>
                             </div>
                         )}
+
+
                     </div>
                 </div>
 
@@ -333,52 +429,29 @@ export function TerminalView({ history: initialHistory, onExecute, isExecuting, 
                 </div>
             </div>
 
-            {/* Quick Macro Sidebar (Dynamic Mode) */}
-            {/* Quick Macro Sidebar (Dynamic Mode) */}
+            {/* Quick Macro Sidebar (Clean Panel Mode) */}
             <div
                 ref={sidebarRef}
                 className={cn(
-                    "transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] z-50",
-                    isPinned && showMacros ? "relative w-80 translate-x-0 border-l border-white/10" : "absolute top-0 right-0 bottom-0 w-80",
-                    !isPinned && (showMacros ? "translate-x-0" : "translate-x-full"),
-                    isPinned && !showMacros && "w-0 translate-x-full"
+                    "fixed top-0 right-0 bottom-0 w-80 z-[60] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]",
+                    showMacros ? "translate-x-0" : "translate-x-full"
                 )}
             >
-                {/* Persistent Handle & Pin Button */}
-                <button
-                    id="macro-trigger"
-                    onClick={() => {
-                        if (!showMacros) {
-                            setShowMacros(true);
-                        } else {
-                            setIsPinned(!isPinned);
-                        }
-                    }}
-                    className={cn(
-                        "absolute left-0 top-1/2 -translate-x-full -translate-y-1/2 w-10 h-24 bg-black/80 border border-r-0 backdrop-blur-md rounded-l-2xl transition-all flex flex-col items-center justify-center gap-3 group shadow-[-5px_0_20px_rgba(0,0,0,0.5)] z-40 outline-none hover:w-12",
-                        showMacros
-                            ? (isPinned ? "border-terminal-green/30 text-terminal-green bg-terminal-green/5" : "border-white/10 text-zinc-400 hover:text-white hover:bg-white/5")
-                            : "border-white/10 text-zinc-500 hover:text-zinc-300 hover:bg-white/5"
-                    )}
-                >
-                    {!showMacros ? (
-                        <List className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                    ) : (
-                        <Pin className={cn("w-4 h-4 transition-all", isPinned ? "fill-current" : "opacity-50 group-hover:opacity-100")} />
-                    )}
 
-                    {/* Minimal Indicator Dots */}
-                    <div className="flex flex-col gap-1">
-                        <div className="w-1 h-1 rounded-full bg-current opacity-40" />
-                        <div className="w-1 h-1 rounded-full bg-current opacity-40" />
-                        <div className="w-1 h-1 rounded-full bg-current opacity-40" />
-                    </div>
-                </button>
 
                 {/* Sidebar Content (Overlay) */}
                 <div className={cn(
-                    "w-80 bg-black/90 border-l border-white/10 backdrop-blur-2xl flex flex-col h-full shadow-[-20px_0_50px_rgba(0,0,0,0.9)]"
+                    "w-80 bg-black/90 border-l border-white/10 backdrop-blur-2xl flex flex-col h-full shadow-[-20px_0_50px_rgba(0,0,0,0.9)] relative"
                 )}>
+                    {/* Close Button */}
+                    <button
+                        onClick={() => setShowMacros(false)}
+                        className="absolute top-3 right-3 p-2 hover:bg-white/5 text-zinc-500 hover:text-white rounded-lg transition-all z-20 outline-none group/close"
+                        title="CLOSE SIDEBAR"
+                    >
+                        <X className="w-4 h-4 transition-transform group-hover:rotate-90 duration-300" strokeWidth={2.5} />
+                    </button>
+
                     <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent p-3 pt-6">
                         {MACROS.map((macro, index) => {
                             const prevGroup = index > 0 ? MACROS[index - 1].group : null;

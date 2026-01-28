@@ -28,9 +28,9 @@ EasyADB, USB hata ayıklama üzerinden Android uygulamalarınızı hızlıca yed
 
 2.  **Dökümantasyon:**
     Tüm teknik detaylar ve yol haritası için `docs/` klasörüne göz atın:
-    - [Yol Haritası (Roadmap)](./docs/planning/ROADMAP.md)
-    - [Proje Tanımı](./docs/project/PROJECT_DEFINITION.md)
-    - [Mimari Detaylar](./docs/architecture/ARCHITECTURE.md)
+    - [Yol Haritası (Roadmap)](./docs/plans/ROADMAP.md)
+    - [Mimari Detaylar](./docs/specs/ARCHITECTURE.md)
+    - [Tasarım Standartları (ADB_UI)](./docs/ui-ux/ADB_UI.md)
 
 ## 🛠 Teknoloji Yığını
 

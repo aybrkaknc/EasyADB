@@ -27,7 +27,7 @@ Standart bir ZIP arşivi olan `.easybckp`, modern Android (Split APK) ve Root (D
 
 ## 3. Kullanıcı Arayüzü Mimarisi (ADB_UI Design System)
 
-Uygulama, **ADB_UI** adını verdiğimiz özel bir tasarım dili üzerine kuruludur. Detaylı teknik spektrum için `docs/design/ADB_UI_SPEC.md` dosyasına bakılabilir.
+Uygulama, **ADB_UI** adını verdiğimiz özel bir tasarım dili üzerine kuruludur. Detaylı teknik spektrum için `docs/ui-ux/ADB_UI.md` dosyasına bakılabilir.
 
 *   **Hybrid Typography:** UI etiketleri için `Space Grotesk`, teknik veriler için `JetBrains Mono`.
 *   **Aesthetic:** Keskin köşeler, neon parlamalar ve scanline efektli terminal arayüzü.

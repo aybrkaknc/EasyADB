@@ -95,7 +95,7 @@ export function DebloaterView({
                             active={filter === 'system'}
                             label="SYSTEM"
                             icon={ShieldAlert}
-                            variant="danger"
+                            variant="cyan"
                             onClick={() => onFilterChange('system')}
                             disabled={disabled}
                         />
@@ -243,7 +243,7 @@ export function DebloaterView({
                                         <div className="flex flex-col min-w-0">
                                             <span
                                                 className="text-sm font-mono truncate transition-colors font-bold"
-                                                style={{ color: selectedPackages.has(pkg.name) ? '#FFFFFF' : (pkg.is_system ? '#FF6E00' : '#E0F7FA') }}
+                                                style={{ color: selectedPackages.has(pkg.name) ? '#FFFFFF' : (pkg.is_system ? '#cedc00' : '#E0F7FA') }}
                                             >
                                                 {pkg.label || smartFormatPackage(pkg.name)}
                                             </span>
@@ -275,30 +275,20 @@ function FilterTab({ active, label, icon: Icon, onClick, disabled, variant = 'de
             onClick={onClick}
             disabled={disabled}
             className={cn(
-                "flex items-center gap-2 px-4 py-2.5 border transition-all group relative overflow-hidden shrink-0",
+                "flex items-center gap-2 px-4 py-2.5 border transition-all shrink-0 font-mono text-[10px] tracking-widest relative outline-none",
                 active
-                    ? (variant === 'danger' ? "bg-red-500/10 border-red-500/50 text-red-100 shadow-[0_0_15px_rgba(239,68,68,0.1)]" : "bg-terminal-green/10 border-terminal-green/50 text-white shadow-[0_0_15px_rgba(34,197,94,0.1)]")
-                    : "bg-zinc-900/10 border-terminal-green/20 text-zinc-400 hover:border-terminal-green/50 hover:text-white",
+                    ? (variant === 'danger' ? "bg-red-500/10 border-red-500/40 text-red-500 shadow-[0_0_15px_rgba(239,68,68,0.1)]" :
+                        variant === 'cyan' ? "bg-terminal-cyan/10 border-terminal-cyan/40 text-terminal-cyan shadow-[0_0_15px_rgba(206,220,0,0.1)]" :
+                            "bg-terminal-green/10 border-terminal-green/40 text-terminal-green shadow-[0_0_15px_rgba(34,197,94,0.1)]")
+                    : "bg-zinc-950/50 border-zinc-700 text-zinc-400 hover:border-terminal-green/40 hover:text-white",
                 disabled && "opacity-30 cursor-not-allowed"
             )}
-            style={{ clipPath: 'polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))' }}
         >
-            {/* Laser Scan Animation (Global Hover/Active) */}
-            <div className={cn(
-                "absolute inset-0 w-full h-[1px] -translate-y-full pointer-events-none opacity-60 z-0",
-                active ? "animate-scanline" : "group-hover:animate-scanline",
-                variant === 'danger' ? "bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.8)]" : "bg-terminal-green shadow-[0_0_10px_rgba(0,255,65,0.8)]"
-            )} />
-
-            {/* Static Scanlines Texture */}
-            <div className="absolute inset-0 bg-scanlines opacity-[0.15] pointer-events-none" />
-
-            <Icon className={cn("w-3.5 h-3.5 relative z-10", active ? (variant === 'danger' ? "text-red-500" : "text-terminal-green") : "text-zinc-500 group-hover:text-terminal-green/80")} />
-            <span className="text-[9px] font-space font-black tracking-[0.2em] uppercase relative z-10">{label}</span>
-
-            {active && (
-                <div className={cn("absolute inset-x-0 bottom-0 h-[1.5px] opacity-100 shadow-[0_0_12px_rgba(0,255,65,0.4)]", variant === 'danger' ? "bg-red-500" : "bg-terminal-green")} />
-            )}
+            <Icon
+                className={cn("w-4 h-4 transition-colors shrink-0", active ? "" : "text-zinc-500 group-hover:text-terminal-green/80")}
+                strokeWidth={2.5}
+            />
+            <span className="uppercase">{label}</span>
         </button>
     );
 }

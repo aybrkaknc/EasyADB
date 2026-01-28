@@ -35,7 +35,7 @@ function PackageItem({ pkg, selected, onToggle }: PackageItemProps) {
                     <div className="flex flex-col min-w-0">
                         <span
                             className="text-sm font-mono truncate transition-colors font-bold"
-                            style={{ color: selected ? '#FFFFFF' : (pkg.is_system ? '#FF6E00' : '#E0F7FA') }}
+                            style={{ color: selected ? '#FFFFFF' : (pkg.is_system ? '#cedc00' : '#E0F7FA') }}
                         >
                             {displayName}
                         </span>
@@ -177,7 +177,7 @@ export function BackupModule({
                         <div className="flex items-center gap-3 mb-2">
                             <Package className="w-6 h-6 text-terminal-green" />
                             <h2 className="text-2xl font-space font-black text-white tracking-[0.2em] uppercase drop-shadow-[0_0_8px_rgba(255,255,255,0.2)]">
-                                BACKUP
+                                BACKUP & RESTORE
                             </h2>
                         </div>
                         <div className="flex items-center gap-2 mt-1.5 font-mono text-[10px] tracking-widest uppercase">
@@ -210,13 +210,13 @@ export function BackupModule({
                             active={filter === 'system'}
                             label="SYSTEM"
                             icon={ShieldAlert}
-                            variant="danger"
+                            variant="cyan"
                             onClick={() => setFilter('system')}
                         />
                         <div className="w-px h-6 bg-terminal-green/20 mx-2" />
                         <FilterTab
                             active={filter === 'restore'}
-                            label="RE-INSTALL"
+                            label="RESTORE"
                             icon={RotateCcw}
                             variant="default"
                             onClick={() => setFilter('restore')}
@@ -225,6 +225,26 @@ export function BackupModule({
 
                     {/* Right: Search & Actions */}
                     <div className="flex items-center gap-3">
+                        {/* Action Buttons (Appearing left of search) */}
+                        {filter === 'restore' && selectedBackups.length > 0 && (
+                            <div className="flex items-center gap-2 shrink-0 animate-in fade-in slide-in-from-left-2 duration-300">
+                                <button
+                                    onClick={() => onBatchDeleteBackups?.(selectedBackups)}
+                                    disabled={isProcessing}
+                                    className="flex items-center gap-2 px-3 py-2.5 border border-zinc-700 hover:border-red-500/40 text-zinc-400 hover:text-red-400 font-mono text-[10px] transition-all uppercase disabled:opacity-50"
+                                >
+                                    <Trash2 className="w-3.5 h-3.5" /> DELETE
+                                </button>
+                                <button
+                                    onClick={onExecuteRestore}
+                                    disabled={isProcessing}
+                                    className="flex items-center gap-2 px-3 py-2.5 border border-zinc-700 hover:border-terminal-green/40 text-zinc-400 hover:text-terminal-green font-mono text-[10px] transition-all uppercase disabled:opacity-50"
+                                >
+                                    <RotateCcw className="w-3.5 h-3.5" /> RESTORE
+                                </button>
+                            </div>
+                        )}
+
                         {/* Compact Search */}
                         <div className="relative group/search w-48 xl:w-64">
                             <div className="absolute inset-0 bg-terminal-green/5 blur-sm opacity-0 group-focus-within/search:opacity-100 transition-opacity pointer-events-none" />
@@ -265,27 +285,13 @@ export function BackupModule({
                             className="group relative px-3 py-2.5 border border-zinc-700 hover:border-terminal-green/40 transition-all outline-none"
                             title="REFRESH LIST"
                         >
-                            <RefreshCw className={cn("w-3.5 h-3.5 text-zinc-400 group-hover:text-terinal-green transition-all", loading && "animate-spin text-terminal-green")} />
+                            <RefreshCw
+                                className={cn("w-4.5 h-4.5 text-zinc-400 group-hover:text-terminal-green transition-all", loading && "animate-spin text-terminal-green")}
+                                strokeWidth={2.5}
+                            />
                         </button>
 
-                        {filter === 'restore' && selectedBackups.length > 0 && (
-                            <div className="flex items-center gap-2 shrink-0 animate-in fade-in slide-in-from-right-2 duration-300">
-                                <button
-                                    onClick={() => onBatchDeleteBackups?.(selectedBackups)}
-                                    disabled={isProcessing}
-                                    className="flex items-center gap-2 px-3 py-2.5 bg-red-950/40 text-red-400 border border-red-900 font-space font-bold text-[9px] tracking-widest hover:bg-neutral-100 hover:text-black transition-all uppercase disabled:opacity-50"
-                                >
-                                    <Trash2 className="w-3.5 h-3.5" /> DELETE
-                                </button>
-                                <button
-                                    onClick={onExecuteRestore}
-                                    disabled={isProcessing}
-                                    className="flex items-center gap-2 px-4 py-2.5 bg-terminal-green text-black font-space font-black text-[10px] tracking-[0.2em] hover:bg-white hover:text-black active:scale-95 shadow-[0_0_20px_rgba(34,197,94,0.4)] transition-all disabled:bg-zinc-950 disabled:text-zinc-500 disabled:border-zinc-800 disabled:opacity-50"
-                                >
-                                    <RotateCcw className="w-3.5 h-3.5" /> RESTORE
-                                </button>
-                            </div>
-                        )}
+
 
                         {filter !== 'restore' && selectedPackages.length > 0 && (
                             <button
@@ -351,24 +357,19 @@ function FilterTab({ active, label, icon: Icon, onClick, variant = 'default' }: 
         <button
             onClick={onClick}
             className={cn(
-                "flex items-center gap-2 px-4 py-2.5 border transition-all group relative overflow-hidden shrink-0",
+                "flex items-center gap-2 px-4 py-2.5 border transition-all shrink-0 font-mono text-[10px] tracking-widest relative outline-none",
                 active
-                    ? (variant === 'danger' ? "bg-red-500/10 border-red-500/50 text-red-100 shadow-[0_0_15px_rgba(239,68,68,0.1)]" : "bg-terminal-green/10 border-terminal-green/50 text-white shadow-[0_0_15px_rgba(34,197,94,0.1)]")
-                    : "bg-zinc-900/10 border-terminal-green/20 text-zinc-400 hover:border-terminal-green/50 hover:text-white",
+                    ? (variant === 'danger' ? "bg-red-500/10 border-red-500/40 text-red-500 shadow-[0_0_15px_rgba(239,68,68,0.1)]" :
+                        variant === 'cyan' ? "bg-terminal-cyan/10 border-terminal-cyan/40 text-terminal-cyan shadow-[0_0_15px_rgba(206,220,0,0.1)]" :
+                            "bg-terminal-green/10 border-terminal-green/40 text-terminal-green shadow-[0_0_15px_rgba(34,197,94,0.1)]")
+                    : "bg-zinc-950/50 border-zinc-700 text-zinc-400 hover:border-terminal-green/40 hover:text-white"
             )}
-            style={{ clipPath: 'polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))' }}
         >
-            <div className={cn(
-                "absolute inset-0 w-full h-[1px] -translate-y-full pointer-events-none opacity-60 z-0",
-                active ? "animate-scanline" : "group-hover:animate-scanline",
-                variant === 'danger' ? "bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.8)]" : "bg-terminal-green shadow-[0_0_10px_rgba(0,255,65,0.8)]"
-            )} />
-            <div className="absolute inset-0 bg-scanlines opacity-[0.15] pointer-events-none" />
-            <Icon className={cn("w-3.5 h-3.5 relative z-10", active ? (variant === 'danger' ? "text-red-500" : "text-terminal-green") : "text-zinc-500 group-hover:text-terminal-green/80")} />
-            <span className="text-[9px] font-space font-black tracking-[0.2em] uppercase relative z-10">{label}</span>
-            {active && (
-                <div className={cn("absolute inset-x-0 bottom-0 h-[1.5px] opacity-100 shadow-[0_0_12px_rgba(0,255,65,0.4)]", variant === 'danger' ? "bg-red-500" : "bg-terminal-green")} />
-            )}
+            <Icon
+                className={cn("w-4 h-4 transition-colors shrink-0", active ? "" : "text-zinc-500 group-hover:text-terminal-green/80")}
+                strokeWidth={2.5}
+            />
+            <span className="uppercase">{label}</span>
         </button>
     );
 }
