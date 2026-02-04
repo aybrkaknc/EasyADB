@@ -30,3 +30,6 @@ easyadb_tools/
 # Environment
 .env
 .env.*
+
+# Logs
+logs/
