@@ -1,67 +1,51 @@
 # EasyADB
 
-**Advanced Android Device Management Interface**
+**"Because manually copying backups from phone to PC is annoying."**
 
-![Version](https://img.shields.io/badge/version-0.1.0-blue.svg?style=flat-square)
+> *I'm sure there is a tool out there that does this better.*
+
 ![Tauri](https://img.shields.io/badge/Tauri-2.0-orange.svg?style=flat-square)
 ![Rust](https://img.shields.io/badge/Backend-Rust-black.svg?style=flat-square)
 ![React](https://img.shields.io/badge/Frontend-React_19-blue.svg?style=flat-square)
 
-EasyADB is a high-performance, local-first GUI aimed at power users and developers. Built on the Tauri framework, it combines the speed of a Rust backend with a modern, terminal-centric React frontend to manage Android devices without external dependencies.
+## Why I Built This?
 
-## Key Features
+As someone who constantly switches ROMs, I built this tool to solve my own problem. It's incredibly annoying to have to backup on the phone first (via SwiftBackup etc.) and then transfer huge files to the PC via USB.
 
-- **Embedded Runtime:** Ships with isolated ADB/Fastboot binaries. No system-wide PATH configuration or external installation required.
-- **Terminal-Centric UX:** Retro-futuristic, "hacker-styled" interface featuring real-time log streaming service and CRT visual effects.
-- **Advanced Package Operations:**
-  - **Batch Processing:** Multi-threaded backup and restore handling (supports Split APKs, OBB, and Root data).
-  - **Smart Debloater:** Integrated package analysis using UAD-NG safety heuristics.
-  - **Context-Aware Filter:** Fuzzy search and filtering across system/user packages.
-- **Device Telemetry:**
-  - Real-time CPU/RAM usage monitoring (500ms polling rate).
-  - Live sideload progress tracking with state detection (Recovery/Fastboot/Sideload).
+I wanted something faster and more direct.
 
-## Tech Stack
+**EasyADB** lets you:
+- Backup **directly** to your PC storage (skip the middleman).
+- Restore everything back with a single click.
+- Do it all through a slick GUI without typing a single ADB command manually.
 
-| Scope | Technology | Description |
-|-------|------------|-------------|
-| **Core** | Tauri 2.0 (Rust) | System bindings, IPC, and binary management. |
-| **View** | React 19 | UI composition and state management. |
-| **Logic** | TypeScript | Type-safe implementation of frontend logic. |
-| **Style** | Tailwind CSS | Utility-first styling with custom design tokens. |
+This is for enthusiasts like *us* who flash a new ROM every other week and hate the setup process.
 
-## Development
+## ✨ The Features
 
-### Prerequisites
+> No generic "Device Manager" stuff here. Only the tools power users actually need.
 
-- **Node.js**: v18+ (LTS recommended)
-- **Rust**: 1.75+ (stable)
+### 🔄 Direct Backup & Restore
+Stop filling up your phone storage with backups. EasyADB streams everything directly to your hard drive. Supports Split APKs, OBBs, and if you have Root, it grabs the data too.
 
-### Setup & Run
+### 🛡️ Smart Debloater
+Don't brick your phone removing `system_webview`. I integrated a safety list (UAD-NG based) that warns you before you nuke something critical.
 
-1. **Install Dependencies**
-   ```bash
-   npm install
-   ```
+### ⌨️ Terminal (For the purists)
+Sometimes you just need to run `adb reboot bootloader`. I built a full terminal emulator right into the app with autocompletion. It even knows your package names.
 
-2. **Start Dev Server**
-   Launches the Tauri interface with Hot Module Replacement (HMR).
-   ```bash
-   npm run tauri dev
-   ```
+### 🚀 Sideload Master
+Flash zips, install APKs, or push files. It detects if you're in Recovery, Sideload, or Bootloader mode and just works.
 
-### Build
+## 🛠 Under the Hood
 
-Compile the production binary for the host platform:
+It's 2026, so I built this with the fastest stack I could find:
+- **Rust (Tauri 2.0):** For the raw ADB communication and threaded performance.
+- **React 19:** Because user interfaces should feel fast and fluid.
+- **Embedded ADB:** You don't even need ADB installed on your system. It's portable.
 
-```bash
-npm run tauri build
-```
+## Getting Started
 
-## Documentation
+Grab the latest `.exe` from [Releases](https://github.com/aybrkaknc/EasyADB/releases). No installation needed, it's portable.
 
-Project architecture and planning documents are located in `docs/`:
-
-- [Roadmap](./docs/plans/ROADMAP.md)
-- [Architecture Specs](./docs/specs/ARCHITECTURE.md)
-- [UI Guidelines](./docs/ui-ux/ADB_UI.md)
+*Happy Flashing!*
