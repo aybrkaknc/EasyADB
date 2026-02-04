@@ -1,4 +1,4 @@
-# EasyADB
+y own problem. It's incredibly annoying to have to backup on the phone first and then transfer it to the PC. This is for enthusiasts like me who want to backup and restore directly from the PC, # EasyADB
 
 **"Because manually copying backups from phone to PC is annoying."**
 
@@ -43,9 +43,5 @@ It's 2026, so I built this with the fastest stack I could find:
 - **Rust (Tauri 2.0):** For the raw ADB communication and threaded performance.
 - **React 19:** Because user interfaces should feel fast and fluid.
 - **Embedded ADB:** You don't even need ADB installed on your system. It's portable.
-
-## Getting Started
-
-Grab the latest `.exe` from [Releases](https://github.com/aybrkaknc/EasyADB/releases). No installation needed, it's portable.
 
 *Happy Flashing!*
