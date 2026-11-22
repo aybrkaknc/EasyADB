@@ -4,7 +4,7 @@ import App from "./App";
 import { AppProvider } from "./context/AppContext";
 import "./index.css";
 
-import { ErrorBoundary } from "./components/ErrorBoundary";
+import { ErrorBoundary } from "./components/ui/ErrorBoundary";
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
