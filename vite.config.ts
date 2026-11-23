@@ -15,5 +15,6 @@ export default defineConfig({
     hmr: host ? { protocol: "ws", host, port: 1421 } : undefined,
     watch: { ignored: ["**/src-tauri/**"] },
   },
-  build: { target: "es2022" },
+  // The bundle is loaded from disk by the desktop app, so a single larger chunk is fine.
+  build: { target: "es2022", chunkSizeWarningLimit: 1000 },
 });

@@ -31,7 +31,10 @@
     "quit": "Çık"
   },
   "modules": {
-    "device": { "title": "Cihaz", "subtitle": "Genel bakış, kurulum ve yeniden başlatma" },
+    "device": {
+      "title": "Cihaz",
+      "subtitle": "Genel bakış, kurulum ve yeniden başlatma"
+    },
     "backup": {
       "title": "Yedekleme",
       "subtitle": "Uygulamaları bu bilgisayara yedekle ve geri yükle"
@@ -40,15 +43,32 @@
       "title": "Debloat",
       "subtitle": "İstenmeyen paketleri devre dışı bırak veya kaldır"
     },
-    "terminal": { "title": "Terminal", "subtitle": "adb ve fastboot komutları çalıştır" },
-    "files": { "title": "Dosyalar", "subtitle": "Cihaz dosyalarına göz at ve aktar" },
-    "logcat": { "title": "Logcat", "subtitle": "Canlı sistem günlüğü" },
-    "performance": { "title": "Performans", "subtitle": "Canlı ölçümler ve donanım" },
-    "wireless": { "title": "Kablosuz", "subtitle": "Wi-Fi üzerinden bağlan" },
-    "settings": { "title": "Ayarlar", "subtitle": "Tercihler ve hakkında" }
+    "terminal": {
+      "title": "Terminal",
+      "subtitle": "adb ve fastboot komutları çalıştır"
+    },
+    "files": {
+      "title": "Dosyalar",
+      "subtitle": "Cihaz dosyalarına göz at ve aktar"
+    },
+    "logcat": {
+      "title": "Logcat",
+      "subtitle": "Canlı sistem günlüğü"
+    },
+    "performance": {
+      "title": "Performans",
+      "subtitle": "Canlı ölçümler ve donanım"
+    },
+    "wireless": {
+      "title": "Kablosuz",
+      "subtitle": "Wi-Fi üzerinden bağlan"
+    },
+    "settings": {
+      "title": "Ayarlar",
+      "subtitle": "Tercihler ve hakkında"
+    }
   },
   "devices": {
-    "label": "Cihaz",
     "none": "Cihaz yok",
     "state": {
       "device": "Hazır",
@@ -59,7 +79,12 @@
       "bootloader": "Önyükleyici",
       "unknown": "Bilinmiyor"
     },
-    "kind": { "usb": "USB", "wifi": "Wi-Fi", "emulator": "Emülatör" }
+    "kind": {
+      "usb": "USB",
+      "wifi": "Wi-Fi",
+      "emulator": "Emülatör"
+    },
+    "select": "Cihaz seç"
   },
   "guide": {
     "noDevice": {
@@ -168,8 +193,15 @@
     }
   },
   "backup": {
-    "tabs": { "apps": "Uygulamalar", "archive": "Arşiv" },
-    "filter": { "user": "Kullanıcı", "system": "Sistem", "all": "Tümü" },
+    "tabs": {
+      "apps": "Uygulamalar",
+      "archive": "Arşiv"
+    },
+    "filter": {
+      "user": "Kullanıcı",
+      "system": "Sistem",
+      "all": "Tümü"
+    },
     "search": "Uygulama ara",
     "options": {
       "title": "Seçenekler",
@@ -229,7 +261,11 @@
       "Unsafe": "Cihazı bozabilir",
       "unknown": "Bilgi yok"
     },
-    "status": { "enabled": "Etkin", "disabled": "Devre dışı", "uninstalled": "Kaldırılmış" },
+    "status": {
+      "enabled": "Etkin",
+      "disabled": "Devre dışı",
+      "uninstalled": "Kaldırılmış"
+    },
     "action": {
       "disable": "Devre dışı bırak",
       "enable": "Etkinleştir",
@@ -253,7 +289,12 @@
     "source": "Paket bilgileri Universal Android Debloater Next Generation projesinden alınmıştır (GPL-3.0)."
   },
   "wireless": {
-    "tabs": { "code": "Eşleştirme kodu", "qr": "QR kod", "ip": "IP adresi", "usb": "USB ile" },
+    "tabs": {
+      "code": "Eşleştirme kodu",
+      "qr": "QR kod",
+      "ip": "IP adresi",
+      "usb": "USB ile"
+    },
     "code": {
       "intro": "Telefonda: Geliştirici seçenekleri > Kablosuz hata ayıklama > Cihazı eşleme koduyla eşle.",
       "address": "Eşleştirme adresi (IP:port)",
@@ -399,6 +440,7 @@
       "version": "Sürüm {{version}}",
       "license": "GPL-3.0 lisansı ile dağıtılır.",
       "credits": "Android SDK Platform-Tools ve Universal Android Debloater Next Generation verilerini içerir."
-    }
+    },
+    "preferences": "Tercihler"
   }
 }

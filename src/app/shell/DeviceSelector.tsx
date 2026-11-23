@@ -30,7 +30,7 @@ export function DeviceSelector() {
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger
-        aria-label={t("devices.label")}
+        aria-label={t("devices.select")}
         className="clip-corners-sm flex h-7 max-w-72 items-center gap-2 border border-line px-3 text-[11px] hover:border-neon/60"
       >
         {selected ? (

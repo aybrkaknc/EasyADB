@@ -93,7 +93,7 @@ export function SettingsView() {
           </div>
         </Panel>
 
-        <Panel title={t("modules.settings.title")} className="xl:col-span-2">
+        <Panel title={t("settings.preferences")} className="xl:col-span-2">
           <div className="flex flex-col divide-y divide-white/5">
             {TOGGLES.map(([key, label]) => (
               <Switch

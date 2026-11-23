@@ -31,18 +31,44 @@
     "quit": "Quit"
   },
   "modules": {
-    "device": { "title": "Device", "subtitle": "Overview, install and reboot" },
-    "backup": { "title": "Backup", "subtitle": "Back up and restore apps on this PC" },
-    "debloat": { "title": "Debloat", "subtitle": "Disable or remove unwanted packages" },
-    "terminal": { "title": "Terminal", "subtitle": "Run adb and fastboot commands" },
-    "files": { "title": "Files", "subtitle": "Browse and transfer device files" },
-    "logcat": { "title": "Logcat", "subtitle": "Live system log" },
-    "performance": { "title": "Performance", "subtitle": "Live metrics and hardware" },
-    "wireless": { "title": "Wireless", "subtitle": "Connect over Wi-Fi" },
-    "settings": { "title": "Settings", "subtitle": "Preferences and about" }
+    "device": {
+      "title": "Device",
+      "subtitle": "Overview, install and reboot"
+    },
+    "backup": {
+      "title": "Backup",
+      "subtitle": "Back up and restore apps on this PC"
+    },
+    "debloat": {
+      "title": "Debloat",
+      "subtitle": "Disable or remove unwanted packages"
+    },
+    "terminal": {
+      "title": "Terminal",
+      "subtitle": "Run adb and fastboot commands"
+    },
+    "files": {
+      "title": "Files",
+      "subtitle": "Browse and transfer device files"
+    },
+    "logcat": {
+      "title": "Logcat",
+      "subtitle": "Live system log"
+    },
+    "performance": {
+      "title": "Performance",
+      "subtitle": "Live metrics and hardware"
+    },
+    "wireless": {
+      "title": "Wireless",
+      "subtitle": "Connect over Wi-Fi"
+    },
+    "settings": {
+      "title": "Settings",
+      "subtitle": "Preferences and about"
+    }
   },
   "devices": {
-    "label": "Device",
     "none": "No device",
     "state": {
       "device": "Ready",
@@ -53,7 +79,12 @@
       "bootloader": "Bootloader",
       "unknown": "Unknown"
     },
-    "kind": { "usb": "USB", "wifi": "Wi-Fi", "emulator": "Emulator" }
+    "kind": {
+      "usb": "USB",
+      "wifi": "Wi-Fi",
+      "emulator": "Emulator"
+    },
+    "select": "Select device"
   },
   "guide": {
     "noDevice": {
@@ -162,8 +193,15 @@
     }
   },
   "backup": {
-    "tabs": { "apps": "Apps", "archive": "Archive" },
-    "filter": { "user": "User", "system": "System", "all": "All" },
+    "tabs": {
+      "apps": "Apps",
+      "archive": "Archive"
+    },
+    "filter": {
+      "user": "User",
+      "system": "System",
+      "all": "All"
+    },
     "search": "Search apps",
     "options": {
       "title": "Options",
@@ -223,7 +261,11 @@
       "Unsafe": "Can break the device",
       "unknown": "No information"
     },
-    "status": { "enabled": "Enabled", "disabled": "Disabled", "uninstalled": "Removed" },
+    "status": {
+      "enabled": "Enabled",
+      "disabled": "Disabled",
+      "uninstalled": "Removed"
+    },
     "action": {
       "disable": "Disable",
       "enable": "Enable",
@@ -247,7 +289,12 @@
     "source": "Package information from Universal Android Debloater Next Generation (GPL-3.0)."
   },
   "wireless": {
-    "tabs": { "code": "Pairing code", "qr": "QR code", "ip": "IP address", "usb": "Via USB" },
+    "tabs": {
+      "code": "Pairing code",
+      "qr": "QR code",
+      "ip": "IP address",
+      "usb": "Via USB"
+    },
     "code": {
       "intro": "On the phone: Developer options > Wireless debugging > Pair device with pairing code.",
       "address": "Pairing address (IP:port)",
@@ -393,6 +440,7 @@
       "version": "Version {{version}}",
       "license": "Licensed under GPL-3.0.",
       "credits": "Includes Android SDK Platform-Tools and data from Universal Android Debloater Next Generation."
-    }
+    },
+    "preferences": "Preferences"
   }
 }
