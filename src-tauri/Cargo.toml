@@ -1,33 +1,44 @@
 [package]
 name = "easy-adb"
-version = "0.1.0"
-description = "A Tauri App"
-authors = ["you"]
-license = ""
-repository = ""
-edition = "2021"
-rust-version = "1.77.2"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+version = "0.2.0"
+description = "Desktop GUI for managing Android devices over ADB"
+authors = ["aybrkaknc"]
+license = "GPL-3.0-only"
+repository = "https://github.com/aybrkaknc/EasyADB"
+edition = "2024"
+rust-version = "1.85"
 
 [lib]
-name = "app_lib"
+name = "easy_adb_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
-tauri-build = { version = "2.5.3", features = [] }
+embed-resource = "3.0.12"
+tauri-build = "2.6.3"
 
 [dependencies]
-serde_json = "1.0"
-serde = { version = "1.0", features = ["derive"] }
-log = "0.4"
-tauri = { version = "2.9.5", features = ["image-png", "image-ico"] }
-tauri-plugin-log = "2"
-zip = "4.2.0"
-dirs = "6.0.0"
-chrono = "0.4.43"
-reqwest = { version = "0.13.1", features = ["blocking", "json"] }
-scraper = "0.25.0"
-tauri-plugin-shell = "2.3.4"
-tauri-plugin-dialog = "2"
-regex = "1.12.2"
+aes-gcm = "0.11.1"
+argon2 = "0.6.0"
+chrono = { version = "0.4.45", features = ["serde"] }
+getrandom = "0.4.3"
+log = "0.4.35"
+regex = "1.13.2"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+sha2 = "0.11.0"
+specta = { version = "=2.0.0-rc.28", features = ["derive"] }
+specta-typescript = "=0.0.15"
+tauri = { version = "2.11.6", features = ["tray-icon", "image-png"] }
+tauri-plugin-dialog = "2.7.3"
+tauri-plugin-log = "2.9.2"
+tauri-plugin-notification = "2.4.0"
+tauri-plugin-opener = "2.5.5"
+tauri-plugin-single-instance = "2.4.5"
+tauri-plugin-store = "2.4.5"
+tauri-plugin-window-state = "2.4.1"
+tauri-specta = { version = "=2.0.0-rc.29", features = ["derive", "typescript"] }
+thiserror = "2.0.21"
+zip = { version = "7.3.0", default-features = false }
+
+[dev-dependencies]
+tempfile = "3.27.0"
