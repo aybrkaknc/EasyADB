@@ -4,6 +4,7 @@ mod events;
 mod features;
 mod state;
 mod store;
+mod stream;
 mod tasks;
 mod tray;
 
@@ -11,7 +12,10 @@ use tauri::{Manager, WindowEvent, Wry};
 use tauri_plugin_log::{RotationStrategy, Target, TargetKind};
 use tauri_specta::{Builder, collect_commands, collect_events};
 
-use features::{device, settings};
+use features::{
+    backup, debloat, device, files, logcat, packages, performance, settings, sideload, terminal,
+    wireless,
+};
 
 pub fn specta_builder() -> Builder<Wry> {
     Builder::<Wry>::new()
@@ -27,8 +31,47 @@ pub fn specta_builder() -> Builder<Wry> {
             device::get_device_details,
             device::check_device_root,
             device::reboot_device,
+            packages::list_device_apps,
+            packages::get_app_sizes,
+            backup::list_backups,
+            backup::start_backup,
+            backup::start_restore,
+            backup::delete_backup,
+            backup::export_backup,
+            backup::import_backup,
+            debloat::list_debloat_apps,
+            debloat::apply_debloat,
+            debloat::save_debloat_profile,
+            debloat::load_debloat_profile,
+            wireless::wireless_pair,
+            wireless::wireless_connect,
+            wireless::wireless_disconnect,
+            wireless::wireless_enable_tcpip,
+            wireless::wireless_new_qr,
+            wireless::wireless_find_pairing,
+            wireless::wireless_saved,
+            wireless::wireless_forget,
+            terminal::run_terminal,
+            sideload::sideload_zip,
+            sideload::install_apk,
+            performance::get_live_metrics,
+            performance::get_hardware_info,
+            performance::get_network_info,
+            files::list_files,
+            files::make_dir,
+            files::delete_paths,
+            files::move_path,
+            files::pull_paths,
+            files::push_paths,
+            logcat::start_logcat,
+            logcat::clear_logcat,
+            settings::save_text_file,
         ])
-        .events(collect_events![events::TaskProgress, events::CommandOutput])
+        .events(collect_events![
+            events::TaskProgress,
+            events::CommandOutput,
+            logcat::LogcatBatch
+        ])
 }
 
 fn export_bindings(builder: &Builder<Wry>) {
@@ -54,10 +97,15 @@ pub fn run() {
     export_bindings(&builder);
 
     tauri::Builder::default()
-        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| show_main_window(app)))
+        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            show_main_window(app)
+        }))
         .plugin(
             tauri_plugin_log::Builder::new()
-                .targets([Target::new(TargetKind::Stdout), Target::new(TargetKind::LogDir { file_name: None })])
+                .targets([
+                    Target::new(TargetKind::Stdout),
+                    Target::new(TargetKind::LogDir { file_name: None }),
+                ])
                 .max_file_size(5_000_000)
                 .rotation_strategy(RotationStrategy::KeepSome(3))
                 .level(log::LevelFilter::Info)

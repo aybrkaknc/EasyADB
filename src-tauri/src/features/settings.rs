@@ -19,7 +19,11 @@ pub fn save_settings(app: AppHandle, settings: Settings) -> AppResult<()> {
 }
 
 pub fn apply_logging(enabled: bool) {
-    let level = if enabled { log::LevelFilter::Info } else { log::LevelFilter::Off };
+    let level = if enabled {
+        log::LevelFilter::Info
+    } else {
+        log::LevelFilter::Off
+    };
     log::set_max_level(level);
 }
 
@@ -56,6 +60,13 @@ pub fn reveal_path(app: AppHandle, path: String) -> AppResult<()> {
     app.opener()
         .reveal_item_in_dir(path)
         .map_err(|err| AppError::new(ErrorCode::Io, err.to_string()))
+}
+
+/// Writes text chosen by the user through a save dialog (log and terminal exports).
+#[tauri::command]
+#[specta::specta]
+pub fn save_text_file(path: String, content: String) -> AppResult<()> {
+    Ok(std::fs::write(path, content)?)
 }
 
 #[tauri::command]

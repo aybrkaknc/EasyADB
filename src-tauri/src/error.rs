@@ -37,7 +37,10 @@ pub type AppResult<T> = Result<T, AppError>;
 
 impl AppError {
     pub fn new(code: ErrorCode, detail: impl Into<String>) -> Self {
-        Self { code, detail: detail.into() }
+        Self {
+            code,
+            detail: detail.into(),
+        }
     }
 
     pub fn invalid_input(detail: impl Into<String>) -> Self {

@@ -19,18 +19,173 @@ export const commands = {
 	getDeviceDetails: (serial: string, options?: InvokeOptions) => __TAURI_INVOKE<DeviceDetails_Serialize>("get_device_details", { serial }, options),
 	checkDeviceRoot: (serial: string, options?: InvokeOptions) => __TAURI_INVOKE<boolean>("check_device_root", { serial }, options),
 	rebootDevice: (serial: string, mode: RebootMode, inFastboot: boolean, options?: InvokeOptions) => __TAURI_INVOKE<null>("reboot_device", { serial, mode, inFastboot }, options),
+	listDeviceApps: (serial: string, options?: InvokeOptions) => __TAURI_INVOKE<AppInfo_Serialize[]>("list_device_apps", { serial }, options),
+	getAppSizes: (serial: string, packages: string[], options?: InvokeOptions) => __TAURI_INVOKE<AppSize[]>("get_app_sizes", { serial, packages }, options),
+	listBackups: (options?: InvokeOptions) => __TAURI_INVOKE<BackupSummary_Serialize[]>("list_backups", undefined, options),
+	startBackup: (taskId: string, serial: string, packages: string[], options: BackupOptions_Deserialize, _options?: InvokeOptions) => __TAURI_INVOKE<BackupOutcome_Serialize[]>("start_backup", { taskId, serial, packages, options }, _options),
+	startRestore: (taskId: string, serial: string, backupId: string, options: RestoreOptions_Deserialize, _options?: InvokeOptions) => __TAURI_INVOKE<null>("start_restore", { taskId, serial, backupId, options }, _options),
+	deleteBackup: (backupId: string, options?: InvokeOptions) => __TAURI_INVOKE<null>("delete_backup", { backupId }, options),
+	exportBackup: (backupId: string, dest: string, options?: InvokeOptions) => __TAURI_INVOKE<null>("export_backup", { backupId, dest }, options),
+	importBackup: (src: string, options?: InvokeOptions) => __TAURI_INVOKE<string>("import_backup", { src }, options),
+	listDebloatApps: (serial: string, options?: InvokeOptions) => __TAURI_INVOKE<DebloatApp_Serialize[]>("list_debloat_apps", { serial }, options),
+	applyDebloat: (taskId: string, serial: string, entries: ProfileEntry[], options?: InvokeOptions) => __TAURI_INVOKE<ActionOutcome_Serialize[]>("apply_debloat", { taskId, serial, entries }, options),
+	saveDebloatProfile: (path: string, name: string, entries: ProfileEntry[], options?: InvokeOptions) => __TAURI_INVOKE<null>("save_debloat_profile", { path, name, entries }, options),
+	loadDebloatProfile: (path: string, options?: InvokeOptions) => __TAURI_INVOKE<DebloatProfile>("load_debloat_profile", { path }, options),
+	wirelessPair: (address: string, code: string, options?: InvokeOptions) => __TAURI_INVOKE<null>("wireless_pair", { address, code }, options),
+	wirelessConnect: (address: string, options?: InvokeOptions) => __TAURI_INVOKE<null>("wireless_connect", { address }, options),
+	wirelessDisconnect: (address: string, options?: InvokeOptions) => __TAURI_INVOKE<null>("wireless_disconnect", { address }, options),
+	wirelessEnableTcpip: (serial: string, options?: InvokeOptions) => __TAURI_INVOKE<string>("wireless_enable_tcpip", { serial }, options),
+	wirelessNewQr: (options?: InvokeOptions) => __TAURI_INVOKE<QrPairing>("wireless_new_qr", undefined, options),
+	/**  Looks for the pairing service the phone advertises after scanning the QR code. */
+	wirelessFindPairing: (name: string, options?: InvokeOptions) => __TAURI_INVOKE<string | null>("wireless_find_pairing", { name }, options),
+	wirelessSaved: (options?: InvokeOptions) => __TAURI_INVOKE<SavedDevice_Serialize[]>("wireless_saved", undefined, options),
+	wirelessForget: (address: string, options?: InvokeOptions) => __TAURI_INVOKE<null>("wireless_forget", { address }, options),
+	runTerminal: (taskId: string, serial: string | null, line: string, options?: InvokeOptions) => __TAURI_INVOKE<number | null>("run_terminal", { taskId, serial, line }, options),
+	sideloadZip: (taskId: string, serial: string, path: string, options?: InvokeOptions) => __TAURI_INVOKE<null>("sideload_zip", { taskId, serial, path }, options),
+	installApk: (serial: string, path: string, options?: InvokeOptions) => __TAURI_INVOKE<null>("install_apk", { serial, path }, options),
+	getLiveMetrics: (serial: string, options?: InvokeOptions) => __TAURI_INVOKE<LiveMetrics_Serialize>("get_live_metrics", { serial }, options),
+	getHardwareInfo: (serial: string, options?: InvokeOptions) => __TAURI_INVOKE<HardwareInfo_Serialize>("get_hardware_info", { serial }, options),
+	getNetworkInfo: (serial: string, options?: InvokeOptions) => __TAURI_INVOKE<NetworkInfo_Serialize>("get_network_info", { serial }, options),
+	listFiles: (serial: string, path: string, options?: InvokeOptions) => __TAURI_INVOKE<FileEntry[]>("list_files", { serial, path }, options),
+	makeDir: (serial: string, path: string, options?: InvokeOptions) => __TAURI_INVOKE<null>("make_dir", { serial, path }, options),
+	deletePaths: (serial: string, paths: string[], options?: InvokeOptions) => __TAURI_INVOKE<null>("delete_paths", { serial, paths }, options),
+	movePath: (serial: string, from: string, to: string, options?: InvokeOptions) => __TAURI_INVOKE<null>("move_path", { serial, from, to }, options),
+	/**  Copies device paths into a local folder, one adb call per item. */
+	pullPaths: (taskId: string, serial: string, paths: string[], localDir: string, options?: InvokeOptions) => __TAURI_INVOKE<null>("pull_paths", { taskId, serial, paths, localDir }, options),
+	/**  Copies local files or folders into a device folder. */
+	pushPaths: (taskId: string, serial: string, paths: string[], remoteDir: string, options?: InvokeOptions) => __TAURI_INVOKE<null>("push_paths", { taskId, serial, paths, remoteDir }, options),
+	/**  Streams logcat until the task is cancelled. */
+	startLogcat: (taskId: string, serial: string, recordPath: string | null, options?: InvokeOptions) => __TAURI_INVOKE<null>("start_logcat", { taskId, serial, recordPath }, options),
+	clearLogcat: (serial: string, options?: InvokeOptions) => __TAURI_INVOKE<null>("clear_logcat", { serial }, options),
+	/**  Writes text chosen by the user through a save dialog (log and terminal exports). */
+	saveTextFile: (path: string, content: string, options?: InvokeOptions) => __TAURI_INVOKE<null>("save_text_file", { path, content }, options),
 };
 
 /** Events */
 export const events = {
 	commandOutput: makeEvent<CommandOutput_Serialize, CommandOutput_Deserialize>("command-output"),
+	logcatBatch: makeEvent<LogcatBatch, LogcatBatch>("logcat-batch"),
 	taskProgress: makeEvent<TaskProgress, TaskProgress>("task-progress"),
 };
 
 /* Types */
+export type ActionOutcome = ActionOutcome_Serialize | ActionOutcome_Deserialize;
+
+export type ActionOutcome_Deserialize = {
+	package: string,
+	error?: AppError | null,
+};
+
+export type ActionOutcome_Serialize = {
+	package: string,
+	error: AppError | null,
+};
+
 export type AppError = {
 	code: ErrorCode,
 	detail: string,
+};
+
+export type AppInfo = AppInfo_Serialize | AppInfo_Deserialize;
+
+export type AppInfo_Deserialize = {
+	package: string,
+	label?: string | null,
+	system: boolean,
+	disabled: boolean,
+	/**  `false` when removed for the current user but still present on the system image. */
+	installed: boolean,
+};
+
+export type AppInfo_Serialize = {
+	package: string,
+	label: string | null,
+	system: boolean,
+	disabled: boolean,
+	/**  `false` when removed for the current user but still present on the system image. */
+	installed: boolean,
+};
+
+export type AppSize = {
+	package: string,
+	apkBytes: number | null,
+	obbBytes: number | null,
+};
+
+export type BackupOptions = BackupOptions_Serialize | BackupOptions_Deserialize;
+
+export type BackupOptions_Deserialize = {
+	includeObb: boolean,
+	includeData: boolean,
+	password?: string | null,
+};
+
+export type BackupOptions_Serialize = {
+	includeObb: boolean,
+	includeData: boolean,
+	password: string | null,
+};
+
+export type BackupOutcome = BackupOutcome_Serialize | BackupOutcome_Deserialize;
+
+export type BackupOutcome_Deserialize = {
+	package: string,
+	id?: string | null,
+	error?: AppError | null,
+};
+
+export type BackupOutcome_Serialize = {
+	package: string,
+	id: string | null,
+	error: AppError | null,
+};
+
+export type BackupSummary = BackupSummary_Serialize | BackupSummary_Deserialize;
+
+export type BackupSummary_Deserialize = {
+	id: string,
+	path: string,
+	package: string,
+	label?: string | null,
+	versionName?: string | null,
+	createdAt: string,
+	totalBytes: number | null,
+	hasObb: boolean,
+	hasData: boolean,
+	encrypted: boolean,
+	deviceModel: string,
+};
+
+export type BackupSummary_Serialize = {
+	id: string,
+	path: string,
+	package: string,
+	label: string | null,
+	versionName: string | null,
+	createdAt: string,
+	totalBytes: number | null,
+	hasObb: boolean,
+	hasData: boolean,
+	encrypted: boolean,
+	deviceModel: string,
+};
+
+export type Battery = Battery_Serialize | Battery_Deserialize;
+
+export type Battery_Deserialize = {
+	level?: number | null,
+	temperatureC?: number | null,
+	voltageMv?: number | null,
+	status: string,
+	plugged: boolean,
+};
+
+export type Battery_Serialize = {
+	level: number | null,
+	temperatureC: number | null,
+	voltageMv: number | null,
+	status: string,
+	plugged: boolean,
 };
 
 /**  One chunk of output from a streaming command (terminal, sideload). */
@@ -53,6 +208,36 @@ export type CommandOutput_Serialize = {
 };
 
 export type ConnectionKind = "usb" | "wifi" | "emulator";
+
+export type DebloatAction = "disable" | "enable" | "uninstall" | "restore";
+
+export type DebloatApp = DebloatApp_Serialize | DebloatApp_Deserialize;
+
+export type DebloatApp_Deserialize = {
+	app: AppInfo_Deserialize,
+	info?: DebloatInfo | null,
+};
+
+export type DebloatApp_Serialize = {
+	app: AppInfo_Serialize,
+	info: DebloatInfo | null,
+};
+
+export type DebloatInfo = {
+	list: string,
+	description: string,
+	removal: Removal,
+	dependencies: string[],
+	neededBy: string[],
+};
+
+export type DebloatProfile = {
+	format: string,
+	version: number,
+	name: string,
+	createdAt: string,
+	entries: ProfileEntry[],
+};
 
 export type DeviceDetails = DeviceDetails_Serialize | DeviceDetails_Deserialize;
 
@@ -107,7 +292,138 @@ export type DeviceState = "device" | "unauthorized" | "offline" | "recovery" | "
 /**  Stable error codes. The frontend translates them; `detail` carries the raw context. */
 export type ErrorCode = "adb_missing" | "adb_failed" | "device_not_found" | "device_unauthorized" | "device_offline" | "root_required" | "invalid_input" | "invalid_path" | "io" | "parse" | "backup_invalid" | "wrong_password" | "integrity_failed" | "install_failed" | "pair_failed" | "connect_failed" | "cancelled" | "not_found" | "internal";
 
+export type FileEntry = {
+	name: string,
+	path: string,
+	isDir: boolean,
+	isLink: boolean,
+	size: number | null,
+	/**  Unix seconds. */
+	modified: number | null,
+};
+
+export type HardwareInfo = HardwareInfo_Serialize | HardwareInfo_Deserialize;
+
+export type HardwareInfo_Deserialize = {
+	device: DeviceDetails_Deserialize,
+	brand: string,
+	soc: string,
+	cpuCores?: number | null,
+	kernel: string,
+	resolution: string,
+	density: string,
+	ramTotalKb: number | null,
+	storageTotalKb: number | null,
+};
+
+export type HardwareInfo_Serialize = {
+	device: DeviceDetails_Serialize,
+	brand: string,
+	soc: string,
+	cpuCores: number | null,
+	kernel: string,
+	resolution: string,
+	density: string,
+	ramTotalKb: number | null,
+	storageTotalKb: number | null,
+};
+
+export type LiveMetrics = LiveMetrics_Serialize | LiveMetrics_Deserialize;
+
+export type LiveMetrics_Deserialize = {
+	cpuPercent?: number | null,
+	loadAverage?: number | null,
+	memTotalKb: number | null,
+	memAvailableKb: number | null,
+	battery: Battery_Deserialize,
+	storage?: Storage | null,
+};
+
+export type LiveMetrics_Serialize = {
+	cpuPercent: number | null,
+	loadAverage: number | null,
+	memTotalKb: number | null,
+	memAvailableKb: number | null,
+	battery: Battery_Serialize,
+	storage: Storage | null,
+};
+
+export type LogLine = {
+	time: string,
+	pid: number,
+	tid: number,
+	level: string,
+	tag: string,
+	message: string,
+};
+
+export type LogcatBatch = {
+	taskId: string,
+	lines: LogLine[],
+};
+
+export type NetworkInfo = NetworkInfo_Serialize | NetworkInfo_Deserialize;
+
+export type NetworkInfo_Deserialize = {
+	wifiIp?: string | null,
+	ssid?: string | null,
+	rssi?: number | null,
+	linkSpeedMbps?: number | null,
+	frequencyMhz?: number | null,
+};
+
+export type NetworkInfo_Serialize = {
+	wifiIp: string | null,
+	ssid: string | null,
+	rssi: number | null,
+	linkSpeedMbps: number | null,
+	frequencyMhz: number | null,
+};
+
+export type ProfileEntry = {
+	package: string,
+	action: DebloatAction,
+};
+
+export type QrPairing = {
+	name: string,
+	password: string,
+	qrText: string,
+};
+
 export type RebootMode = "system" | "recovery" | "bootloader" | "sideload" | "fastbootd";
+
+export type Removal = "Recommended" | "Advanced" | "Expert" | "Unsafe";
+
+export type RestoreOptions = RestoreOptions_Serialize | RestoreOptions_Deserialize;
+
+export type RestoreOptions_Deserialize = {
+	restoreObb: boolean,
+	restoreData: boolean,
+	password?: string | null,
+	verifyHash: boolean,
+};
+
+export type RestoreOptions_Serialize = {
+	restoreObb: boolean,
+	restoreData: boolean,
+	password: string | null,
+	verifyHash: boolean,
+};
+
+export type SavedDevice = SavedDevice_Serialize | SavedDevice_Deserialize;
+
+export type SavedDevice_Deserialize = {
+	address: string,
+	name?: string | null,
+	lastConnected: string,
+};
+
+export type SavedDevice_Serialize = {
+	address: string,
+	name: string | null,
+	lastConnected: string,
+};
 
 export type Settings = Settings_Serialize | Settings_Deserialize;
 
@@ -137,6 +453,11 @@ export type Settings_Serialize = {
 	verifyHashOnRestore: boolean,
 	/**  Closing the window hides it to the tray instead of quitting. */
 	closeToTray: boolean,
+};
+
+export type Storage = {
+	totalKb: number | null,
+	usedKb: number | null,
 };
 
 export type StreamKind = "stdout" | "stderr" | "exit";

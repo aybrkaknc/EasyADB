@@ -4,4 +4,4 @@ pub mod fake;
 pub mod parse;
 pub mod shell;
 
-pub use client::{Adb, AdbRunner, Device, Output, Tool};
+pub use client::{Adb, AdbRunner, Device, Tool};

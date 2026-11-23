@@ -21,7 +21,10 @@ impl AppState {
                 Adb::from_dir(dir)
             })
             .map(|adb| Arc::new(adb) as Arc<dyn AdbRunner>);
-        Self { runner, tasks: TaskRegistry::default() }
+        Self {
+            runner,
+            tasks: TaskRegistry::default(),
+        }
     }
 
     pub fn runner(&self) -> AppResult<Arc<dyn AdbRunner>> {

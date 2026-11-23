@@ -34,7 +34,9 @@ pub fn validate_package(name: &str) -> AppResult<()> {
     if PACKAGE_RE.is_match(name) {
         Ok(())
     } else {
-        Err(AppError::invalid_input(format!("invalid package name: {name}")))
+        Err(AppError::invalid_input(format!(
+            "invalid package name: {name}"
+        )))
     }
 }
 
@@ -66,7 +68,10 @@ mod tests {
 
     #[test]
     fn joins_arguments() {
-        assert_eq!(join(&["ls", "-la", "/sdcard/My Files"]), "ls -la '/sdcard/My Files'");
+        assert_eq!(
+            join(&["ls", "-la", "/sdcard/My Files"]),
+            "ls -la '/sdcard/My Files'"
+        );
     }
 
     #[test]

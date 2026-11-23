@@ -1,2 +1,11 @@
+pub mod backup;
+pub mod debloat;
 pub mod device;
+pub mod files;
+pub mod logcat;
+pub mod packages;
+pub mod performance;
 pub mod settings;
+pub mod sideload;
+pub mod terminal;
+pub mod wireless;

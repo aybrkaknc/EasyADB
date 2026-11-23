@@ -41,12 +41,18 @@ pub fn details(device: Device) -> AppResult<DeviceDetails> {
         .script("command -v su")
         .map(|out| !out.trim().is_empty())
         .unwrap_or(false);
-    let locked = match (prop("ro.boot.flash.locked").as_str(), prop("ro.boot.vbmeta.device_state").as_str()) {
+    let locked = match (
+        prop("ro.boot.flash.locked").as_str(),
+        prop("ro.boot.vbmeta.device_state").as_str(),
+    ) {
         ("1", _) | (_, "locked") => Some(true),
         ("0", _) | (_, "unlocked") => Some(false),
         _ => None,
     };
-    let selinux = device.shell(&["getenforce"]).map(|s| s.trim().to_string()).unwrap_or_default();
+    let selinux = device
+        .shell(&["getenforce"])
+        .map(|s| s.trim().to_string())
+        .unwrap_or_default();
     Ok(DeviceDetails {
         serial: device.serial().to_string(),
         model: prop("ro.product.model"),
@@ -64,7 +70,10 @@ pub fn details(device: Device) -> AppResult<DeviceDetails> {
 
 /// Asks for root through `su`; this may show a prompt on the device.
 pub fn check_root(device: Device) -> bool {
-    device.su("id").map(|out| out.contains("uid=0")).unwrap_or(false)
+    device
+        .su("id")
+        .map(|out| out.contains("uid=0"))
+        .unwrap_or(false)
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, Type, PartialEq, Eq)]
@@ -77,7 +86,12 @@ pub enum RebootMode {
     Fastbootd,
 }
 
-pub fn reboot(runner: &dyn AdbRunner, serial: &str, mode: RebootMode, in_fastboot: bool) -> AppResult<()> {
+pub fn reboot(
+    runner: &dyn AdbRunner,
+    serial: &str,
+    mode: RebootMode,
+    in_fastboot: bool,
+) -> AppResult<()> {
     if in_fastboot {
         let args: &[&str] = match mode {
             RebootMode::System => &["-s", serial, "reboot"],
@@ -113,7 +127,10 @@ pub async fn list_devices(state: State<'_, AppState>) -> AppResult<Vec<DeviceEnt
 
 #[tauri::command]
 #[specta::specta]
-pub async fn get_device_details(state: State<'_, AppState>, serial: String) -> AppResult<DeviceDetails> {
+pub async fn get_device_details(
+    state: State<'_, AppState>,
+    serial: String,
+) -> AppResult<DeviceDetails> {
     let runner = state.runner()?;
     blocking(move || details(Device::new(&*runner, &serial))).await
 }
@@ -145,11 +162,21 @@ mod tests {
     #[test]
     fn lists_adb_and_fastboot_devices() {
         let fake = FakeAdb::new()
-            .on("devices -l", "List of devices attached\nABC device model:Pixel_7\n")
+            .on(
+                "devices -l",
+                "List of devices attached\nABC device model:Pixel_7\n",
+            )
             .on("fastboot devices", "XYZ\tfastboot\n");
         let devices = list(&fake).unwrap();
         assert_eq!(devices.len(), 2);
         assert_eq!(devices[1].serial, "XYZ");
+    }
+
+    #[test]
+    fn classifies_list_failures() {
+        let fake = FakeAdb::new().on_fail("devices -l", "error: device unauthorized.\n");
+        let err = list(&fake).unwrap_err();
+        assert_eq!(err.code, crate::error::ErrorCode::DeviceUnauthorized);
     }
 
     #[test]
@@ -174,6 +201,12 @@ mod tests {
         let fake = FakeAdb::new().on("reboot", "");
         reboot(&fake, "ABC", RebootMode::Recovery, false).unwrap();
         reboot(&fake, "ABC", RebootMode::Bootloader, true).unwrap();
-        assert_eq!(fake.calls(), vec!["-s ABC reboot recovery", "fastboot -s ABC reboot-bootloader"]);
+        assert_eq!(
+            fake.calls(),
+            vec![
+                "-s ABC reboot recovery",
+                "fastboot -s ABC reboot-bootloader"
+            ]
+        );
     }
 }

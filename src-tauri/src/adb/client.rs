@@ -52,9 +52,15 @@ impl Adb {
     pub fn from_dir(dir: &Path) -> AppResult<Self> {
         let adb = dir.join("adb.exe");
         if !adb.exists() {
-            return Err(AppError::new(ErrorCode::AdbMissing, adb.display().to_string()));
+            return Err(AppError::new(
+                ErrorCode::AdbMissing,
+                adb.display().to_string(),
+            ));
         }
-        Ok(Self { adb, fastboot: dir.join("fastboot.exe") })
+        Ok(Self {
+            adb,
+            fastboot: dir.join("fastboot.exe"),
+        })
     }
 
     fn command(&self, tool: Tool, args: &[&str]) -> Command {
@@ -63,7 +69,9 @@ impl Adb {
             Tool::Fastboot => &self.fastboot,
         };
         let mut cmd = Command::new(program);
-        cmd.args(args).stdin(Stdio::null()).creation_flags(CREATE_NO_WINDOW);
+        cmd.args(args)
+            .stdin(Stdio::null())
+            .creation_flags(CREATE_NO_WINDOW);
         cmd
     }
 }

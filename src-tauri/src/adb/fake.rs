@@ -19,13 +19,21 @@ impl FakeAdb {
     }
 
     pub fn on(mut self, pattern: &str, stdout: &str) -> Self {
-        let out = Output { success: true, stdout: stdout.into(), stderr: String::new() };
+        let out = Output {
+            success: true,
+            stdout: stdout.into(),
+            stderr: String::new(),
+        };
         self.rules.push((pattern.into(), out));
         self
     }
 
     pub fn on_fail(mut self, pattern: &str, stderr: &str) -> Self {
-        let out = Output { success: false, stdout: String::new(), stderr: stderr.into() };
+        let out = Output {
+            success: false,
+            stdout: String::new(),
+            stderr: stderr.into(),
+        };
         self.rules.push((pattern.into(), out));
         self
     }
@@ -37,10 +45,17 @@ impl FakeAdb {
 
 impl AdbRunner for FakeAdb {
     fn exec(&self, tool: Tool, args: &[&str]) -> AppResult<Output> {
-        let prefix = if tool == Tool::Fastboot { "fastboot " } else { "" };
+        let prefix = if tool == Tool::Fastboot {
+            "fastboot "
+        } else {
+            ""
+        };
         let joined = format!("{prefix}{}", args.join(" "));
         self.calls.lock().unwrap().push(joined.clone());
-        let rule = self.rules.iter().find(|(pattern, _)| joined.contains(pattern.as_str()));
+        let rule = self
+            .rules
+            .iter()
+            .find(|(pattern, _)| joined.contains(pattern.as_str()));
         Ok(rule.map(|(_, out)| out.clone()).unwrap_or_else(|| Output {
             success: false,
             stdout: String::new(),
@@ -49,6 +64,9 @@ impl AdbRunner for FakeAdb {
     }
 
     fn spawn(&self, _tool: Tool, _args: &[&str]) -> AppResult<Child> {
-        Err(AppError::new(ErrorCode::Internal, "fake runner cannot spawn"))
+        Err(AppError::new(
+            ErrorCode::Internal,
+            "fake runner cannot spawn",
+        ))
     }
 }

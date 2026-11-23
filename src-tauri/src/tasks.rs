@@ -24,7 +24,11 @@ impl TaskHandle {
 
     /// Returns `Err(Cancelled)` once the task has been cancelled.
     pub fn check(&self) -> AppResult<()> {
-        if self.is_cancelled() { Err(AppError::cancelled()) } else { Ok(()) }
+        if self.is_cancelled() {
+            Err(AppError::cancelled())
+        } else {
+            Ok(())
+        }
     }
 
     /// Keeps a child process so cancelling the task kills it.
@@ -52,7 +56,10 @@ pub struct TaskRegistry {
 impl TaskRegistry {
     pub fn start(&self, id: &str) -> Arc<TaskHandle> {
         let handle = Arc::new(TaskHandle::default());
-        self.tasks.lock().unwrap().insert(id.to_string(), handle.clone());
+        self.tasks
+            .lock()
+            .unwrap()
+            .insert(id.to_string(), handle.clone());
         handle
     }
 
@@ -79,13 +86,10 @@ pub struct Reporter {
 
 impl Reporter {
     pub fn new(app: AppHandle, task_id: &str) -> Self {
-        Self { app: Some(app), task_id: task_id.to_string() }
-    }
-
-    /// A reporter that drops every update, for tests.
-    #[cfg(test)]
-    pub fn silent() -> Self {
-        Self { app: None, task_id: String::new() }
+        Self {
+            app: Some(app),
+            task_id: task_id.to_string(),
+        }
     }
 
     pub fn progress(&self, stage: &str, item: &str, current: f64, total: f64) {
