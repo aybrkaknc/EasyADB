@@ -7,14 +7,16 @@ dist-ssr
 !.vscode/extensions.json
 .idea
 .DS_Store
+coverage
+playwright-report
+test-results
 
 # Tauri / Rust
 src-tauri/target
-src-tauri/bin/*.exe
-src-tauri/bin/*.dll
-!src-tauri/bin/.gitkeep
+src-tauri/gen/schemas
+src-tauri/binaries/*
 
-# Build Artifacts
+# Build artifacts
 target/
 *.exe
 *.msi
@@ -22,10 +24,8 @@ target/
 *.app
 *.dmg
 
-# Backups & Temp
+# Backups
 *.easybckp
-easyadb_processing/
-easyadb_tools/
 
 # Environment
 .env
@@ -33,3 +33,4 @@ easyadb_tools/
 
 # Logs
 logs/
+*.log

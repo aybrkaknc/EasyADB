@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Fetch platform-tools
+        shell: pwsh
+        run: ./scripts/fetch-platform-tools.ps1
+
+      - run: npm ci
+
+      - name: Frontend lint and types
+        run: |
+          npm run lint
+          npm run format:check
+          npx tsc --noEmit
+
+      - name: Frontend tests
+        run: npm test
+
+      - name: Rust format, lint and tests
+        working-directory: src-tauri
+        run: |
+          cargo fmt --check
+          cargo clippy --all-targets -- -D warnings
+          cargo test
