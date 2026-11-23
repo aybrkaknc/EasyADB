@@ -7,6 +7,22 @@ Versiyon numaralandırması [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Yayınlanmadı]
+
+### Eklenenler
+- EasyAndroid ile birlikte çalışma ([sözleşme](../specs/EASYANDROID_INTEROP.md)): format 2 (zstd) yedekler, ek veri arşivleri (`data_de`, `data_ext`), uygulama izinleri (app ops) ve pil istisnası okunup geri yüklenir
+- Telefonda EasyAndroid yedeği varsa PC'ye çekme sorusu; root gerektiren veri için uyarı
+- EasyAndroid sistem ayarı yedeğini (yaygın ayarlar, varsayılan uygulamalar, Wi-Fi) geri yükleme
+- Cihaz bilgisinde EasyAndroid'in kurulu olup olmadığı
+- Yedek alırken uygulama izinleri (app ops) ve pil istisnası da kaydedilir
+- Başlıkta ve cihaz listesinde root durumu ikonu; debloat satırlarında duruma göre düğmeler
+
+### Değişenler
+- Debloat: `systemui`, `settings`, `shell` ve UAD-NG listesindeki Güvensiz paketler devre dışı bırakılamaz veya kaldırılamaz (EasyAndroid ile aynı kural)
+- Veri geri yüklemede sahip, kip ve SELinux etiketi arşiv açılmadan önce okunuyor; yükleyicinin verdiği yeni uid'e göre uygulanıyor
+
+---
+
 ## [0.2.0] - 2026-11-23
 
 Uygulama sıfırdan yeniden yazıldı. Eski `.easybckp` yedekleri bu sürümle okunmaz.

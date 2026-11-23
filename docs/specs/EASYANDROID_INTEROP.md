@@ -82,8 +82,12 @@ Koruma: `disable` ve `uninstall` şu paketler için reddedilir:
 
 Anahtar adı `[A-Za-z0-9._]{1,199}` olmalı ve kimlik, güvenlik, SIM veya durum bilgisi taşıyan anahtarlar (örnek: `android_id`, `bluetooth_`, `setup_`, `adb_`, `lock_`, `token`, `password`, `sim_`, `wifi_on`, `airplane_mode_on`) geri yüklenmez. Tam engel listesi kaynakta `core/SystemBackup.kt` içindedir ve EasyADB'de `system_backup.rs` ile aynıdır.
 
+EasyADB yalnızca yaygın tercihleri uygular (EasyAndroid'in varsayılan seçtiği `COMMON` listesi: ekran zaman aşımı, yazı boyutu, koyu tema vb.). Cihazdaki değerle aynı olan ayarlar atlanır. Ayarlar `settings put --user 0`, roller `cmd role add-role-holder --user 0`, Wi-Fi ağları `cmd wifi add-network` ile düz cihaz kabuğundan uygulanır; root gerekmez. Wi-Fi şifreleri yedek dosyasında düz metindir, bu yüzden Wi-Fi geri yüklemesi varsayılan olarak kapalıdır. Başarısız her öğe raporda ayrı sayılır, işlem durmaz.
+
 Roller: `android.app.role.{BROWSER,DIALER,SMS,HOME,ASSISTANT,CALL_SCREENING,CALL_REDIRECTION}`. Wi-Fi güvenlik değerleri: `open`, `owe`, `wpa2`, `wpa3`.
 
 ## 7. Telefondan PC'ye çekme
 
-EasyADB cihaz bağlanınca `/sdcard/EasyAndroid/Backups` altında yedek arar. Bulursa kullanıcıya sorar. Yedek root gerektiren veri içeriyorsa (data veya extras) kullanıcı, kabuğa (shell) root izni vermesi gerektiği konusunda uyarılır; izin verilmezse bu dosyalar okunamayabilir. Onay verilirse yedekler EasyADB yedek klasörüne çekilir ve `manifest.json` ile boyut ve SHA-256 doğrulanır. Daha sonra Geri yükle sekmesinden geri yüklenir.
+EasyADB cihaz bağlanınca `/sdcard/EasyAndroid/Backups` altında yedek ve `system_*.json` dosyası arar (PC'de zaten olanlar atlanır). Bulursa kullanıcıya sorar. Yedek root gerektiren veri içeriyorsa (data veya extras) kullanıcı, kabuğa (shell) root izni vermesi gerektiği konusunda uyarılır; izin verilmezse bu dosyalar okunamayabilir. Onay verilirse yedekler EasyADB yedek klasörüne çekilir; her dosyanın boyutu ve SHA-256'sı `manifest.json` ile doğrulanır, manifest en son yazılır. Dosyalar önce düz kabukla okunur; okunamazsa ve kullanıcı root verdiyse `su -c cat` ile yeniden denenir. Sistem ayarı dosyaları aynı klasöre kopyalanır. Daha sonra Geri yükle sekmesinden geri yüklenir.
+
+Yalnızca varsayılan klasör taranır. EasyAndroid'de seçilmiş başka bir klasör (SAF) taranmaz.
