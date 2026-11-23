@@ -59,6 +59,11 @@ export const commands = {
 	clearLogcat: (serial: string, options?: InvokeOptions) => __TAURI_INVOKE<null>("clear_logcat", { serial }, options),
 	/**  Writes text chosen by the user through a save dialog (log and terminal exports). */
 	saveTextFile: (path: string, content: string, options?: InvokeOptions) => __TAURI_INVOKE<null>("save_text_file", { path, content }, options),
+	/**
+	 *  Opens a Google search through Windows' "Open with" dialog so the user picks the browser.
+	 *  Only Google search links are accepted; the link goes into a local redirect page.
+	 */
+	openWebSearch: (url: string, options?: InvokeOptions) => __TAURI_INVOKE<null>("open_web_search", { url }, options),
 };
 
 /** Events */

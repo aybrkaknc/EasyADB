@@ -58,7 +58,8 @@ function useShortcuts() {
         }
       } else if (event.key === "F5") {
         event.preventDefault();
-        void client.invalidateQueries();
+        // Root checks make the phone show a prompt, so a refresh keeps their cached result.
+        void client.invalidateQueries({ predicate: (q) => q.queryKey[0] !== "root" });
       } else if (event.ctrlKey && event.key.toLowerCase() === "f") {
         const input = document.querySelector<HTMLInputElement>(
           "[data-module-active] [data-search]",
@@ -88,7 +89,8 @@ export function App() {
       <TitleBar />
       <div className="flex min-h-0 flex-1">
         <IconRail />
-        <main className="tech-grid relative min-w-0 flex-1">
+        <main className="tech-dots relative isolate min-w-0 flex-1">
+          <div className="absolute inset-0 -z-10 bg-black/70" />
           {MODULES.filter((id) => visited.has(id)).map((id) => {
             const View = VIEWS[id];
             const active = id === module;

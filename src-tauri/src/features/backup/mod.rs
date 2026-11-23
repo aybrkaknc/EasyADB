@@ -13,6 +13,7 @@ use tauri::{AppHandle, State};
 
 use crate::adb::Device;
 use crate::error::{AppError, AppResult};
+use crate::features::device;
 use crate::features::settings::backup_root;
 use crate::state::{AppState, blocking};
 use crate::tasks::Reporter;
@@ -60,6 +61,7 @@ pub async fn start_backup(
             task: &task,
             reporter: &reporter,
             snapshot: &snapshot,
+            has_root: options.include_data && device::check_root(device),
         };
         let mut outcomes = Vec::new();
         for package in packages {

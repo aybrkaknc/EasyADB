@@ -66,6 +66,7 @@ pub fn specta_builder() -> Builder<Wry> {
             logcat::start_logcat,
             logcat::clear_logcat,
             settings::save_text_file,
+            settings::open_web_search,
         ])
         .events(collect_events![
             events::TaskProgress,

@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 
 import { type BackupSummary, commands, type DeviceEntry } from "../../bindings";
 import { useFeedback } from "../../shared/hooks/useFeedback";
+import { useRoot } from "../../shared/hooks/useRoot";
 import { useSelection } from "../../shared/hooks/useSelection";
 import { useSettings } from "../../shared/hooks/useSettings";
 import { useTask } from "../../shared/hooks/useTask";
@@ -16,6 +17,7 @@ import { Checkbox } from "../../shared/ui/Controls";
 import { useConfirm } from "../../shared/hooks/useConfirm";
 import { Badge, EmptyState, Spinner, TaskBar } from "../../shared/ui/Feedback";
 import { restoreWarnings } from "./report";
+import { RootStatus } from "./RootStatus";
 import { RestoreDialog } from "./RestoreDialog";
 
 export function ArchiveTab({ device }: { device: DeviceEntry | null }) {
@@ -28,6 +30,7 @@ export function ArchiveTab({ device }: { device: DeviceEntry | null }) {
   const selection = useSelection();
   const [restoring, setRestoring] = useState<BackupSummary | null>(null);
   const [restorePermissions, setRestorePermissions] = useState(true);
+  const rootAccess = useRoot(device?.state === "device" ? device.serial : null);
   const backups = useQuery({ queryKey: ["backups"], queryFn: () => commands.listBackups() });
   const root = useQuery({ queryKey: ["backupRoot"], queryFn: () => commands.getBackupRoot() });
   const refresh = () => void client.invalidateQueries({ queryKey: ["backups"] });
@@ -49,7 +52,7 @@ export function ArchiveTab({ device }: { device: DeviceEntry | null }) {
         const report = await task.run((id) =>
           commands.startRestore(id, serial, backup.id, {
             restoreObb: backup.hasObb,
-            restoreData: backup.hasData,
+            restoreData: backup.hasData && rootAccess.isRoot,
             restorePermissions: restorePermissions && backup.permissionCount > 0,
             verifyHash: settings.verifyHashOnRestore,
           }),
@@ -153,7 +156,7 @@ export function ArchiveTab({ device }: { device: DeviceEntry | null }) {
       )}
       {backups.data?.some((b) => selection.has(b.id) && b.hasData) && (
         <div className="px-6 pb-3">
-          <p className="text-[11px] text-warn/80">{t("backup.restore.rootHint")}</p>
+          <RootStatus root={rootAccess} />
         </div>
       )}
       {backups.isLoading ? (

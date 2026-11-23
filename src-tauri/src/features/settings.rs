@@ -62,6 +62,29 @@ pub fn reveal_path(app: AppHandle, path: String) -> AppResult<()> {
         .map_err(|err| AppError::new(ErrorCode::Io, err.to_string()))
 }
 
+/// Opens a Google search through Windows' "Open with" dialog so the user picks the browser.
+/// Only Google search links are accepted; the link goes into a local redirect page.
+#[tauri::command]
+#[specta::specta]
+pub fn open_web_search(app: AppHandle, url: String) -> AppResult<()> {
+    if !url.starts_with("https://www.google.com/search?") {
+        return Err(AppError::invalid_input(url));
+    }
+    let target = url.replace('&', "&amp;").replace('"', "&quot;");
+    let page = app.path().temp_dir()?.join("EasyADB-web-search.html");
+    std::fs::write(
+        &page,
+        format!(
+            "<!doctype html><meta charset=\"utf-8\"><meta http-equiv=\"refresh\" content=\"0; url={target}\">"
+        ),
+    )?;
+    std::process::Command::new("rundll32")
+        .arg("shell32.dll,OpenAs_RunDLL")
+        .arg(&page)
+        .spawn()?;
+    Ok(())
+}
+
 /// Writes text chosen by the user through a save dialog (log and terminal exports).
 #[tauri::command]
 #[specta::specta]

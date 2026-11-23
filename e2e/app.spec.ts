@@ -56,9 +56,8 @@ test("asks before removing packages and respects cancel", async ({ page }) => {
 
   await page
     .locator("div.cursor-pointer", { hasText: "com.android.systemui" })
-    .getByRole("checkbox")
+    .getByRole("button", { name: "Remove", exact: true })
     .click();
-  await page.getByRole("button", { name: "Remove" }).click();
   await expect(page.getByText(/marked Unsafe/)).toBeVisible();
   await page.getByRole("button", { name: "Cancel" }).click();
   expect(await calls(page)).not.toContain("apply_debloat");
@@ -81,14 +80,47 @@ test("switches the interface to Turkish", async ({ page }) => {
   await expect(page.getByText("Klavye kısayolları")).toBeVisible();
 });
 
-test("warns when app data cannot be backed up without root", async ({ page }) => {
+test("does not offer app data without root", async ({ page }) => {
   await page.goto("/?scenario=noroot");
   await openModule(page, "Backup");
-  await page.getByText("Spotify", { exact: true }).click();
-  await page.getByRole("checkbox", { name: /Include app data/ }).click();
-  await expect(page.getByText(/allow root for "Shell"/)).toBeVisible();
-  await page.getByRole("button", { name: "Back up 1 apps" }).click();
-  await expect(page.getByText(/The app was backed up, its data was not/)).toBeVisible();
+  await expect(page.getByText(/No root, or root was denied/)).toBeVisible();
+  await expect(page.getByRole("checkbox", { name: /Include app data/ })).toBeDisabled();
+});
+
+test("offers app data when root is available", async ({ page }) => {
+  await page.goto("/");
+  await openModule(page, "Backup");
+  await expect(page.getByText("Root available: app data can be copied.")).toBeVisible();
+  await expect(page.getByRole("checkbox", { name: /Include app data/ })).toBeEnabled();
+});
+
+test("dims removed apps and enables only fitting actions", async ({ page }) => {
+  await page.goto("/");
+  await openModule(page, "Debloat");
+  await page.getByRole("radio", { name: /All/ }).first().click();
+
+  const removed = page.locator("div.cursor-pointer", { hasText: "Old Removed" });
+  await expect(removed.locator(".opacity-40")).toHaveCount(1);
+  await expect(removed.getByRole("button", { name: "Restore", exact: true })).toBeVisible();
+  await expect(removed.getByRole("button", { name: "Disable", exact: true })).toHaveCount(0);
+
+  const disabled = page.locator("div.cursor-pointer", { hasText: "Old Disabled" });
+  await expect(disabled.getByRole("button", { name: "Enable", exact: true })).toBeVisible();
+  await expect(disabled.getByRole("button", { name: "Disable", exact: true })).toHaveCount(0);
+
+  await removed.getByRole("checkbox").click();
+  // The bulk buttons come before the list in the DOM, so the first match is the toolbar.
+  await expect(page.getByRole("button", { name: "Restore", exact: true }).first()).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Disable", exact: true }).first()).toBeDisabled();
+});
+
+test("opens a web search for the selected app", async ({ page }) => {
+  await page.goto("/");
+  await openModule(page, "Debloat");
+  await page.getByRole("radio", { name: /All/ }).first().click();
+  await page.getByText("com.android.systemui").first().click();
+  await page.getByRole("button", { name: "Search the web" }).click();
+  await expect.poll(() => calls(page)).toContain("open_web_search");
 });
 
 test("asks whether to restore saved permissions", async ({ page }) => {

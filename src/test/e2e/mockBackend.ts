@@ -26,6 +26,20 @@ const apps = [
   { package: "org.mozilla.firefox", label: null, system: false, disabled: false, installed: true },
   { package: "com.facebook.services", label: null, system: true, disabled: false, installed: true },
   { package: "com.android.systemui", label: null, system: true, disabled: false, installed: true },
+  {
+    package: "com.old.removed",
+    label: "Old Removed",
+    system: true,
+    disabled: false,
+    installed: false,
+  },
+  {
+    package: "com.old.disabled",
+    label: "Old Disabled",
+    system: true,
+    disabled: true,
+    installed: true,
+  },
 ];
 
 const debloatInfo: Record<string, unknown> = {
@@ -64,6 +78,8 @@ const state = {
 
 const handlers: Record<string, (args: Args) => unknown> = {
   list_devices: () => (scenario === "nodevice" ? [] : [device]),
+  check_device_root: () => scenario !== "noroot",
+  open_web_search: () => null,
   get_settings: () => state.settings,
   save_settings: (a) => {
     state.settings = a.settings as typeof state.settings;

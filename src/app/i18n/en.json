@@ -24,7 +24,12 @@
   "titlebar": {
     "minimize": "Minimize",
     "maximize": "Maximize",
-    "close": "Close"
+    "close": "Close",
+    "root": {
+      "checking": "Checking root access...",
+      "yes": "Root access available",
+      "no": "No root access"
+    }
   },
   "tray": {
     "show": "Show EasyADB",
@@ -205,8 +210,7 @@
     "options": {
       "title": "Options",
       "obb": "Include OBB files",
-      "data": "Include app data (root)",
-      "dataHint": "Needs root. When the device asks, allow root for \"Shell\"."
+      "data": "Include app data (root)"
     },
     "start": "Back up {{count}} apps",
     "estimate": "Estimated size: {{size}}",
@@ -239,14 +243,19 @@
       "start": "Restore",
       "done": "{{name}} restored",
       "permissions": "Grant the app's saved permissions ({{count}})",
-      "rootHint": "App data needs root. When the device asks, allow root for \"Shell\". Without root only the app is installed.",
       "report": {
         "noRoot": "{{name}}: no root or root was denied. The app was installed, its data was not restored.",
         "failed": "{{name}}: the app was installed but its data could not be restored: {{detail}}",
         "permissions": "{{name}}: {{granted}} of {{total}} permissions granted."
       }
     },
-    "dataSkipped": "{{name}}: no root or root was denied. The app was backed up, its data was not."
+    "dataSkipped": "{{name}}: no root or root was denied. The app was backed up, its data was not.",
+    "root": {
+      "checking": "Checking root...",
+      "available": "Root available: app data can be copied.",
+      "missing": "No root, or root was denied. App data cannot be copied, only the app itself. When the device asks, allow root for \"Shell\".",
+      "recheck": "Check root again"
+    }
   },
   "debloat": {
     "search": "Search packages",
@@ -292,7 +301,8 @@
       "loaded": "Profile loaded: {{count}} packages selected",
       "name": "EasyADB debloat profile"
     },
-    "source": "Package information from Universal Android Debloater Next Generation (GPL-3.0)."
+    "skipped": "{{count}} apps were skipped because the action does not apply to them.",
+    "webSearch": "Search the web"
   },
   "wireless": {
     "tabs": {

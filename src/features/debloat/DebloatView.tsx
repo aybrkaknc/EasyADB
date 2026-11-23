@@ -23,7 +23,7 @@ import { DeviceGuard } from "../../shared/ui/DeviceGuard";
 import { useConfirm } from "../../shared/hooks/useConfirm";
 import { Badge, EmptyState, Spinner, TaskBar } from "../../shared/ui/Feedback";
 import { ModuleHeader } from "../../shared/ui/ModuleHeader";
-import { REMOVAL_TONE, statusKey } from "./debloat";
+import { canApply, REMOVAL_TONE, statusKey } from "./debloat";
 import { DebloatDetails } from "./DebloatDetails";
 
 const FILTERS = [
@@ -37,6 +37,14 @@ const FILTERS = [
   "uninstalled",
 ] as const;
 type Filter = (typeof FILTERS)[number];
+
+const ROW_ACTIONS: DebloatAction[] = ["disable", "enable", "restore", "uninstall"];
+const ACTION_VARIANT = {
+  disable: "ghost",
+  enable: "ghost",
+  restore: "primary",
+  uninstall: "danger",
+} as const;
 
 function matches(item: DebloatApp, filter: Filter) {
   switch (filter) {
@@ -79,7 +87,7 @@ function Debloater({ device }: { device: DeviceEntry }) {
     );
   }, [items, filter, search]);
 
-  const apply = async (entries: ProfileEntry[]) => {
+  const apply = async (entries: ProfileEntry[], skipped = 0, keepSelection = false) => {
     if (entries.length === 0) return;
     try {
       const outcomes = await task.run((id) => commands.applyDebloat(id, device.serial, entries));
@@ -89,15 +97,25 @@ function Debloater({ device }: { device: DeviceEntry }) {
         true,
       );
       failed.forEach((o) => feedback.failure(o.error));
-      selection.clear();
+      if (skipped > 0) feedback.warning(t("debloat.skipped", { count: skipped }));
+      if (!keepSelection) selection.clear();
     } catch (error) {
       feedback.failure(error, true);
     }
     void client.invalidateQueries({ queryKey: ["debloat", device.serial] });
   };
 
-  const run = async (action: DebloatAction) => {
-    const ids = selection.ids;
+  /** Selected packages the action applies to, given their current state. */
+  const eligibleFor = (action: DebloatAction) =>
+    selection.ids.filter((id) => {
+      const item = byPackage.get(id);
+      return item !== undefined && canApply(action, item.app);
+    });
+
+  /** Runs an action on the selection, or on `only` when a single row's button was used. */
+  const run = async (action: DebloatAction, only?: string) => {
+    const ids = only ? [only] : eligibleFor(action);
+    if (ids.length === 0) return;
     if (action === "uninstall" || action === "disable") {
       const unsafe = ids.filter((id) => byPackage.get(id)?.info?.removal === "Unsafe").length;
       if (unsafe > 0 && !(await confirm(t("debloat.confirmUnsafe", { count: unsafe })))) return;
@@ -107,7 +125,11 @@ function Debloater({ device }: { device: DeviceEntry }) {
       !(await confirm(t("debloat.confirmUninstall", { count: ids.length })))
     )
       return;
-    await apply(ids.map((pkg) => ({ package: pkg, action })));
+    await apply(
+      ids.map((pkg) => ({ package: pkg, action })),
+      only ? 0 : selection.count - ids.length,
+      Boolean(only),
+    );
   };
 
   const saveProfile = async () => {
@@ -146,7 +168,7 @@ function Debloater({ device }: { device: DeviceEntry }) {
     }
   };
 
-  const busy = task.running || selection.count === 0;
+  const disabledFor = (action: DebloatAction) => task.running || eligibleFor(action).length === 0;
   return (
     <div className="relative flex min-h-0 flex-1 flex-col">
       <div className="flex flex-wrap items-center gap-2 px-6 py-3">
@@ -178,19 +200,21 @@ function Debloater({ device }: { device: DeviceEntry }) {
           }
           label={t("common.selected", { count: selection.count })}
         />
+        <div className="flex flex-wrap gap-1.5">
+          {selection.count > 0 &&
+            ROW_ACTIONS.map((action) => (
+              <Button
+                key={action}
+                size="sm"
+                variant={ACTION_VARIANT[action]}
+                onClick={() => void run(action)}
+                disabled={disabledFor(action)}
+              >
+                {t(`debloat.action.${action}`)}
+              </Button>
+            ))}
+        </div>
         <div className="ml-auto flex flex-wrap gap-1.5">
-          <Button size="sm" variant="ghost" onClick={() => void run("disable")} disabled={busy}>
-            {t("debloat.action.disable")}
-          </Button>
-          <Button size="sm" variant="ghost" onClick={() => void run("enable")} disabled={busy}>
-            {t("debloat.action.enable")}
-          </Button>
-          <Button size="sm" variant="danger" onClick={() => void run("uninstall")} disabled={busy}>
-            {t("debloat.action.uninstall")}
-          </Button>
-          <Button size="sm" onClick={() => void run("restore")} disabled={busy}>
-            {t("debloat.action.restore")}
-          </Button>
           <Button
             size="sm"
             variant="ghost"
@@ -236,20 +260,40 @@ function Debloater({ device }: { device: DeviceEntry }) {
                     checked={selection.has(item.app.package)}
                     onChange={() => selection.toggle(item.app.package)}
                   />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-xs text-white">{appName(item.app)}</p>
-                    <p className="truncate text-[10px] text-white/40">{item.app.package}</p>
+                  <div
+                    className={cn(
+                      "flex min-w-0 flex-1 items-center gap-2",
+                      !item.app.installed && "opacity-40",
+                    )}
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-xs text-white">{appName(item.app)}</p>
+                      <p className="truncate text-[10px] text-white/40">{item.app.package}</p>
+                    </div>
+                    {item.info ? (
+                      <Badge tone={REMOVAL_TONE[item.info.removal]}>
+                        {t(`debloat.filter.${item.info.removal}`)}
+                      </Badge>
+                    ) : (
+                      <Badge>{t("debloat.filter.unknown")}</Badge>
+                    )}
+                    {statusKey(item.app) !== "enabled" && (
+                      <Badge>{t(`debloat.status.${statusKey(item.app)}`)}</Badge>
+                    )}
                   </div>
-                  {statusKey(item.app) !== "enabled" && (
-                    <Badge>{t(`debloat.status.${statusKey(item.app)}`)}</Badge>
-                  )}
-                  {item.info ? (
-                    <Badge tone={REMOVAL_TONE[item.info.removal]}>
-                      {t(`debloat.filter.${item.info.removal}`)}
-                    </Badge>
-                  ) : (
-                    <Badge>{t("debloat.filter.unknown")}</Badge>
-                  )}
+                  <div className="flex shrink-0 gap-1.5" onClick={(e) => e.stopPropagation()}>
+                    {ROW_ACTIONS.filter((action) => canApply(action, item.app)).map((action) => (
+                      <Button
+                        key={action}
+                        size="sm"
+                        variant={ACTION_VARIANT[action]}
+                        onClick={() => void run(action, item.app.package)}
+                        disabled={task.running}
+                      >
+                        {t(`debloat.action.${action}`)}
+                      </Button>
+                    ))}
+                  </div>
                 </div>
               )}
             />

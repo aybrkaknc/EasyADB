@@ -28,6 +28,8 @@ pub struct Job<'a> {
     pub task: &'a TaskHandle,
     pub reporter: &'a Reporter,
     pub snapshot: &'a DeviceSnapshot,
+    /// Root was checked once for this job; without it app data is never read.
+    pub has_root: bool,
 }
 
 fn file_name(remote: &str) -> AppResult<String> {
@@ -178,7 +180,10 @@ fn fill(
     }
 
     let mut data_skipped = false;
-    if options.include_data {
+    if options.include_data && !job.has_root {
+        // No root: do not even try, so the device is not asked for root once per app.
+        data_skipped = true;
+    } else if options.include_data {
         let tar = format!("tar -cf - -C /data/data {package} 2>/dev/null");
         let script = shell::join(&["su", "-c", &tar]);
         let pulled = pull(

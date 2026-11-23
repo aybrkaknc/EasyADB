@@ -24,7 +24,12 @@
   "titlebar": {
     "minimize": "Küçült",
     "maximize": "Büyüt",
-    "close": "Kapat"
+    "close": "Kapat",
+    "root": {
+      "checking": "Root erişimi kontrol ediliyor...",
+      "yes": "Root erişimi var",
+      "no": "Root erişimi yok"
+    }
   },
   "tray": {
     "show": "EasyADB'yi göster",
@@ -205,8 +210,7 @@
     "options": {
       "title": "Seçenekler",
       "obb": "OBB dosyalarını ekle",
-      "data": "Uygulama verisini ekle (root)",
-      "dataHint": "Root gerekir. Cihaz sorduğunda \"Shell\" için root iznini verin."
+      "data": "Uygulama verisini ekle (root)"
     },
     "start": "{{count}} uygulamayı yedekle",
     "estimate": "Tahmini boyut: {{size}}",
@@ -239,14 +243,19 @@
       "start": "Geri yükle",
       "done": "{{name}} geri yüklendi",
       "permissions": "Uygulamanın kayıtlı izinlerini ver ({{count}})",
-      "rootHint": "Uygulama verisi için root gerekir. Cihaz sorduğunda \"Shell\" için root iznini verin. Root yoksa yalnızca uygulama kurulur.",
       "report": {
         "noRoot": "{{name}}: root yok veya izin reddedildi. Uygulama kuruldu, verisi yüklenmedi.",
         "failed": "{{name}}: uygulama kuruldu ama verisi yüklenemedi: {{detail}}",
         "permissions": "{{name}}: {{total}} izinden {{granted}} tanesi verildi."
       }
     },
-    "dataSkipped": "{{name}}: root yok veya izin reddedildi. Uygulama yedeklendi, verisi yedeklenmedi."
+    "dataSkipped": "{{name}}: root yok veya izin reddedildi. Uygulama yedeklendi, verisi yedeklenmedi.",
+    "root": {
+      "checking": "Root kontrol ediliyor...",
+      "available": "Root var: uygulama verisi kopyalanabilir.",
+      "missing": "Root yok veya izin reddedildi. Uygulama verisi kopyalanamaz, yalnızca uygulamanın kendisi işlenir. Cihaz sorduğunda \"Shell\" için root iznini verin.",
+      "recheck": "Root'u tekrar kontrol et"
+    }
   },
   "debloat": {
     "search": "Paket ara",
@@ -292,7 +301,8 @@
       "loaded": "Profil yüklendi: {{count}} paket seçildi",
       "name": "EasyADB debloat profili"
     },
-    "source": "Paket bilgileri Universal Android Debloater Next Generation projesinden alınmıştır (GPL-3.0)."
+    "skipped": "{{count}} uygulama, eylem onlara uygulanamadığı için atlandı.",
+    "webSearch": "Web'de ara"
   },
   "wireless": {
     "tabs": {

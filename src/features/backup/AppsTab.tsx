@@ -6,6 +6,7 @@ import { Virtuoso } from "react-virtuoso";
 
 import { type AppInfo, commands, type DeviceEntry } from "../../bindings";
 import { useFeedback } from "../../shared/hooks/useFeedback";
+import { useRoot } from "../../shared/hooks/useRoot";
 import { useSelection } from "../../shared/hooks/useSelection";
 import { useTask } from "../../shared/hooks/useTask";
 import { cn } from "../../shared/lib/cn";
@@ -14,15 +15,18 @@ import { Button } from "../../shared/ui/Button";
 import { Checkbox, FilterChips, Input } from "../../shared/ui/Controls";
 import { EmptyState, Spinner, TaskBar } from "../../shared/ui/Feedback";
 import { Panel } from "../../shared/ui/Panel";
+import { RootStatus } from "./RootStatus";
 
 type Filter = "user" | "system" | "all";
 
 function BackupOptionsPanel({
   value,
   onChange,
+  root,
 }: {
   value: { obb: boolean; data: boolean };
   onChange: (v: Partial<typeof value>) => void;
+  root: ReturnType<typeof useRoot>;
 }) {
   const { t } = useTranslation();
   return (
@@ -34,11 +38,12 @@ function BackupOptionsPanel({
           label={t("backup.options.obb")}
         />
         <Checkbox
-          checked={value.data}
+          checked={value.data && root.isRoot}
           onChange={(data) => onChange({ data })}
+          disabled={!root.isRoot}
           label={t("backup.options.data")}
         />
-        {value.data && <p className="text-[11px] text-warn/80">{t("backup.options.dataHint")}</p>}
+        <RootStatus root={root} />
       </div>
     </Panel>
   );
@@ -53,6 +58,7 @@ export function AppsTab({ device, onDone }: { device: DeviceEntry; onDone: () =>
   const [filter, setFilter] = useState<Filter>("user");
   const [search, setSearch] = useState("");
   const [options, setOptions] = useState({ obb: true, data: false });
+  const root = useRoot(device.serial);
 
   const apps = useQuery({
     queryKey: ["apps", device.serial],
@@ -85,7 +91,7 @@ export function AppsTab({ device, onDone }: { device: DeviceEntry; onDone: () =>
       const outcomes = await task.run((id) =>
         commands.startBackup(id, device.serial, selectedIds, {
           includeObb: options.obb,
-          includeData: options.data,
+          includeData: options.data && root.isRoot,
         }),
       );
       const failed = outcomes.filter((o) => o.error);
@@ -181,6 +187,7 @@ export function AppsTab({ device, onDone }: { device: DeviceEntry; onDone: () =>
         <BackupOptionsPanel
           value={options}
           onChange={(patch) => setOptions((o) => ({ ...o, ...patch }))}
+          root={root}
         />
         <div className="flex flex-col gap-2 text-xs text-white/70">
           <span>{t("common.selected", { count: selection.count })}</span>

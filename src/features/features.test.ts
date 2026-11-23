@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { LogLine } from "../bindings";
-import { statusKey } from "./debloat/debloat";
+import { canApply, statusKey, webSearchUrl } from "./debloat/debloat";
 import { parentPath } from "./files/paths";
 import { compileSearch, filterLines, formatLine, highlight } from "./logcat/filter";
 import { complete } from "./terminal/completion";
@@ -82,6 +82,34 @@ describe("file paths", () => {
     expect(parentPath("/sdcard/Download/x")).toBe("/sdcard/Download");
     expect(parentPath("/sdcard")).toBe("/");
     expect(parentPath("/")).toBe("/");
+  });
+});
+
+describe("debloat actions", () => {
+  const base = { package: "a.b", label: null, system: true, disabled: false, installed: true };
+  const removed = { ...base, installed: false };
+  const disabled = { ...base, disabled: true };
+
+  it("only offers actions that fit the current state", () => {
+    expect(canApply("disable", base)).toBe(true);
+    expect(canApply("enable", base)).toBe(false);
+    expect(canApply("uninstall", base)).toBe(true);
+    expect(canApply("restore", base)).toBe(false);
+
+    expect(canApply("disable", disabled)).toBe(false);
+    expect(canApply("enable", disabled)).toBe(true);
+
+    expect(canApply("disable", removed)).toBe(false);
+    expect(canApply("enable", removed)).toBe(false);
+    expect(canApply("uninstall", removed)).toBe(false);
+    expect(canApply("restore", removed)).toBe(true);
+  });
+
+  it("builds a Google search from name and package", () => {
+    expect(
+      webSearchUrl({ ...base, label: "Digital Wellbeing", package: "com.google.wellbeing" }),
+    ).toBe("https://www.google.com/search?q=Digital%20Wellbeing%20com.google.wellbeing%20android");
+    expect(webSearchUrl(base)).toBe("https://www.google.com/search?q=a.b%20android");
   });
 });
 

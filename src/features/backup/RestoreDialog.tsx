@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { type BackupSummary, commands } from "../../bindings";
 import { useConfirm } from "../../shared/hooks/useConfirm";
 import { useFeedback } from "../../shared/hooks/useFeedback";
+import { useRoot } from "../../shared/hooks/useRoot";
 import { useSettings } from "../../shared/hooks/useSettings";
 import { useTask } from "../../shared/hooks/useTask";
 import { appName } from "../../shared/lib/format";
@@ -12,6 +13,7 @@ import { Checkbox } from "../../shared/ui/Controls";
 import { Dialog } from "../../shared/ui/Dialog";
 import { TaskBar } from "../../shared/ui/Feedback";
 import { restoreWarnings } from "./report";
+import { RootStatus } from "./RootStatus";
 
 export function RestoreDialog({
   backup,
@@ -28,18 +30,20 @@ export function RestoreDialog({
   const confirm = useConfirm();
   const task = useTask();
   const [obb, setObb] = useState(backup.hasObb);
+  const root = useRoot(serial);
   const [data, setData] = useState(backup.hasData);
+  const dataOn = data && backup.hasData && root.isRoot;
   const [permissions, setPermissions] = useState(backup.permissionCount > 0);
   const [verify, setVerify] = useState(settings.verifyHashOnRestore);
   const name = appName(backup);
 
   const start = async () => {
-    if (data && !(await confirm(t("backup.restore.dataConfirm", { name })))) return;
+    if (dataOn && !(await confirm(t("backup.restore.dataConfirm", { name })))) return;
     try {
       const report = await task.run((id) =>
         commands.startRestore(id, serial, backup.id, {
           restoreObb: obb,
-          restoreData: data,
+          restoreData: dataOn,
           restorePermissions: permissions,
           verifyHash: verify,
         }),
@@ -76,9 +80,9 @@ export function RestoreDialog({
           label={t("backup.restore.obb")}
         />
         <Checkbox
-          checked={data}
+          checked={dataOn}
           onChange={setData}
-          disabled={!backup.hasData}
+          disabled={!backup.hasData || !root.isRoot}
           label={t("backup.restore.data")}
         />
         <Checkbox
@@ -89,7 +93,7 @@ export function RestoreDialog({
         />
         <Checkbox checked={verify} onChange={setVerify} label={t("backup.restore.verify")} />
       </div>
-      {backup.hasData && <p className="text-[11px] text-warn/80">{t("backup.restore.rootHint")}</p>}
+      {backup.hasData && <RootStatus root={root} />}
       {task.running && (
         <div className="-mx-6">
           <TaskBar progress={task.progress} onCancel={task.cancel} />

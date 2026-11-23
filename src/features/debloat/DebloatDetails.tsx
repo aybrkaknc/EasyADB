@@ -1,12 +1,16 @@
+import { Globe } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-import type { DebloatApp } from "../../bindings";
-import { Badge } from "../../shared/ui/Feedback";
+import { type DebloatApp, commands } from "../../bindings";
+import { useFeedback } from "../../shared/hooks/useFeedback";
 import { appName } from "../../shared/lib/format";
-import { REMOVAL_TONE, statusKey } from "./debloat";
+import { Button } from "../../shared/ui/Button";
+import { Badge } from "../../shared/ui/Feedback";
+import { REMOVAL_TONE, statusKey, webSearchUrl } from "./debloat";
 
 export function DebloatDetails({ item }: { item: DebloatApp | null }) {
   const { t } = useTranslation();
+  const feedback = useFeedback();
   if (!item) return <p className="label p-4">{t("debloat.noInfo")}</p>;
   const { app, info } = item;
   return (
@@ -47,7 +51,15 @@ export function DebloatDetails({ item }: { item: DebloatApp | null }) {
           </ul>
         </div>
       )}
-      <p className="label mt-2 normal-case tracking-normal text-white/30">{t("debloat.source")}</p>
+      <Button
+        variant="ghost"
+        size="sm"
+        className="self-start"
+        onClick={() => void commands.openWebSearch(webSearchUrl(app)).catch(feedback.failure)}
+      >
+        <Globe className="size-3.5" />
+        {t("debloat.webSearch")}
+      </Button>
     </div>
   );
 }

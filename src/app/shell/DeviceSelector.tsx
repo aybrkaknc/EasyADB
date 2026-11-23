@@ -6,6 +6,7 @@ import type { DeviceEntry } from "../../bindings";
 import { useDevices } from "../../shared/hooks/useDevices";
 import { cn } from "../../shared/lib/cn";
 import { useAppStore } from "../store";
+import { RootBadge } from "./RootBadge";
 
 function stateColor(device: DeviceEntry) {
   if (device.state === "device") return "bg-neon";
@@ -37,6 +38,7 @@ export function DeviceSelector() {
           <>
             <span className={cn("size-1.5 shrink-0", stateColor(selected))} />
             <KindIcon device={selected} />
+            <RootBadge device={selected} />
             <span className="truncate">{name(selected)}</span>
             <span className="label shrink-0">{t(`devices.state.${selected.state}`)}</span>
           </>
@@ -65,6 +67,7 @@ export function DeviceSelector() {
             >
               <span className={cn("size-1.5 shrink-0", stateColor(device))} />
               <KindIcon device={device} />
+              <RootBadge device={device} />
               <span className="flex-1 truncate">{name(device)}</span>
               <span className="label">{t(`devices.kind.${device.kind}`)}</span>
             </DropdownMenu.Item>
