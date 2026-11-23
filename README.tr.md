@@ -14,6 +14,10 @@
 
 <br />
 <div align="center">
+  <a href="https://github.com/aybrkaknc/EasyADB">
+    <img src="docs/icons/icon.png" alt="EasyADB logosu" width="120">
+  </a>
+
   <h3 align="center">EasyADB</h3>
 
   <p align="center">
