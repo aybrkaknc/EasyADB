@@ -32,13 +32,21 @@ impl AppState {
     }
 }
 
-/// Runs blocking work (adb calls, file IO) off the async runtime.
+/// Runs blocking work (adb calls, file IO) off the async runtime and logs failures.
 pub async fn blocking<T, F>(work: F) -> AppResult<T>
 where
     T: Send + 'static,
     F: FnOnce() -> AppResult<T> + Send + 'static,
 {
-    tauri::async_runtime::spawn_blocking(work)
+    let result = tauri::async_runtime::spawn_blocking(work)
         .await
-        .map_err(|err| AppError::new(ErrorCode::Internal, err.to_string()))?
+        .map_err(|err| AppError::new(ErrorCode::Internal, err.to_string()))
+        .and_then(|inner| inner);
+    if let Err(err) = &result {
+        // A missing sidecar is logged once at startup; cancellations are not failures.
+        if !matches!(err.code, ErrorCode::Cancelled | ErrorCode::AdbMissing) {
+            log::warn!("{err}");
+        }
+    }
+    result
 }

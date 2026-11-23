@@ -122,11 +122,15 @@ pub fn run() {
             builder.mount_events(app);
             settings::apply_logging(store::settings(app.handle()).file_logging);
             tray::create(app.handle())?;
-            if let Ok(runner) = app.state::<state::AppState>().runner() {
-                // Start the adb server early so the first device query is fast.
-                std::thread::spawn(move || {
-                    let _ = runner.exec(adb::Tool::Adb, &["start-server"]);
-                });
+            match app.state::<state::AppState>().runner() {
+                Ok(runner) => {
+                    log::info!("EasyADB {} started", env!("CARGO_PKG_VERSION"));
+                    // Start the adb server early so the first device query is fast.
+                    std::thread::spawn(move || {
+                        let _ = runner.exec(adb::Tool::Adb, &["start-server"]);
+                    });
+                }
+                Err(err) => log::error!("adb sidecar not available: {err}"),
             }
             show_main_window(app.handle());
             Ok(())
