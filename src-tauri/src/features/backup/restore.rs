@@ -8,6 +8,7 @@ use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 use specta::Type;
 
+use super::appops;
 use super::manifest::{self, BackupFile, ExtraFile, ExtraKind, FileKind, Manifest};
 use super::permissions::is_valid_permission;
 use super::transfer;
@@ -44,6 +45,8 @@ pub struct RestoreReport {
     pub detail: Option<String>,
     pub permissions_granted: u32,
     pub permissions_total: u32,
+    /// Special app access settings and battery exemption that could not be applied.
+    pub special_failed: u32,
 }
 
 /// Where an app data archive is extracted on the device.
@@ -173,11 +176,13 @@ pub fn restore(
         }
     }
 
-    let (permissions_granted, permissions_total) = if options.restore_permissions {
+    let (permissions_granted, permissions_total, special_failed) = if options.restore_permissions {
         reporter.progress("permissions", &manifest.package, 0.0, 1.0);
-        grant_permissions(device, &manifest)
+        let (granted, total) = grant_permissions(device, &manifest);
+        let (failed, _) = appops::restore(device, &manifest);
+        (granted, total, failed)
     } else {
-        (0, 0)
+        (0, 0, 0)
     };
 
     let mut archives: Vec<(Layer, &str, &Path)> = Vec::new();
@@ -229,6 +234,7 @@ pub fn restore(
         detail,
         permissions_granted,
         permissions_total,
+        special_failed,
     })
 }
 
@@ -551,6 +557,46 @@ mod tests {
         .unwrap();
         assert_eq!(report.data, DataStatus::NoRoot);
         assert!(fake.calls()[0].contains("install"));
+    }
+
+    #[test]
+    fn restores_special_access_with_the_permissions_option() {
+        let tmp = tempfile::tempdir().unwrap();
+        let dir = tmp.path().join("com.a_1");
+        backup_with(&dir, vec![]);
+        let mut manifest = manifest::read(&dir).unwrap();
+        manifest.app_ops = vec![manifest::AppOp {
+            op: "SYSTEM_ALERT_WINDOW".into(),
+            mode: "allow".into(),
+        }];
+        manifest.battery_exempt = true;
+        manifest::write(&dir, &manifest).unwrap();
+        let fake = FakeAdb::new()
+            .on("install", "Success\n")
+            .on("appops set", "")
+            .on_fail("whitelist", "denied");
+        let mut opts = options(false);
+        opts.restore_permissions = true;
+        let report = restore(
+            Device::new(&fake, "X"),
+            &dir,
+            &opts,
+            &TaskHandle::default(),
+            &Reporter::silent(),
+        )
+        .unwrap();
+        assert_eq!(report.special_failed, 1);
+        assert!(fake.calls().iter().any(|c| c.contains("whitelist +com.a")));
+
+        let skipped = restore(
+            Device::new(&fake, "X"),
+            &dir,
+            &options(false),
+            &TaskHandle::default(),
+            &Reporter::silent(),
+        )
+        .unwrap();
+        assert_eq!(skipped.special_failed, 0);
     }
 
     #[test]

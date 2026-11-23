@@ -198,7 +198,8 @@ pub struct BackupSummary {
     pub total_bytes: f64,
     pub has_obb: bool,
     pub has_data: bool,
-    /// Number of runtime permissions that were granted when the backup was made.
+    /// Runtime permissions that were granted when the backup was made, plus the saved
+    /// special app access settings and the battery exemption.
     pub permission_count: u32,
     pub device_model: String,
 }
@@ -218,7 +219,8 @@ pub fn list(root: &Path) -> Vec<BackupSummary> {
                 path: e.path().display().to_string(),
                 has_obb: manifest.has(FileKind::Obb),
                 has_data: manifest.has_data(),
-                permission_count: manifest.permissions.iter().filter(|p| p.granted).count() as u32,
+                permission_count: manifest.permissions.iter().filter(|p| p.granted).count() as u32
+                    + super::appops::saved_count(&manifest),
                 total_bytes: manifest.total_bytes() as f64,
                 device_model: manifest.device.model,
                 package: manifest.package,

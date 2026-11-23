@@ -246,7 +246,8 @@
       "report": {
         "noRoot": "{{name}}: no root or root was denied. The app was installed, its data was not restored.",
         "failed": "{{name}}: the app was installed but its data could not be restored: {{detail}}",
-        "permissions": "{{name}}: {{granted}} of {{total}} permissions granted."
+        "permissions": "{{name}}: {{granted}} of {{total}} permissions granted.",
+        "special": "{{name}}: {{count}} special access settings could not be restored."
       }
     },
     "dataSkipped": "{{name}}: no root or root was denied. The app was backed up, its data was not.",

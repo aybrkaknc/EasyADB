@@ -246,7 +246,8 @@
       "report": {
         "noRoot": "{{name}}: root yok veya izin reddedildi. Uygulama kuruldu, verisi yüklenmedi.",
         "failed": "{{name}}: uygulama kuruldu ama verisi yüklenemedi: {{detail}}",
-        "permissions": "{{name}}: {{total}} izinden {{granted}} tanesi verildi."
+        "permissions": "{{name}}: {{total}} izinden {{granted}} tanesi verildi.",
+        "special": "{{name}}: {{count}} özel erişim ayarı geri yüklenemedi."
       }
     },
     "dataSkipped": "{{name}}: root yok veya izin reddedildi. Uygulama yedeklendi, verisi yedeklenmedi.",

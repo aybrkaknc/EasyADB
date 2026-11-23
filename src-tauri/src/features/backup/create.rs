@@ -6,6 +6,7 @@ use std::path::{Path, PathBuf};
 use serde::Deserialize;
 use specta::Type;
 
+use super::appops;
 use super::manifest::{self, BackupFile, DeviceSnapshot, FileKind, Manifest};
 use super::permissions::parse_runtime_permissions;
 use super::transfer;
@@ -92,6 +93,15 @@ pub fn create(job: &Job, package: &str, options: &BackupOptions) -> AppResult<Cr
         .device
         .shell(&["dumpsys", "package", package])
         .unwrap_or_default();
+    let app_ops = job
+        .device
+        .shell(&["cmd", "appops", "get", "--user", "0", package])
+        .map(|out| appops::parse_app_ops(&out))
+        .unwrap_or_default();
+    let battery_exempt = job
+        .device
+        .shell(&["dumpsys", "deviceidle", "whitelist"])
+        .is_ok_and(|out| appops::is_battery_exempt(&out, package));
 
     let now = chrono::Local::now();
     let dir = job.root.join(manifest::folder_name(package, &now));
@@ -108,8 +118,8 @@ pub fn create(job: &Job, package: &str, options: &BackupOptions) -> AppResult<Cr
             files,
             permissions: parse_runtime_permissions(&dump),
             extras: Vec::new(),
-            app_ops: Vec::new(),
-            battery_exempt: false,
+            app_ops,
+            battery_exempt,
         };
         manifest::write(&dir, &manifest).map(|_| data_skipped)
     });

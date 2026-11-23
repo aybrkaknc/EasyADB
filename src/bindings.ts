@@ -158,7 +158,10 @@ export type BackupSummary_Deserialize = {
 	totalBytes: number | null,
 	hasObb: boolean,
 	hasData: boolean,
-	/**  Number of runtime permissions that were granted when the backup was made. */
+	/**
+	 *  Runtime permissions that were granted when the backup was made, plus the saved
+	 *  special app access settings and the battery exemption.
+	 */
 	permissionCount: number,
 	deviceModel: string,
 };
@@ -173,7 +176,10 @@ export type BackupSummary_Serialize = {
 	totalBytes: number | null,
 	hasObb: boolean,
 	hasData: boolean,
-	/**  Number of runtime permissions that were granted when the backup was made. */
+	/**
+	 *  Runtime permissions that were granted when the backup was made, plus the saved
+	 *  special app access settings and the battery exemption.
+	 */
 	permissionCount: number,
 	deviceModel: string,
 };
@@ -409,6 +415,7 @@ export type Removal = "Recommended" | "Advanced" | "Expert" | "Unsafe";
 
 export type RestoreOptions = {
 	restoreObb: boolean,
+	/**  App data: the private archive and the extra archives written by EasyAndroid. */
 	restoreData: boolean,
 	restorePermissions: boolean,
 	verifyHash: boolean,
@@ -422,6 +429,8 @@ export type RestoreReport_Deserialize = {
 	detail?: string | null,
 	permissionsGranted: number,
 	permissionsTotal: number,
+	/**  Special app access settings and battery exemption that could not be applied. */
+	specialFailed: number,
 };
 
 export type RestoreReport_Serialize = {
@@ -430,6 +439,8 @@ export type RestoreReport_Serialize = {
 	detail: string | null,
 	permissionsGranted: number,
 	permissionsTotal: number,
+	/**  Special app access settings and battery exemption that could not be applied. */
+	specialFailed: number,
 };
 
 export type SavedDevice = SavedDevice_Serialize | SavedDevice_Deserialize;

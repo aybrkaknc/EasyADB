@@ -2,7 +2,7 @@ import type { TFunction } from "i18next";
 
 import type { RestoreReport } from "../../bindings";
 
-/** Warnings worth showing after a restore: data that was skipped or permissions that did not apply. */
+/** Warnings worth showing after a restore: data that was skipped or permissions and special access that did not apply. */
 export function restoreWarnings(t: TFunction, name: string, report: RestoreReport): string[] {
   const warnings: string[] = [];
   if (report.data === "no_root") warnings.push(t("backup.restore.report.noRoot", { name }));
@@ -13,6 +13,9 @@ export function restoreWarnings(t: TFunction, name: string, report: RestoreRepor
   const total = report.permissionsTotal ?? 0;
   if (total > 0 && granted < total) {
     warnings.push(t("backup.restore.report.permissions", { name, granted, total }));
+  }
+  if (report.specialFailed > 0) {
+    warnings.push(t("backup.restore.report.special", { name, count: report.specialFailed }));
   }
   return warnings;
 }

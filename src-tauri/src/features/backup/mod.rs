@@ -1,5 +1,6 @@
 //! Backup and restore commands.
 
+mod appops;
 mod archive;
 pub mod create;
 pub mod manifest;

@@ -144,6 +144,7 @@ const handlers: Record<string, (args: Args) => unknown> = {
     detail: null,
     permissionsGranted: 0,
     permissionsTotal: 0,
+    specialFailed: 0,
   }),
   list_debloat_apps: () => apps.map((app) => ({ app, info: debloatInfo[app.package] ?? null })),
   apply_debloat: (a) =>
