@@ -13,7 +13,7 @@ Uygulama sıfırdan yeniden yazıldı. Eski `.easybckp` yedekleri bu sürümle o
 
 ### Eklenenler
 - Birden fazla cihaz desteği, cihaz seçici ve yetkisiz/çevrimdışı cihazlar için adım adım rehber
-- Klasör tabanlı yedek biçimi (v1): akışlı aktarım, SHA-256, isteğe bağlı AES-256-GCM şifreleme, `.easybckp` dışa/içe aktarma
+- Klasör tabanlı yedek biçimi (v1): akışlı aktarım, SHA-256, çalışma zamanı izinlerinin yedeklenmesi ve isteğe bağlı geri verilmesi, toplu geri yükleme, `.easybckp` dışa/içe aktarma. Root yoksa uygulama kurulur, veri atlanır
 - UAD-NG verileriyle debloat, toplu işlemler ve profiller
 - Kablosuz hata ayıklama: eşleştirme kodu, QR kod, IP ve `adb tcpip`
 - Canlı çıktılı ve iptal edilebilir terminal

@@ -14,7 +14,7 @@ Areas of special interest:
 
 * Command injection into the device shell or the host
 * Path traversal when importing or restoring backups
-* Weaknesses in backup encryption
+* Unsafe handling of backup files (tampered manifests, unexpected paths)
 
 ---
 
@@ -32,4 +32,4 @@ Yedi gün içinde yanıt alırsınız. Düzeltme yayınlandığında, anonim kal
 
 * Cihaz kabuğuna veya bilgisayara komut enjeksiyonu
 * Yedek içe aktarırken veya geri yüklerken yol geçişi (path traversal)
-* Yedek şifrelemesindeki zayıflıklar
+* Yedek dosyalarının güvensiz işlenmesi (değiştirilmiş manifest, beklenmeyen yollar)

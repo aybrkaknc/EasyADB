@@ -22,6 +22,11 @@ impl TaskHandle {
         self.cancelled.load(Ordering::SeqCst)
     }
 
+    #[cfg(test)]
+    pub fn cancel_for_test(&self) {
+        self.cancel();
+    }
+
     /// Returns `Err(Cancelled)` once the task has been cancelled.
     pub fn check(&self) -> AppResult<()> {
         if self.is_cancelled() {

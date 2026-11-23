@@ -17,8 +17,6 @@ embed-resource = "3.0.12"
 tauri-build = { version = "2.6.3", features = [] }
 
 [dependencies]
-aes-gcm = "0.11.1"
-argon2 = "0.6.0"
 chrono = { version = "0.4.45", features = ["serde"] }
 getrandom = "0.4.3"
 log = "0.4.35"

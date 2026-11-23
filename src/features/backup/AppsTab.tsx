@@ -21,7 +21,7 @@ function BackupOptionsPanel({
   value,
   onChange,
 }: {
-  value: { obb: boolean; data: boolean; encrypt: boolean; password: string; confirm: string };
+  value: { obb: boolean; data: boolean };
   onChange: (v: Partial<typeof value>) => void;
 }) {
   const { t } = useTranslation();
@@ -38,32 +38,7 @@ function BackupOptionsPanel({
           onChange={(data) => onChange({ data })}
           label={t("backup.options.data")}
         />
-        <Checkbox
-          checked={value.encrypt}
-          onChange={(encrypt) => onChange({ encrypt })}
-          label={t("backup.options.encrypt")}
-        />
-        {value.encrypt && (
-          <div className="flex flex-col gap-2">
-            <Input
-              type="password"
-              placeholder={t("backup.options.password")}
-              aria-label={t("backup.options.password")}
-              value={value.password}
-              onChange={(e) => onChange({ password: e.target.value })}
-            />
-            <Input
-              type="password"
-              placeholder={t("backup.options.passwordConfirm")}
-              aria-label={t("backup.options.passwordConfirm")}
-              value={value.confirm}
-              onChange={(e) => onChange({ confirm: e.target.value })}
-            />
-            {value.password !== value.confirm && (
-              <p className="text-[11px] text-danger">{t("backup.options.mismatch")}</p>
-            )}
-          </div>
-        )}
+        {value.data && <p className="text-[11px] text-warn/80">{t("backup.options.dataHint")}</p>}
       </div>
     </Panel>
   );
@@ -77,13 +52,7 @@ export function AppsTab({ device, onDone }: { device: DeviceEntry; onDone: () =>
   const selection = useSelection();
   const [filter, setFilter] = useState<Filter>("user");
   const [search, setSearch] = useState("");
-  const [options, setOptions] = useState({
-    obb: true,
-    data: false,
-    encrypt: false,
-    password: "",
-    confirm: "",
-  });
+  const [options, setOptions] = useState({ obb: true, data: false });
 
   const apps = useQuery({
     queryKey: ["apps", device.serial],
@@ -109,8 +78,6 @@ export function AppsTab({ device, onDone }: { device: DeviceEntry; onDone: () =>
     (sum, s) => sum + (s.apkBytes ?? 0) + (options.obb ? (s.obbBytes ?? 0) : 0),
     0,
   );
-  const passwordInvalid =
-    options.encrypt && (!options.password || options.password !== options.confirm);
   const allVisible = visible.length > 0 && visible.every((a) => selection.has(a.package));
 
   const start = async () => {
@@ -119,7 +86,6 @@ export function AppsTab({ device, onDone }: { device: DeviceEntry; onDone: () =>
         commands.startBackup(id, device.serial, selectedIds, {
           includeObb: options.obb,
           includeData: options.data,
-          password: options.encrypt ? options.password : null,
         }),
       );
       const failed = outcomes.filter((o) => o.error);
@@ -128,6 +94,14 @@ export function AppsTab({ device, onDone }: { device: DeviceEntry; onDone: () =>
         true,
       );
       failed.forEach((o) => feedback.failure(o.error));
+      outcomes
+        .filter((o) => o.dataSkipped)
+        .forEach((o) => {
+          const app = installed.find((a) => a.package === o.package);
+          feedback.warning(
+            t("backup.dataSkipped", { name: appName(app ?? { package: o.package }) }),
+          );
+        });
       selection.clear();
       void client.invalidateQueries({ queryKey: ["backups"] });
       if (failed.length === 0) onDone();
@@ -217,10 +191,7 @@ export function AppsTab({ device, onDone }: { device: DeviceEntry; onDone: () =>
           )}
           {filter !== "user" && <span className="text-warn/80">{t("backup.systemHint")}</span>}
         </div>
-        <Button
-          onClick={() => void start()}
-          disabled={selection.count === 0 || passwordInvalid || task.running}
-        >
+        <Button onClick={() => void start()} disabled={selection.count === 0 || task.running}>
           {t("backup.start", { count: selection.count })}
         </Button>
       </aside>

@@ -22,8 +22,8 @@ export const commands = {
 	listDeviceApps: (serial: string, options?: InvokeOptions) => __TAURI_INVOKE<AppInfo_Serialize[]>("list_device_apps", { serial }, options),
 	getAppSizes: (serial: string, packages: string[], options?: InvokeOptions) => __TAURI_INVOKE<AppSize[]>("get_app_sizes", { serial, packages }, options),
 	listBackups: (options?: InvokeOptions) => __TAURI_INVOKE<BackupSummary_Serialize[]>("list_backups", undefined, options),
-	startBackup: (taskId: string, serial: string, packages: string[], options: BackupOptions_Deserialize, _options?: InvokeOptions) => __TAURI_INVOKE<BackupOutcome_Serialize[]>("start_backup", { taskId, serial, packages, options }, _options),
-	startRestore: (taskId: string, serial: string, backupId: string, options: RestoreOptions_Deserialize, _options?: InvokeOptions) => __TAURI_INVOKE<null>("start_restore", { taskId, serial, backupId, options }, _options),
+	startBackup: (taskId: string, serial: string, packages: string[], options: BackupOptions, _options?: InvokeOptions) => __TAURI_INVOKE<BackupOutcome_Serialize[]>("start_backup", { taskId, serial, packages, options }, _options),
+	startRestore: (taskId: string, serial: string, backupId: string, options: RestoreOptions, _options?: InvokeOptions) => __TAURI_INVOKE<RestoreReport_Serialize>("start_restore", { taskId, serial, backupId, options }, _options),
 	deleteBackup: (backupId: string, options?: InvokeOptions) => __TAURI_INVOKE<null>("delete_backup", { backupId }, options),
 	exportBackup: (backupId: string, dest: string, options?: InvokeOptions) => __TAURI_INVOKE<null>("export_backup", { backupId, dest }, options),
 	importBackup: (src: string, options?: InvokeOptions) => __TAURI_INVOKE<string>("import_backup", { src }, options),
@@ -112,18 +112,9 @@ export type AppSize = {
 	obbBytes: number | null,
 };
 
-export type BackupOptions = BackupOptions_Serialize | BackupOptions_Deserialize;
-
-export type BackupOptions_Deserialize = {
+export type BackupOptions = {
 	includeObb: boolean,
 	includeData: boolean,
-	password?: string | null,
-};
-
-export type BackupOptions_Serialize = {
-	includeObb: boolean,
-	includeData: boolean,
-	password: string | null,
 };
 
 export type BackupOutcome = BackupOutcome_Serialize | BackupOutcome_Deserialize;
@@ -132,12 +123,22 @@ export type BackupOutcome_Deserialize = {
 	package: string,
 	id?: string | null,
 	error?: AppError | null,
+	/**
+	 *  App data was requested but could not be backed up (no root or root denied).
+	 *  The app itself was still backed up.
+	 */
+	dataSkipped: boolean,
 };
 
 export type BackupOutcome_Serialize = {
 	package: string,
 	id: string | null,
 	error: AppError | null,
+	/**
+	 *  App data was requested but could not be backed up (no root or root denied).
+	 *  The app itself was still backed up.
+	 */
+	dataSkipped: boolean,
 };
 
 export type BackupSummary = BackupSummary_Serialize | BackupSummary_Deserialize;
@@ -152,7 +153,8 @@ export type BackupSummary_Deserialize = {
 	totalBytes: number | null,
 	hasObb: boolean,
 	hasData: boolean,
-	encrypted: boolean,
+	/**  Number of runtime permissions that were granted when the backup was made. */
+	permissionCount: number,
 	deviceModel: string,
 };
 
@@ -166,7 +168,8 @@ export type BackupSummary_Serialize = {
 	totalBytes: number | null,
 	hasObb: boolean,
 	hasData: boolean,
-	encrypted: boolean,
+	/**  Number of runtime permissions that were granted when the backup was made. */
+	permissionCount: number,
 	deviceModel: string,
 };
 
@@ -208,6 +211,10 @@ export type CommandOutput_Serialize = {
 };
 
 export type ConnectionKind = "usb" | "wifi" | "emulator";
+
+export type DataStatus = "not_requested" | "restored" | 
+/**  There is no root, or the root prompt on the device was denied. */
+"no_root" | "failed";
 
 export type DebloatAction = "disable" | "enable" | "uninstall" | "restore";
 
@@ -290,7 +297,7 @@ export type DeviceEntry_Serialize = {
 export type DeviceState = "device" | "unauthorized" | "offline" | "recovery" | "sideload" | "bootloader" | "unknown";
 
 /**  Stable error codes. The frontend translates them; `detail` carries the raw context. */
-export type ErrorCode = "adb_missing" | "adb_failed" | "device_not_found" | "device_unauthorized" | "device_offline" | "root_required" | "invalid_input" | "invalid_path" | "io" | "parse" | "backup_invalid" | "wrong_password" | "integrity_failed" | "install_failed" | "pair_failed" | "connect_failed" | "cancelled" | "not_found" | "internal";
+export type ErrorCode = "adb_missing" | "adb_failed" | "device_not_found" | "device_unauthorized" | "device_offline" | "invalid_input" | "invalid_path" | "io" | "parse" | "backup_invalid" | "integrity_failed" | "install_failed" | "pair_failed" | "connect_failed" | "cancelled" | "not_found" | "internal";
 
 export type FileEntry = {
 	name: string,
@@ -395,20 +402,29 @@ export type RebootMode = "system" | "recovery" | "bootloader" | "sideload" | "fa
 
 export type Removal = "Recommended" | "Advanced" | "Expert" | "Unsafe";
 
-export type RestoreOptions = RestoreOptions_Serialize | RestoreOptions_Deserialize;
-
-export type RestoreOptions_Deserialize = {
+export type RestoreOptions = {
 	restoreObb: boolean,
 	restoreData: boolean,
-	password?: string | null,
+	restorePermissions: boolean,
 	verifyHash: boolean,
 };
 
-export type RestoreOptions_Serialize = {
-	restoreObb: boolean,
-	restoreData: boolean,
-	password: string | null,
-	verifyHash: boolean,
+export type RestoreReport = RestoreReport_Serialize | RestoreReport_Deserialize;
+
+export type RestoreReport_Deserialize = {
+	data: DataStatus,
+	/**  Error text when `data` is `Failed`. */
+	detail?: string | null,
+	permissionsGranted: number,
+	permissionsTotal: number,
+};
+
+export type RestoreReport_Serialize = {
+	data: DataStatus,
+	/**  Error text when `data` is `Failed`. */
+	detail: string | null,
+	permissionsGranted: number,
+	permissionsTotal: number,
 };
 
 export type SavedDevice = SavedDevice_Serialize | SavedDevice_Deserialize;

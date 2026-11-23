@@ -119,13 +119,11 @@
     "device_not_found": "Cihaz bulunamadı. Hâlâ bağlı mı?",
     "device_unauthorized": "Cihaz bu bilgisayara yetki vermedi.",
     "device_offline": "Cihaz çevrimdışı.",
-    "root_required": "Root erişimi gerekiyor. Cihazdaki root isteğine izin verin.",
     "invalid_input": "Geçersiz giriş.",
     "invalid_path": "Geçersiz veya korunan yol.",
     "io": "Bir dosya işlemi başarısız oldu.",
     "parse": "Veri okunamadı.",
     "backup_invalid": "Bu yedek geçersiz veya desteklenmeyen bir sürümden.",
-    "wrong_password": "Parola yanlış.",
     "integrity_failed": "Yedek bozuk veya değiştirilmiş.",
     "install_failed": "Kurulum başarısız oldu.",
     "pair_failed": "Eşleştirme başarısız oldu.",
@@ -148,7 +146,8 @@
       "debloat": "Uygulanıyor",
       "sideload": "Sideload yapılıyor",
       "pull": "İndiriliyor",
-      "push": "Yükleniyor"
+      "push": "Yükleniyor",
+      "permissions": "İzinler veriliyor"
     }
   },
   "notify": {
@@ -195,7 +194,7 @@
   "backup": {
     "tabs": {
       "apps": "Uygulamalar",
-      "archive": "Arşiv"
+      "archive": "Geri yükle"
     },
     "filter": {
       "user": "Kullanıcı",
@@ -207,10 +206,7 @@
       "title": "Seçenekler",
       "obb": "OBB dosyalarını ekle",
       "data": "Uygulama verisini ekle (root)",
-      "encrypt": "Parola ile şifrele",
-      "password": "Parola",
-      "passwordConfirm": "Parolayı onayla",
-      "mismatch": "Parolalar eşleşmiyor"
+      "dataHint": "Root gerekir. Cihaz sorduğunda \"Shell\" için root iznini verin."
     },
     "start": "{{count}} uygulamayı yedekle",
     "estimate": "Tahmini boyut: {{size}}",
@@ -225,11 +221,14 @@
       "import": ".easybckp içe aktar",
       "delete": "Sil",
       "deleteConfirm": "{{name}} yedeği silinsin mi? Bu işlem geri alınamaz.",
-      "encrypted": "Şifreli",
       "data": "Veri",
       "obb": "OBB",
       "exported": "Şuraya aktarıldı: {{path}}",
-      "imported": "Yedek içe aktarıldı"
+      "imported": "Yedek içe aktarıldı",
+      "restoreSelected": "Seçilen {{count}} yedeği geri yükle",
+      "batchConfirm": "{{count}} yedek cihaza geri yüklensin mi? Uygulamalar kurulur; verisi olan yedeklerde root varsa uygulama verisi değiştirilir.",
+      "batchDone": "{{ok}} geri yüklendi, {{failed}} başarısız",
+      "batchPermissions": "Kayıtlı izinleri de ver"
     },
     "restore": {
       "title": "{{name}} geri yükle",
@@ -237,10 +236,17 @@
       "data": "Uygulama verisini geri yükle (root)",
       "dataConfirm": "Uygulama verisini geri yüklemek {{name}} için mevcut verinin yerine geçer. Devam edilsin mi?",
       "verify": "Geri yüklemeden önce SHA-256 doğrula",
-      "password": "Yedek parolası",
       "start": "Geri yükle",
-      "done": "{{name}} geri yüklendi"
-    }
+      "done": "{{name}} geri yüklendi",
+      "permissions": "Uygulamanın kayıtlı izinlerini ver ({{count}})",
+      "rootHint": "Uygulama verisi için root gerekir. Cihaz sorduğunda \"Shell\" için root iznini verin. Root yoksa yalnızca uygulama kurulur.",
+      "report": {
+        "noRoot": "{{name}}: root yok veya izin reddedildi. Uygulama kuruldu, verisi yüklenmedi.",
+        "failed": "{{name}}: uygulama kuruldu ama verisi yüklenemedi: {{detail}}",
+        "permissions": "{{name}}: {{total}} izinden {{granted}} tanesi verildi."
+      }
+    },
+    "dataSkipped": "{{name}}: root yok veya izin reddedildi. Uygulama yedeklendi, verisi yedeklenmedi."
   },
   "debloat": {
     "search": "Paket ara",

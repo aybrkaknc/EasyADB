@@ -108,12 +108,27 @@ const handlers: Record<string, (args: Args) => unknown> = {
         totalBytes: 25_000_000,
         hasObb: false,
         hasData: false,
-        encrypted: false,
+        permissionCount: 3,
         deviceModel: "Pixel 7",
       });
     }
-    return packages.map((pkg) => ({ package: pkg, id: `${pkg}_20260101-120000`, error: null }));
+    const noRoot = scenario === "noroot" && (a.options as { includeData: boolean }).includeData;
+    return packages.map((pkg) => ({
+      package: pkg,
+      id: `${pkg}_20260101-120000`,
+      error: null,
+      dataSkipped: noRoot,
+    }));
   },
+  start_restore: (a) => ({
+    data:
+      scenario === "noroot" && (a.options as { restoreData: boolean }).restoreData
+        ? "no_root"
+        : "not_requested",
+    detail: null,
+    permissionsGranted: 0,
+    permissionsTotal: 0,
+  }),
   list_debloat_apps: () => apps.map((app) => ({ app, info: debloatInfo[app.package] ?? null })),
   apply_debloat: (a) =>
     (a.entries as { package: string }[]).map((e) => ({ package: e.package, error: null })),

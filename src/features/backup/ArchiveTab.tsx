@@ -6,10 +6,16 @@ import { useTranslation } from "react-i18next";
 
 import { type BackupSummary, commands, type DeviceEntry } from "../../bindings";
 import { useFeedback } from "../../shared/hooks/useFeedback";
+import { useSelection } from "../../shared/hooks/useSelection";
+import { useSettings } from "../../shared/hooks/useSettings";
+import { useTask } from "../../shared/hooks/useTask";
+import { isAppError } from "../../shared/lib/errors";
 import { appName, formatBytes, formatDate } from "../../shared/lib/format";
 import { Button } from "../../shared/ui/Button";
+import { Checkbox } from "../../shared/ui/Controls";
 import { useConfirm } from "../../shared/hooks/useConfirm";
-import { Badge, EmptyState, Spinner } from "../../shared/ui/Feedback";
+import { Badge, EmptyState, Spinner, TaskBar } from "../../shared/ui/Feedback";
+import { restoreWarnings } from "./report";
 import { RestoreDialog } from "./RestoreDialog";
 
 export function ArchiveTab({ device }: { device: DeviceEntry | null }) {
@@ -17,10 +23,48 @@ export function ArchiveTab({ device }: { device: DeviceEntry | null }) {
   const client = useQueryClient();
   const feedback = useFeedback();
   const confirm = useConfirm();
+  const settings = useSettings();
+  const task = useTask();
+  const selection = useSelection();
   const [restoring, setRestoring] = useState<BackupSummary | null>(null);
+  const [restorePermissions, setRestorePermissions] = useState(true);
   const backups = useQuery({ queryKey: ["backups"], queryFn: () => commands.listBackups() });
   const root = useQuery({ queryKey: ["backupRoot"], queryFn: () => commands.getBackupRoot() });
   const refresh = () => void client.invalidateQueries({ queryKey: ["backups"] });
+
+  const batchItems = (backups.data ?? []).filter((b) => selection.has(b.id));
+
+  const restoreSelected = async () => {
+    if (!device || batchItems.length === 0) return;
+    const serial = device.serial;
+    const ok = await confirm(
+      t("backup.archive.batchConfirm", { count: batchItems.length }),
+      batchItems.some((b) => b.hasData),
+    );
+    if (!ok) return;
+    let restored = 0;
+    let failed = 0;
+    for (const backup of batchItems) {
+      try {
+        const report = await task.run((id) =>
+          commands.startRestore(id, serial, backup.id, {
+            restoreObb: backup.hasObb,
+            restoreData: backup.hasData,
+            restorePermissions: restorePermissions && backup.permissionCount > 0,
+            verifyHash: settings.verifyHashOnRestore,
+          }),
+        );
+        restored++;
+        restoreWarnings(t, appName(backup), report).forEach(feedback.warning);
+      } catch (error) {
+        if (isAppError(error) && error.code === "cancelled") break;
+        failed++;
+        feedback.failure(error);
+      }
+    }
+    feedback.success(t("backup.archive.batchDone", { ok: restored, failed }), true);
+    selection.clear();
+  };
 
   const remove = async (backup: BackupSummary) => {
     if (!(await confirm(t("backup.archive.deleteConfirm", { name: appName(backup) })))) return;
@@ -76,8 +120,42 @@ export function ArchiveTab({ device }: { device: DeviceEntry | null }) {
             <Upload className="size-3.5" />
             {t("backup.archive.import")}
           </Button>
+          <Button
+            size="sm"
+            onClick={() => void restoreSelected()}
+            disabled={!ready || batchItems.length === 0 || task.running}
+          >
+            <RotateCcw className="size-3.5" />
+            {t("backup.archive.restoreSelected", { count: batchItems.length })}
+          </Button>
         </div>
       </div>
+      {backups.data && backups.data.length > 0 && (
+        <div className="flex items-center gap-3 px-6 pb-3">
+          <Checkbox
+            checked={backups.data.every((b) => selection.has(b.id))}
+            onChange={(on) => selection.setAll(backups.data?.map((b) => b.id) ?? [], on)}
+            label={t("common.selectAll")}
+          />
+          {selection.count > 0 && (
+            <span className="text-[11px] text-white/50">
+              {t("common.selected", { count: selection.count })}
+            </span>
+          )}
+          <div className="ml-auto">
+            <Checkbox
+              checked={restorePermissions}
+              onChange={setRestorePermissions}
+              label={t("backup.archive.batchPermissions")}
+            />
+          </div>
+        </div>
+      )}
+      {backups.data?.some((b) => selection.has(b.id) && b.hasData) && (
+        <div className="px-6 pb-3">
+          <p className="text-[11px] text-warn/80">{t("backup.restore.rootHint")}</p>
+        </div>
+      )}
       {backups.isLoading ? (
         <div className="p-6">
           <Spinner label={t("common.loading")} />
@@ -88,13 +166,16 @@ export function ArchiveTab({ device }: { device: DeviceEntry | null }) {
         <ul className="flex-1 overflow-auto px-6 pb-6">
           {backups.data.map((backup) => (
             <li key={backup.id} className="flex items-center gap-4 border-b border-white/5 py-3">
+              <Checkbox
+                checked={selection.has(backup.id)}
+                onChange={() => selection.toggle(backup.id)}
+              />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <p className="truncate text-xs text-white">{appName(backup)}</p>
                   {backup.versionName && (
                     <span className="text-[10px] text-white/40">{backup.versionName}</span>
                   )}
-                  {backup.encrypted && <Badge tone="warn">{t("backup.archive.encrypted")}</Badge>}
                   {backup.hasData && <Badge tone="neon">{t("backup.archive.data")}</Badge>}
                   {backup.hasObb && <Badge>{t("backup.archive.obb")}</Badge>}
                 </div>
@@ -138,6 +219,7 @@ export function ArchiveTab({ device }: { device: DeviceEntry | null }) {
           ))}
         </ul>
       )}
+      {task.running && <TaskBar progress={task.progress} onCancel={task.cancel} />}
       {restoring && device && (
         <RestoreDialog
           backup={restoring}

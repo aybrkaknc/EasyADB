@@ -115,7 +115,9 @@ export function Toaster() {
           role={toast.kind === "error" ? "alert" : "status"}
           className={cn(
             "clip-corners-sm pointer-events-auto flex items-start gap-3 border bg-black/95 px-4 py-3 text-xs",
-            toast.kind === "error" ? "border-danger/60 text-danger" : "border-neon/50 text-neon",
+            toast.kind === "error" && "border-danger/60 text-danger",
+            toast.kind === "warning" && "border-warn/60 text-warn",
+            (toast.kind === "success" || toast.kind === "info") && "border-neon/50 text-neon",
           )}
         >
           <p className="flex-1 break-words whitespace-pre-wrap">{toast.text}</p>

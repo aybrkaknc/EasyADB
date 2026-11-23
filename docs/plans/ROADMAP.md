@@ -6,7 +6,7 @@ Sıfırdan yeniden yazım. Ayrıntılar için [REFACTOR_PLAN.md](REFACTOR_PLAN.m
 
 - [x] Tek ADB istemcisi, tipli hatalar, üretilen TypeScript tipleri
 - [x] Birden fazla cihaz, cihaz seçici, bağlantı rehberi
-- [x] Klasör tabanlı hızlı yedekleme, SHA-256, isteğe bağlı şifreleme, `.easybckp` dışa/içe aktarma
+- [x] Klasör tabanlı hızlı yedekleme, SHA-256, izinlerin yedeklenmesi, toplu geri yükleme, `.easybckp` dışa/içe aktarma
 - [x] UAD-NG tabanlı debloat, profiller
 - [x] Kablosuz hata ayıklama: eşleştirme kodu, QR, IP, `adb tcpip`
 - [x] Canlı çıktılı terminal, sideload, APK kurma

@@ -1,13 +1,15 @@
 //! Restores one backup folder onto a device.
+//!
+//! The app is always installed. Permissions and data are optional extras: a failure
+//! there never undoes the install, it is reported back instead.
 
-use std::fs;
 use std::path::{Path, PathBuf};
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use specta::Type;
 
-use super::crypto::{self, Key};
 use super::manifest::{self, BackupFile, FileKind, Manifest};
+use super::permissions::is_valid_permission;
 use super::transfer;
 use crate::adb::{Device, shell};
 use crate::error::{AppError, AppResult, ErrorCode};
@@ -19,28 +21,28 @@ use crate::tasks::{Reporter, TaskHandle};
 pub struct RestoreOptions {
     pub restore_obb: bool,
     pub restore_data: bool,
-    pub password: Option<String>,
+    pub restore_permissions: bool,
     pub verify_hash: bool,
 }
 
-/// Deletes the temporary folder when dropped.
-struct TempDir(PathBuf);
-
-impl Drop for TempDir {
-    fn drop(&mut self) {
-        let _ = fs::remove_dir_all(&self.0);
-    }
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Type)]
+#[serde(rename_all = "snake_case")]
+pub enum DataStatus {
+    NotRequested,
+    Restored,
+    /// There is no root, or the root prompt on the device was denied.
+    NoRoot,
+    Failed,
 }
 
-fn temp_dir(package: &str) -> AppResult<TempDir> {
-    let mut suffix = [0u8; 4];
-    getrandom::fill(&mut suffix).map_err(|e| AppError::new(ErrorCode::Internal, e.to_string()))?;
-    let dir = std::env::temp_dir().join(format!(
-        "easyadb-restore-{package}-{}",
-        crypto::to_hex(&suffix)
-    ));
-    fs::create_dir_all(&dir)?;
-    Ok(TempDir(dir))
+#[derive(Debug, Clone, Serialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct RestoreReport {
+    pub data: DataStatus,
+    /// Error text when `data` is `Failed`.
+    pub detail: Option<String>,
+    pub permissions_granted: u32,
+    pub permissions_total: u32,
 }
 
 pub fn restore(
@@ -49,33 +51,19 @@ pub fn restore(
     options: &RestoreOptions,
     task: &TaskHandle,
     reporter: &Reporter,
-) -> AppResult<()> {
+) -> AppResult<RestoreReport> {
     let manifest = manifest::read(dir)?;
     shell::validate_package(&manifest.package)?;
-    let key = match &manifest.encryption {
-        Some(info) => {
-            let password = options.password.as_deref().unwrap_or_default();
-            Some(crypto::open_key(password, info)?)
-        }
-        None => None,
-    };
     let wants = |f: &&BackupFile| match f.kind {
         FileKind::Apk => true,
         FileKind::Obb => options.restore_obb,
         FileKind::Data => options.restore_data,
     };
     let selected: Vec<&BackupFile> = manifest.files.iter().filter(wants).collect();
-    if selected.iter().any(|f| f.kind == FileKind::Data) && !device::check_root(device) {
-        return Err(AppError::new(ErrorCode::RootRequired, manifest.package));
-    }
-
-    let temp = temp_dir(&manifest.package)?;
-    let local = prepare(
+    let local = verify(
         &manifest,
         &selected,
         dir,
-        &temp.0,
-        key.as_ref(),
         options.verify_hash,
         task,
         reporter,
@@ -112,29 +100,49 @@ pub fn restore(
         }
     }
 
-    if let Some(tar) = path_of(FileKind::Data).first() {
-        reporter.progress("data", &manifest.package, 0.0, 1.0);
-        restore_data(device, &manifest.package, tar)?;
-    }
-    Ok(())
+    let (permissions_granted, permissions_total) = if options.restore_permissions {
+        reporter.progress("permissions", &manifest.package, 0.0, 1.0);
+        grant_permissions(device, &manifest)
+    } else {
+        (0, 0)
+    };
+
+    let (data, detail) = match path_of(FileKind::Data).first() {
+        None => (DataStatus::NotRequested, None),
+        Some(tar) => {
+            task.check()?;
+            reporter.progress("data", &manifest.package, 0.0, 1.0);
+            if !device::check_root(device) {
+                (DataStatus::NoRoot, None)
+            } else {
+                match restore_data(device, &manifest.package, tar) {
+                    Ok(()) => (DataStatus::Restored, None),
+                    Err(err) => (DataStatus::Failed, Some(err.detail)),
+                }
+            }
+        }
+    };
+    Ok(RestoreReport {
+        data,
+        detail,
+        permissions_granted,
+        permissions_total,
+    })
 }
 
-/// Returns a plaintext local path for each selected file, decrypting or verifying as needed.
-#[allow(clippy::too_many_arguments)]
-fn prepare(
+/// Checks every selected file in the backup folder and returns their paths.
+fn verify(
     manifest: &Manifest,
     files: &[&BackupFile],
     dir: &Path,
-    temp: &Path,
-    key: Option<&Key>,
     verify_hash: bool,
     task: &TaskHandle,
     reporter: &Reporter,
 ) -> AppResult<Vec<PathBuf>> {
     let total: f64 = files.iter().map(|f| f.size as f64).sum();
     let mut done = 0.0;
-    let mut local = Vec::new();
-    for (index, file) in files.iter().enumerate() {
+    let mut paths = Vec::new();
+    for file in files {
         let stored = dir.join(manifest::safe_relative(&file.stored)?);
         if !stored.is_file() {
             return Err(AppError::new(
@@ -147,16 +155,10 @@ fn prepare(
             done += n as f64;
             reporter.progress("verify", &manifest.package, done, total);
         };
-        if key.is_some() {
-            let dest = temp.join(format!("{index}-{}", file.name));
-            transfer::unpack(&stored, &dest, key, file.size, sha, task, &mut on_bytes)?;
-            local.push(dest);
-        } else {
-            transfer::verify_in_place(&stored, file.size, sha, task, &mut on_bytes)?;
-            local.push(stored);
-        }
+        transfer::verify_in_place(&stored, file.size, sha, task, &mut on_bytes)?;
+        paths.push(stored);
     }
-    Ok(local)
+    Ok(paths)
 }
 
 fn install(device: Device, apks: &[&PathBuf]) -> AppResult<()> {
@@ -179,6 +181,26 @@ fn install(device: Device, apks: &[&PathBuf]) -> AppResult<()> {
     }
 }
 
+/// Grants the runtime permissions that were granted at backup time.
+/// Returns (granted, wanted). Permissions the new system no longer knows are skipped.
+fn grant_permissions(device: Device, manifest: &Manifest) -> (u32, u32) {
+    let wanted: Vec<&str> = manifest
+        .permissions
+        .iter()
+        .filter(|p| p.granted && is_valid_permission(&p.name))
+        .map(|p| p.name.as_str())
+        .collect();
+    let granted = wanted
+        .iter()
+        .filter(|name| {
+            device
+                .shell(&["pm", "grant", &manifest.package, name])
+                .is_ok()
+        })
+        .count();
+    (granted as u32, wanted.len() as u32)
+}
+
 fn restore_data(device: Device, package: &str, tar: &Path) -> AppResult<()> {
     let remote = format!("/data/local/tmp/easyadb-{package}.tar");
     device.adb(&["push", &tar.display().to_string(), &remote])?;
@@ -195,6 +217,7 @@ fn restore_data(device: Device, package: &str, tar: &Path) -> AppResult<()> {
 mod tests {
     use super::*;
     use crate::adb::fake::FakeAdb;
+    use crate::features::backup::manifest::PermissionGrant;
 
     #[test]
     fn installs_single_and_split_apks() {
@@ -218,5 +241,30 @@ mod tests {
         let err = install(Device::new(&fake, "X"), &[&a]).unwrap_err();
         assert_eq!(err.code, ErrorCode::InstallFailed);
         assert!(err.detail.contains("DOWNGRADE"));
+    }
+
+    #[test]
+    fn grants_only_valid_granted_permissions() {
+        let fake = FakeAdb::new()
+            .on("grant com.a android.permission.CAMERA", "")
+            .on_fail("grant com.a android.permission.GONE", "Unknown permission");
+        let mut manifest = manifest::sample("com.a");
+        manifest.permissions = ["CAMERA", "GONE", "MIC"]
+            .iter()
+            .map(|n| PermissionGrant {
+                name: format!("android.permission.{n}"),
+                granted: *n != "MIC",
+            })
+            .chain([PermissionGrant {
+                name: "bad name; reboot".into(),
+                granted: true,
+            }])
+            .collect();
+        let (granted, wanted) = grant_permissions(Device::new(&fake, "X"), &manifest);
+        assert_eq!((granted, wanted), (1, 2));
+        assert_eq!(
+            fake.calls()[0],
+            "-s X shell pm grant com.a android.permission.CAMERA"
+        );
     }
 }

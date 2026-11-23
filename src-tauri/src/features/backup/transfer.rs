@@ -1,5 +1,5 @@
-//! Streaming helpers: device stdout to local file with hashing, optional
-//! encryption, progress and cancellation; and the reverse for restore.
+//! Streaming helpers: device stdout to a local file with hashing, progress and
+//! cancellation, plus in-place verification of stored files.
 
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Read, Write};
@@ -7,10 +7,13 @@ use std::path::Path;
 
 use sha2::{Digest, Sha256};
 
-use super::crypto::{self, Key};
 use crate::adb::Device;
 use crate::error::{AppError, AppResult, ErrorCode};
 use crate::tasks::TaskHandle;
+
+pub fn to_hex(bytes: &[u8]) -> String {
+    bytes.iter().map(|b| format!("{b:02x}")).collect()
+}
 
 /// Wraps a reader, hashing and counting everything that passes through.
 struct Tap<'a, R> {
@@ -24,10 +27,8 @@ struct Tap<'a, R> {
 impl<R: Read> Read for Tap<'_, R> {
     fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
         if self.task.is_cancelled() {
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::Interrupted,
-                "cancelled",
-            ));
+            // Not `Interrupted`: `io::copy` retries those forever.
+            return Err(std::io::Error::other("cancelled"));
         }
         let n = self.inner.read(buf)?;
         self.hasher.update(&buf[..n]);
@@ -45,11 +46,10 @@ fn map_cancel(task: &TaskHandle, err: AppError) -> AppError {
     }
 }
 
-/// Writes `reader` to `dest` (encrypted when `key` is set). Returns plaintext size and SHA-256.
+/// Writes `reader` to `dest`. Returns the size and SHA-256.
 pub fn store(
     reader: impl Read,
     dest: &Path,
-    key: Option<&Key>,
     task: &TaskHandle,
     on_bytes: &mut dyn FnMut(u64),
 ) -> AppResult<(u64, String)> {
@@ -61,16 +61,11 @@ pub fn store(
         on_bytes,
     };
     let mut out = BufWriter::new(File::create(dest)?);
-    let result = match key {
-        Some(key) => crypto::encrypt_stream(key, &mut tap, &mut out).map(|_| ()),
-        None => std::io::copy(&mut tap, &mut out)
-            .map(|_| ())
-            .map_err(AppError::from),
-    };
-    result
-        .and_then(|_| out.flush().map_err(AppError::from))
-        .map_err(|e| map_cancel(task, e))?;
-    Ok((tap.count, crypto::to_hex(&tap.hasher.finalize())))
+    std::io::copy(&mut tap, &mut out)
+        .map(|_| ())
+        .and_then(|_| out.flush())
+        .map_err(|e| map_cancel(task, e.into()))?;
+    Ok((tap.count, to_hex(&tap.hasher.finalize())))
 }
 
 /// Runs `adb exec-out <script>` and stores its stdout in `dest`.
@@ -78,7 +73,6 @@ pub fn pull(
     device: Device,
     script: &str,
     dest: &Path,
-    key: Option<&Key>,
     task: &TaskHandle,
     on_bytes: &mut dyn FnMut(u64),
 ) -> AppResult<(u64, String)> {
@@ -96,7 +90,7 @@ pub fn pull(
         text
     });
     task.attach(child);
-    let stored = store(BufReader::new(stdout), dest, key, task, on_bytes);
+    let stored = store(BufReader::new(stdout), dest, task, on_bytes);
     let status = task.detach().map(|mut c| c.wait()).transpose()?;
     let stderr_text = stderr_reader.join().unwrap_or_default();
     task.check()?;
@@ -107,67 +101,7 @@ pub fn pull(
     }
 }
 
-/// Produces a plaintext copy of a stored file in `dest`, verifying size and optionally the hash.
-pub fn unpack(
-    src: &Path,
-    dest: &Path,
-    key: Option<&Key>,
-    expected_size: u64,
-    expected_sha: Option<&str>,
-    task: &TaskHandle,
-    on_bytes: &mut dyn FnMut(u64),
-) -> AppResult<()> {
-    let mut input = BufReader::new(File::open(src)?);
-    let mut out = TapWriter {
-        inner: BufWriter::new(File::create(dest)?),
-        hasher: Sha256::new(),
-        count: 0,
-        task,
-        on_bytes,
-    };
-    let result = match key {
-        Some(key) => crypto::decrypt_stream(key, input, &mut out).map(|_| ()),
-        None => std::io::copy(&mut input, &mut out)
-            .map(|_| ())
-            .map_err(AppError::from),
-    };
-    result
-        .and_then(|_| out.inner.flush().map_err(AppError::from))
-        .map_err(|e| map_cancel(task, e))?;
-    let sha = crypto::to_hex(&out.hasher.finalize());
-    check(out.count, &sha, expected_size, expected_sha, src)
-}
-
-/// Hashes and counts everything written through it.
-struct TapWriter<'a, W> {
-    inner: W,
-    hasher: Sha256,
-    count: u64,
-    task: &'a TaskHandle,
-    on_bytes: &'a mut dyn FnMut(u64),
-}
-
-impl<W: Write> Write for TapWriter<'_, W> {
-    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-        if self.task.is_cancelled() {
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::Interrupted,
-                "cancelled",
-            ));
-        }
-        let n = self.inner.write(buf)?;
-        self.hasher.update(&buf[..n]);
-        self.count += n as u64;
-        (self.on_bytes)(n as u64);
-        Ok(n)
-    }
-
-    fn flush(&mut self) -> std::io::Result<()> {
-        self.inner.flush()
-    }
-}
-
-/// Verifies an unencrypted stored file in place without copying it.
+/// Verifies a stored file in place without copying it: size always, SHA-256 when requested.
 pub fn verify_in_place(
     path: &Path,
     expected_size: u64,
@@ -189,7 +123,7 @@ pub fn verify_in_place(
     std::io::copy(&mut tap, &mut std::io::sink()).map_err(|e| map_cancel(task, e.into()))?;
     check(
         tap.count,
-        &crypto::to_hex(&tap.hasher.finalize()),
+        &to_hex(&tap.hasher.finalize()),
         expected_size,
         expected_sha,
         path,
@@ -219,28 +153,18 @@ fn check(
 mod tests {
     use super::*;
 
+    const ABC_SHA: &str = "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad";
+
     #[test]
-    fn stores_and_unpacks_with_and_without_key() {
+    fn stores_with_size_hash_and_progress() {
         let dir = tempfile::tempdir().unwrap();
         let task = TaskHandle::default();
-        let data = vec![42u8; 3 * 1024 * 1024 + 5];
-        let key = crypto::new_key("pw").unwrap().0;
-
-        for key in [None, Some(&key)] {
-            let stored = dir.path().join("stored");
-            let mut seen = 0;
-            let (size, sha) =
-                store(data.as_slice(), &stored, key, &task, &mut |n| seen += n).unwrap();
-            assert_eq!((size, seen), (data.len() as u64, data.len() as u64));
-
-            let plain = dir.path().join("plain");
-            unpack(&stored, &plain, key, size, Some(&sha), &task, &mut |_| {}).unwrap();
-            assert_eq!(std::fs::read(&plain).unwrap(), data);
-
-            let err =
-                unpack(&stored, &plain, key, size, Some("00"), &task, &mut |_| {}).unwrap_err();
-            assert_eq!(err.code, ErrorCode::IntegrityFailed);
-        }
+        let dest = dir.path().join("out");
+        let mut seen = 0;
+        let (size, sha) = store(&b"abc"[..], &dest, &task, &mut |n| seen += n).unwrap();
+        assert_eq!((size, seen), (3, 3));
+        assert_eq!(sha, ABC_SHA);
+        assert_eq!(std::fs::read(&dest).unwrap(), b"abc");
     }
 
     #[test]
@@ -249,9 +173,19 @@ mod tests {
         let path = dir.path().join("f");
         std::fs::write(&path, b"abc").unwrap();
         let task = TaskHandle::default();
-        let sha = "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad";
         verify_in_place(&path, 3, None, &task, &mut |_| {}).unwrap();
-        verify_in_place(&path, 3, Some(sha), &task, &mut |_| {}).unwrap();
+        verify_in_place(&path, 3, Some(ABC_SHA), &task, &mut |_| {}).unwrap();
         assert!(verify_in_place(&path, 4, None, &task, &mut |_| {}).is_err());
+        let err = verify_in_place(&path, 3, Some("00"), &task, &mut |_| {}).unwrap_err();
+        assert_eq!(err.code, ErrorCode::IntegrityFailed);
+    }
+
+    #[test]
+    fn cancelled_tasks_stop_storing() {
+        let dir = tempfile::tempdir().unwrap();
+        let task = TaskHandle::default();
+        task.cancel_for_test();
+        let err = store(&b"abc"[..], &dir.path().join("o"), &task, &mut |_| {}).unwrap_err();
+        assert_eq!(err.code, ErrorCode::Cancelled);
     }
 }

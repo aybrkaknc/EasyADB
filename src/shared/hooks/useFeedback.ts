@@ -68,5 +68,8 @@ export function useFeedback() {
     [push, settings.sound, settings.notifications, t],
   );
 
-  return { success, failure };
+  /** Something worked but not completely, e.g. the app was installed but its data was not. */
+  const warning = useCallback((text: string) => push("warning", text), [push]);
+
+  return { success, failure, warning };
 }

@@ -119,13 +119,11 @@
     "device_not_found": "The device was not found. Is it still connected?",
     "device_unauthorized": "The device has not authorized this computer.",
     "device_offline": "The device is offline.",
-    "root_required": "Root access is required. Allow the root prompt on the device.",
     "invalid_input": "Invalid input.",
     "invalid_path": "Invalid or protected path.",
     "io": "A file operation failed.",
     "parse": "Could not read the data.",
     "backup_invalid": "This backup is invalid or from an unsupported version.",
-    "wrong_password": "Wrong password.",
     "integrity_failed": "The backup is damaged or was modified.",
     "install_failed": "Installation failed.",
     "pair_failed": "Pairing failed.",
@@ -148,7 +146,8 @@
       "debloat": "Applying",
       "sideload": "Sideloading",
       "pull": "Downloading",
-      "push": "Uploading"
+      "push": "Uploading",
+      "permissions": "Granting permissions"
     }
   },
   "notify": {
@@ -195,7 +194,7 @@
   "backup": {
     "tabs": {
       "apps": "Apps",
-      "archive": "Archive"
+      "archive": "Restore"
     },
     "filter": {
       "user": "User",
@@ -207,10 +206,7 @@
       "title": "Options",
       "obb": "Include OBB files",
       "data": "Include app data (root)",
-      "encrypt": "Encrypt with a password",
-      "password": "Password",
-      "passwordConfirm": "Confirm password",
-      "mismatch": "Passwords do not match"
+      "dataHint": "Needs root. When the device asks, allow root for \"Shell\"."
     },
     "start": "Back up {{count}} apps",
     "estimate": "Estimated size: {{size}}",
@@ -225,11 +221,14 @@
       "import": "Import .easybckp",
       "delete": "Delete",
       "deleteConfirm": "Delete the backup of {{name}}? This cannot be undone.",
-      "encrypted": "Encrypted",
       "data": "Data",
       "obb": "OBB",
       "exported": "Exported to {{path}}",
-      "imported": "Backup imported"
+      "imported": "Backup imported",
+      "restoreSelected": "Restore {{count}} selected",
+      "batchConfirm": "Restore {{count}} backups to the device? Apps are installed; where a backup has data and root is available, the app data is replaced.",
+      "batchDone": "{{ok}} restored, {{failed}} failed",
+      "batchPermissions": "Also grant saved permissions"
     },
     "restore": {
       "title": "Restore {{name}}",
@@ -237,10 +236,17 @@
       "data": "Restore app data (root)",
       "dataConfirm": "Restoring app data replaces the current data of {{name}}. Continue?",
       "verify": "Verify SHA-256 before restoring",
-      "password": "Backup password",
       "start": "Restore",
-      "done": "{{name}} restored"
-    }
+      "done": "{{name}} restored",
+      "permissions": "Grant the app's saved permissions ({{count}})",
+      "rootHint": "App data needs root. When the device asks, allow root for \"Shell\". Without root only the app is installed.",
+      "report": {
+        "noRoot": "{{name}}: no root or root was denied. The app was installed, its data was not restored.",
+        "failed": "{{name}}: the app was installed but its data could not be restored: {{detail}}",
+        "permissions": "{{name}}: {{granted}} of {{total}} permissions granted."
+      }
+    },
+    "dataSkipped": "{{name}}: no root or root was denied. The app was backed up, its data was not."
   },
   "debloat": {
     "search": "Search packages",

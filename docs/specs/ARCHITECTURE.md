@@ -58,8 +58,9 @@ Her yedek bir klasördür:
 ```
 
 * `manifest.json` biçim sürümünü, paket bilgisini, cihaz özetini ve her dosyanın düz metin boyutu ile SHA-256 değerini tutar.
-* Dosyalar `adb exec-out cat` ile akıtılır; özet ve (seçildiyse) şifreleme aynı geçişte yapılır. Uygulama verisi `su -c "tar -cf - ..."` ile doğrudan bilgisayara akar, telefona geçici dosya yazılmaz.
-* Şifreleme isteğe bağlıdır: Argon2id ile anahtar türetilir, dosyalar 1 MiB'lık AES-256-GCM parçalarıyla şifrelenir (`.enc`). Her parçanın nonce'u ve ek verisi sıra numarasını ve son parça bilgisini içerir; sıra değişikliği, kesme ve ekleme algılanır. Manifest'teki kontrol değeri yanlış parolayı geri yüklemeden önce yakalar.
+* Dosyalar `adb exec-out cat` ile akıtılır; özet aynı geçişte hesaplanır. Uygulama verisi `su -c "tar -cf - ..."` ile doğrudan bilgisayara akar, telefona geçici dosya yazılmaz.
+* İzinler: `dumpsys package` çıktısındaki çalışma zamanı izinleri manifest'e yazılır. Geri yüklemede kullanıcı isterse `pm grant` ile verilir; yeni sistemde tanınmayanlar atlanır.
+* Root: uygulama her zaman kurulur. Veri geri yükleme `su` gerektirir; root yoksa veya izin reddedilirse veri atlanır ve `RestoreReport` ile arayüze bildirilir. Yedek alırken de aynı kural geçerlidir.
 * Geri yüklemede varsayılan olarak boyut kontrol edilir, istenirse tam SHA-256 doğrulanır. Tek dosya gerektiğinde klasör sıkıştırmasız bir zip (`.easybckp`) olarak dışa aktarılır; içe aktarmada yol geçişi engellenir.
 
 ## 4. Frontend
@@ -82,7 +83,7 @@ src/
 
 ## 5. Testler
 
-* Rust: ayrıştırıcılar, şifreleme, manifest, arşiv, sahte ADB ile komut mantığı. `export_bindings` testi `src/bindings.ts` dosyasını yeniden üretir.
+* Rust: ayrıştırıcılar, izin ayrıştırma, manifest, arşiv, sahte ADB ile komut mantığı. `export_bindings` testi `src/bindings.ts` dosyasını yeniden üretir.
 * Vitest: çeviri anahtarları, yardımcılar, hook'lar ve bileşenler.
 * Playwright: arayüz `vite --mode e2e` ile tarayıcıda açılır, Tauri IPC `src/test/e2e/mockBackend.ts` tarafından yanıtlanır.
 

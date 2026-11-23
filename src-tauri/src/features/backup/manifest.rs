@@ -7,7 +7,6 @@
 //!   obb/<files>
 //!   data.tar            (root only)
 //! ```
-//! Encrypted files carry an `.enc` suffix; sizes and SHA-256 refer to the plaintext.
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -15,7 +14,6 @@ use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 use specta::Type;
 
-use super::crypto::EncryptionInfo;
 use crate::error::{AppError, AppResult, ErrorCode};
 
 pub const FORMAT_VERSION: u32 = 1;
@@ -61,7 +59,15 @@ pub struct Manifest {
     pub created_at: String,
     pub device: DeviceSnapshot,
     pub files: Vec<BackupFile>,
-    pub encryption: Option<EncryptionInfo>,
+    /// Runtime permissions of the app at backup time.
+    #[serde(default)]
+    pub permissions: Vec<PermissionGrant>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct PermissionGrant {
+    pub name: String,
+    pub granted: bool,
 }
 
 impl Manifest {
@@ -141,7 +147,8 @@ pub struct BackupSummary {
     pub total_bytes: f64,
     pub has_obb: bool,
     pub has_data: bool,
-    pub encrypted: bool,
+    /// Number of runtime permissions that were granted when the backup was made.
+    pub permission_count: u32,
     pub device_model: String,
 }
 
@@ -160,7 +167,7 @@ pub fn list(root: &Path) -> Vec<BackupSummary> {
                 path: e.path().display().to_string(),
                 has_obb: manifest.has(FileKind::Obb),
                 has_data: manifest.has(FileKind::Data),
-                encrypted: manifest.encryption.is_some(),
+                permission_count: manifest.permissions.iter().filter(|p| p.granted).count() as u32,
                 total_bytes: manifest.total_bytes() as f64,
                 device_model: manifest.device.model,
                 package: manifest.package,
@@ -191,7 +198,7 @@ pub fn sample(package: &str) -> Manifest {
             size: 3,
             sha256: String::new(),
         }],
-        encryption: None,
+        permissions: vec![],
     }
 }
 

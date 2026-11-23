@@ -70,7 +70,7 @@ Screenshots will be added with the next release.
 ### Features
 
 * **Multiple devices:** USB and Wi-Fi devices at the same time, with a device selector and step-by-step help for unauthorized or offline devices.
-* **Backup and restore:** APKs and split APKs, OBB files and, with root, app data. Backups are plain folders with a versioned manifest and SHA-256 checksums, so restoring is fast. Optional AES-256-GCM encryption with a password. Export or import a single `.easybckp` file.
+* **Backup and restore:** APKs and split APKs, OBB files and, with root, app data. Backups are plain folders with a versioned manifest and SHA-256 checksums, so restoring is fast. Runtime permissions are saved too and can be granted again on restore. Without root, only the app is restored and you are told that its data was skipped. Select several backups to restore them in one go. Export or import a single `.easybckp` file.
 * **Debloater:** Package descriptions and safety levels from the UAD-NG list, batch disable, enable, remove and restore, and profiles you can save and re-apply after a new ROM.
 * **Wireless debugging:** Pairing code, QR code, manual IP and `adb tcpip` for older devices. Saved devices reconnect with one click.
 * **Terminal:** Runs adb and fastboot commands with live output, history, completion and cancel.

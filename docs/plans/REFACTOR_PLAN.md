@@ -24,7 +24,7 @@
 - **Yedekleme:** sıkıştırmasız klasör + sürümlü `manifest.json`. Tek dosya için sıkıştırmasız zip (`.easybckp`) dışa aktarma. Eski biçim okunmaz.
   - Kapsam: APK + split (her zaman), OBB (varsayılan açık), uygulama verisi (yalnızca root, kullanıcı seçer), sistem uygulamaları filtreden seçilir.
   - Veri `adb exec-out su -c "tar -cf - ..."` ile doğrudan PC'ye akar, telefona geçici dosya yazılmaz.
-  - İsteğe bağlı parola ile şifreleme (AES-256-GCM, Argon2), varsayılan kapalı.
+  - Şifreleme kaldırıldı (v0.2.0 sırasında karar değişti). Çalışma zamanı izinleri yedeklenir ve geri yüklerken isteğe bağlı verilir. Root yoksa uygulama kurulur, veri atlanır ve kullanıcıya söylenir.
   - Bütünlük: varsayılan boyut + manifest kontrolü, isteğe bağlı tam SHA-256.
   - Varsayılan konum: `Belgeler\EasyADB\Yedekler\<paket>_<tarih>`, ayarlardan değişir.
 - **Debloat:** UAD-NG listesi + mevcut kayıtlar JSON olarak gömülü. Devre dışı bırak, etkinleştir, kaldır (`--user 0`), yeniden yükle (`install-existing`). Kaldırmadan önce otomatik yedek yok. Profil içe/dışa aktarma.

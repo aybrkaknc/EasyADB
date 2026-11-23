@@ -2,15 +2,16 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { type BackupSummary, commands } from "../../bindings";
+import { useConfirm } from "../../shared/hooks/useConfirm";
 import { useFeedback } from "../../shared/hooks/useFeedback";
 import { useSettings } from "../../shared/hooks/useSettings";
 import { useTask } from "../../shared/hooks/useTask";
 import { appName } from "../../shared/lib/format";
 import { Button } from "../../shared/ui/Button";
-import { Checkbox, Field, Input } from "../../shared/ui/Controls";
-import { useConfirm } from "../../shared/hooks/useConfirm";
+import { Checkbox } from "../../shared/ui/Controls";
 import { Dialog } from "../../shared/ui/Dialog";
 import { TaskBar } from "../../shared/ui/Feedback";
+import { restoreWarnings } from "./report";
 
 export function RestoreDialog({
   backup,
@@ -27,23 +28,24 @@ export function RestoreDialog({
   const confirm = useConfirm();
   const task = useTask();
   const [obb, setObb] = useState(backup.hasObb);
-  const [data, setData] = useState(false);
+  const [data, setData] = useState(backup.hasData);
+  const [permissions, setPermissions] = useState(backup.permissionCount > 0);
   const [verify, setVerify] = useState(settings.verifyHashOnRestore);
-  const [password, setPassword] = useState("");
   const name = appName(backup);
 
   const start = async () => {
     if (data && !(await confirm(t("backup.restore.dataConfirm", { name })))) return;
     try {
-      await task.run((id) =>
+      const report = await task.run((id) =>
         commands.startRestore(id, serial, backup.id, {
           restoreObb: obb,
           restoreData: data,
+          restorePermissions: permissions,
           verifyHash: verify,
-          password: backup.encrypted ? password : null,
         }),
       );
       feedback.success(t("backup.restore.done", { name }), true);
+      restoreWarnings(t, name, report).forEach(feedback.warning);
       onClose();
     } catch (error) {
       feedback.failure(error, true);
@@ -60,10 +62,7 @@ export function RestoreDialog({
           <Button variant="ghost" onClick={onClose} disabled={task.running}>
             {t("common.cancel")}
           </Button>
-          <Button
-            onClick={() => void start()}
-            disabled={task.running || (backup.encrypted && !password)}
-          >
+          <Button onClick={() => void start()} disabled={task.running}>
             {t("backup.restore.start")}
           </Button>
         </>
@@ -82,18 +81,15 @@ export function RestoreDialog({
           disabled={!backup.hasData}
           label={t("backup.restore.data")}
         />
+        <Checkbox
+          checked={permissions}
+          onChange={setPermissions}
+          disabled={backup.permissionCount === 0}
+          label={t("backup.restore.permissions", { count: backup.permissionCount })}
+        />
         <Checkbox checked={verify} onChange={setVerify} label={t("backup.restore.verify")} />
       </div>
-      {backup.encrypted && (
-        <Field label={t("backup.restore.password")}>
-          <Input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            autoFocus
-          />
-        </Field>
-      )}
+      {backup.hasData && <p className="text-[11px] text-warn/80">{t("backup.restore.rootHint")}</p>}
       {task.running && (
         <div className="-mx-6">
           <TaskBar progress={task.progress} onCancel={task.cancel} />
