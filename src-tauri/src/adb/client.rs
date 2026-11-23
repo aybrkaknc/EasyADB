@@ -47,20 +47,35 @@ pub struct Adb {
     fastboot: PathBuf,
 }
 
+/// Finds `<name>.exe`, or the sidecar name `<name>-x86_64-pc-windows-msvc.exe` that Tauri
+/// keeps in the source `binaries` folder.
+fn find_tool(dir: &Path, name: &str) -> Option<PathBuf> {
+    [
+        format!("{name}.exe"),
+        format!("{name}-x86_64-pc-windows-msvc.exe"),
+    ]
+    .into_iter()
+    .map(|file| dir.join(file))
+    .find(|path| path.is_file())
+}
+
 impl Adb {
-    /// Uses the sidecar binaries that Tauri places next to the application executable.
-    pub fn from_dir(dir: &Path) -> AppResult<Self> {
-        let adb = dir.join("adb.exe");
-        if !adb.exists() {
-            return Err(AppError::new(
-                ErrorCode::AdbMissing,
-                adb.display().to_string(),
-            ));
+    /// Uses the first folder that contains adb. adb.exe loads its DLLs from its own folder,
+    /// so fastboot is taken from the same place.
+    pub fn from_dirs(dirs: &[PathBuf]) -> AppResult<Self> {
+        for dir in dirs {
+            if let Some(adb) = find_tool(dir, "adb") {
+                let fastboot =
+                    find_tool(dir, "fastboot").unwrap_or_else(|| dir.join("fastboot.exe"));
+                return Ok(Self { adb, fastboot });
+            }
         }
-        Ok(Self {
-            adb,
-            fastboot: dir.join("fastboot.exe"),
-        })
+        let searched = dirs
+            .iter()
+            .map(|d| d.display().to_string())
+            .collect::<Vec<_>>()
+            .join("; ");
+        Err(AppError::new(ErrorCode::AdbMissing, searched))
     }
 
     fn command(&self, tool: Tool, args: &[&str]) -> Command {

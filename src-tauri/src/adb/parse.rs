@@ -18,6 +18,19 @@ pub enum DeviceState {
 }
 
 impl DeviceState {
+    fn is_state_word(word: &str) -> bool {
+        matches!(
+            word,
+            "device"
+                | "unauthorized"
+                | "offline"
+                | "recovery"
+                | "sideload"
+                | "bootloader"
+                | "fastboot"
+        )
+    }
+
     fn from_word(word: &str) -> Self {
         match word {
             "device" => Self::Device,
@@ -64,9 +77,12 @@ pub fn parse_devices(output: &str) -> Vec<DeviceEntry> {
         .lines()
         .filter(|line| !line.starts_with("List of devices") && !line.starts_with('*'))
         .filter_map(|line| {
-            let mut parts = line.split_whitespace();
-            let serial = parts.next()?.to_string();
-            let state = DeviceState::from_word(parts.next()?);
+            let tokens: Vec<&str> = line.split_whitespace().collect();
+            // Wireless (mDNS) serials can contain spaces, e.g. "adb-XYZ (2)._adb-tls-connect._tcp",
+            // so the state is the first known state word after the serial.
+            let state_at = (1..tokens.len()).find(|&i| DeviceState::is_state_word(tokens[i]))?;
+            let serial = tokens[..state_at].join(" ");
+            let state = DeviceState::from_word(tokens[state_at]);
             let mut entry = DeviceEntry {
                 kind: connection_kind(&serial),
                 serial,
@@ -74,7 +90,7 @@ pub fn parse_devices(output: &str) -> Vec<DeviceEntry> {
                 model: None,
                 product: None,
             };
-            for part in parts {
+            for part in &tokens[state_at + 1..] {
                 if let Some(model) = part.strip_prefix("model:") {
                     entry.model = Some(model.replace('_', " "));
                 } else if let Some(product) = part.strip_prefix("product:") {
@@ -157,6 +173,17 @@ ZY223                  unauthorized usb:1-2 transport_id:5\n\
         assert_eq!(devices[3].state, DeviceState::Offline);
         assert_eq!(devices[4].state, DeviceState::Unauthorized);
         assert_eq!(devices[4].model, None);
+    }
+
+    #[test]
+    fn parses_serials_with_spaces() {
+        let out = "List of devices attached\nadb-a279-u1x (2)._adb-tls-connect._tcp device product:munch model:22021211RG transport_id:6\n";
+        let devices = parse_devices(out);
+        assert_eq!(devices.len(), 1);
+        assert_eq!(devices[0].serial, "adb-a279-u1x (2)._adb-tls-connect._tcp");
+        assert_eq!(devices[0].state, DeviceState::Device);
+        assert_eq!(devices[0].kind, ConnectionKind::Wifi);
+        assert_eq!(devices[0].model.as_deref(), Some("22021211RG"));
     }
 
     #[test]

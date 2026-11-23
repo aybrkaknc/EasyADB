@@ -10,17 +10,20 @@ pub struct AppState {
 }
 
 impl AppState {
-    /// Locates the adb sidecar next to the running executable.
+    /// Locates adb next to the executable (installed app), or in `src-tauri/binaries` during
+    /// `tauri dev`, where Tauri does not copy the sidecars next to the debug executable.
     pub fn new() -> Self {
-        let runner = std::env::current_exe()
-            .map_err(AppError::from)
-            .and_then(|exe| {
-                let dir = exe.parent().ok_or_else(|| {
-                    AppError::new(ErrorCode::AdbMissing, "executable has no parent directory")
-                })?;
-                Adb::from_dir(dir)
-            })
-            .map(|adb| Arc::new(adb) as Arc<dyn AdbRunner>);
+        let mut dirs = Vec::new();
+        if let Some(dir) = std::env::current_exe()
+            .ok()
+            .and_then(|exe| exe.parent().map(|d| d.to_path_buf()))
+        {
+            dirs.push(dir);
+        }
+        if cfg!(debug_assertions) {
+            dirs.push(std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("binaries"));
+        }
+        let runner = Adb::from_dirs(&dirs).map(|adb| Arc::new(adb) as Arc<dyn AdbRunner>);
         Self {
             runner,
             tasks: TaskRegistry::default(),

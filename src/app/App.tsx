@@ -95,9 +95,10 @@ export function App() {
             return (
               <div
                 key={id}
-                hidden={!active}
                 data-module-active={active ? "" : undefined}
-                className="absolute inset-0 flex flex-col"
+                // `flex` would override the `hidden` attribute, so hidden modules keep showing
+                // and stack on top of each other. Hide them with the class instead.
+                className={active ? "absolute inset-0 flex flex-col" : "hidden"}
               >
                 <View />
               </div>
