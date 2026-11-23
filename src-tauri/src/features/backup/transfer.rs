@@ -101,6 +101,28 @@ pub fn pull(
     }
 }
 
+/// Decompresses a zstd file (EasyAndroid format 2 archives) into `dest` as a plain tar,
+/// so the device does not need a `zstd` program.
+pub fn decompress_zstd(src: &Path, dest: &Path, task: &TaskHandle) -> AppResult<()> {
+    let bad = |e: &dyn std::fmt::Display| AppError::new(ErrorCode::BackupInvalid, e.to_string());
+    let decoder = ruzstd::decoding::StreamingDecoder::new(BufReader::new(File::open(src)?))
+        .map_err(|e| bad(&e))?;
+    let mut tap = Tap {
+        inner: decoder,
+        hasher: Sha256::new(),
+        count: 0,
+        task,
+        on_bytes: &mut |_| {},
+    };
+    let mut out = BufWriter::new(File::create(dest)?);
+    std::io::copy(&mut tap, &mut out)
+        .and_then(|_| out.flush())
+        .map_err(|e| {
+            let _ = std::fs::remove_file(dest);
+            map_cancel(task, AppError::new(ErrorCode::BackupInvalid, e.to_string()))
+        })
+}
+
 /// Verifies a stored file in place without copying it: size always, SHA-256 when requested.
 pub fn verify_in_place(
     path: &Path,
@@ -178,6 +200,28 @@ mod tests {
         assert!(verify_in_place(&path, 4, None, &task, &mut |_| {}).is_err());
         let err = verify_in_place(&path, 3, Some("00"), &task, &mut |_| {}).unwrap_err();
         assert_eq!(err.code, ErrorCode::IntegrityFailed);
+    }
+
+    #[test]
+    fn decompresses_zstd_archives() {
+        let dir = tempfile::tempdir().unwrap();
+        let src = dir.path().join("data.tar.zst");
+        let plain = b"tar bytes ".repeat(5000);
+        std::fs::write(
+            &src,
+            ruzstd::encoding::compress_to_vec(
+                &plain[..],
+                ruzstd::encoding::CompressionLevel::Fastest,
+            ),
+        )
+        .unwrap();
+        let dest = dir.path().join("data.tar");
+        decompress_zstd(&src, &dest, &TaskHandle::default()).unwrap();
+        assert_eq!(std::fs::read(&dest).unwrap(), plain);
+
+        std::fs::write(&src, b"not zstd").unwrap();
+        let err = decompress_zstd(&src, &dest, &TaskHandle::default()).unwrap_err();
+        assert_eq!(err.code, ErrorCode::BackupInvalid);
     }
 
     #[test]

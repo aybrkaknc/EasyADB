@@ -5,8 +5,13 @@
 //!   manifest.json
 //!   apk/base.apk, apk/split_*.apk
 //!   obb/<files>
-//!   data.tar            (root only)
+//!   data.tar            (root only; data.tar.zst in v2)
+//!   data_de.tar[.zst]   (extras written by EasyAndroid)
+//!   data_ext.tar[.zst]  (extras written by EasyAndroid)
 //! ```
+//!
+//! Format 1 is plain. Format 2 (EasyAndroid) only differs in zstd archives. EasyADB writes
+//! format 1 and reads both. See `docs/specs/EASYANDROID_INTEROP.md`.
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -14,9 +19,13 @@ use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 use specta::Type;
 
+use crate::adb::shell;
 use crate::error::{AppError, AppResult, ErrorCode};
 
+/// Format EasyADB writes.
 pub const FORMAT_VERSION: u32 = 1;
+/// Newest format EasyADB reads (zstd archives).
+pub const MAX_FORMAT_VERSION: u32 = 2;
 pub const MANIFEST: &str = "manifest.json";
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
@@ -37,6 +46,28 @@ pub struct BackupFile {
     pub name: String,
     pub size: u64,
     pub sha256: String,
+}
+
+/// Archives next to `files` that EasyAndroid writes and EasyADB's own readers do not know.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum ExtraKind {
+    DeviceData,
+    ExternalData,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct ExtraFile {
+    pub kind: ExtraKind,
+    pub stored: String,
+    pub size: u64,
+    pub sha256: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct AppOp {
+    pub op: String,
+    pub mode: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
@@ -62,6 +93,14 @@ pub struct Manifest {
     /// Runtime permissions of the app at backup time.
     #[serde(default)]
     pub permissions: Vec<PermissionGrant>,
+    #[serde(default)]
+    pub extras: Vec<ExtraFile>,
+    /// Special app access (`cmd appops`) the user had set.
+    #[serde(default)]
+    pub app_ops: Vec<AppOp>,
+    /// The app was exempt from battery optimization.
+    #[serde(default)]
+    pub battery_exempt: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -75,8 +114,14 @@ impl Manifest {
         self.files.iter().any(|f| f.kind == kind)
     }
 
+    /// App data in any form: the private archive or an extra one.
+    pub fn has_data(&self) -> bool {
+        self.has(FileKind::Data) || !self.extras.is_empty()
+    }
+
     pub fn total_bytes(&self) -> u64 {
-        self.files.iter().map(|f| f.size).sum()
+        self.files.iter().map(|f| f.size).sum::<u64>()
+            + self.extras.iter().map(|f| f.size).sum::<u64>()
     }
 }
 
@@ -85,14 +130,20 @@ pub fn read(dir: &Path) -> AppResult<Manifest> {
         .map_err(|e| AppError::new(ErrorCode::BackupInvalid, e.to_string()))?;
     let manifest: Manifest = serde_json::from_str(&text)
         .map_err(|e| AppError::new(ErrorCode::BackupInvalid, e.to_string()))?;
-    if manifest.format_version != FORMAT_VERSION {
+    if !(FORMAT_VERSION..=MAX_FORMAT_VERSION).contains(&manifest.format_version) {
         return Err(AppError::new(
             ErrorCode::BackupInvalid,
             format!("unsupported format version {}", manifest.format_version),
         ));
     }
-    for file in &manifest.files {
-        safe_relative(&file.stored)?;
+    shell::validate_package(&manifest.package)?;
+    for stored in manifest
+        .files
+        .iter()
+        .map(|f| &f.stored)
+        .chain(manifest.extras.iter().map(|f| &f.stored))
+    {
+        safe_relative(stored)?;
     }
     Ok(manifest)
 }
@@ -166,7 +217,7 @@ pub fn list(root: &Path) -> Vec<BackupSummary> {
                 id: e.file_name().to_string_lossy().into_owned(),
                 path: e.path().display().to_string(),
                 has_obb: manifest.has(FileKind::Obb),
-                has_data: manifest.has(FileKind::Data),
+                has_data: manifest.has_data(),
                 permission_count: manifest.permissions.iter().filter(|p| p.granted).count() as u32,
                 total_bytes: manifest.total_bytes() as f64,
                 device_model: manifest.device.model,
@@ -199,6 +250,9 @@ pub fn sample(package: &str) -> Manifest {
             sha256: String::new(),
         }],
         permissions: vec![],
+        extras: vec![],
+        app_ops: vec![],
+        battery_exempt: false,
     }
 }
 
@@ -242,6 +296,57 @@ mod tests {
             resolve(root.path(), "missing").unwrap_err().code,
             ErrorCode::NotFound
         );
+    }
+
+    const EASYANDROID: &str = r#"{
+        "formatVersion": 2,
+        "appVersion": "0.1.0",
+        "package": "com.example.app",
+        "label": "Example",
+        "versionName": "1.2",
+        "createdAt": "2026-11-23T10:00:00.123+03:00",
+        "device": { "model": "POCO F4", "serial": "abc", "androidVersion": "15", "sdk": 35 },
+        "files": [
+            { "kind": "apk", "stored": "apk/base.apk", "name": "base.apk", "size": 3, "sha256": "aa" },
+            { "kind": "data", "stored": "data.tar.zst", "name": "data.tar.zst", "size": 9, "sha256": "bb" }
+        ],
+        "permissions": [{ "name": "android.permission.CAMERA", "granted": true }],
+        "extras": [
+            { "kind": "device_data", "stored": "data_de.tar.zst", "size": 4, "sha256": "cc" },
+            { "kind": "external_data", "stored": "data_ext.tar.zst", "size": 5, "sha256": "dd" }
+        ],
+        "appOps": [{ "op": "SYSTEM_ALERT_WINDOW", "mode": "allow" }],
+        "batteryExempt": true
+    }"#;
+
+    #[test]
+    fn reads_an_easyandroid_manifest() {
+        let dir = tempfile::tempdir().unwrap();
+        fs::write(dir.path().join(MANIFEST), EASYANDROID).unwrap();
+        let m = read(dir.path()).unwrap();
+        assert_eq!(m.format_version, 2);
+        assert_eq!(m.extras.len(), 2);
+        assert_eq!(m.extras[0].kind, ExtraKind::DeviceData);
+        assert_eq!(m.app_ops[0].op, "SYSTEM_ALERT_WINDOW");
+        assert!(m.battery_exempt && m.has_data());
+        assert_eq!(m.total_bytes(), 3 + 9 + 4 + 5);
+    }
+
+    #[test]
+    fn rejects_unsafe_extra_paths_and_bad_packages() {
+        let dir = tempfile::tempdir().unwrap();
+        fs::write(
+            dir.path().join(MANIFEST),
+            EASYANDROID.replace("data_de.tar.zst", "../evil.tar"),
+        )
+        .unwrap();
+        assert_eq!(read(dir.path()).unwrap_err().code, ErrorCode::InvalidPath);
+        fs::write(
+            dir.path().join(MANIFEST),
+            EASYANDROID.replace("com.example.app", "com.a; reboot"),
+        )
+        .unwrap();
+        assert_eq!(read(dir.path()).unwrap_err().code, ErrorCode::InvalidInput);
     }
 
     #[test]

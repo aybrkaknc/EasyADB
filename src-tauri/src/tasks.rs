@@ -97,6 +97,15 @@ impl Reporter {
         }
     }
 
+    /// A reporter that emits nothing, for tests.
+    #[cfg(test)]
+    pub fn silent() -> Self {
+        Self {
+            app: None,
+            task_id: String::new(),
+        }
+    }
+
     pub fn progress(&self, stage: &str, item: &str, current: f64, total: f64) {
         self.emit(TaskState::Running, stage, item, current, total);
     }

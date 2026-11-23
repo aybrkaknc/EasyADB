@@ -107,6 +107,9 @@ pub fn create(job: &Job, package: &str, options: &BackupOptions) -> AppResult<Cr
             device: job.snapshot.clone(),
             files,
             permissions: parse_runtime_permissions(&dump),
+            extras: Vec::new(),
+            app_ops: Vec::new(),
+            battery_exempt: false,
         };
         manifest::write(&dir, &manifest).map(|_| data_skipped)
     });

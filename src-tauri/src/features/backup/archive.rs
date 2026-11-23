@@ -28,6 +28,7 @@ pub fn export(dir: &Path, dest: &Path) -> AppResult<()> {
 
     let mut entries = vec![manifest::MANIFEST.to_string()];
     entries.extend(manifest.files.iter().map(|f| f.stored.clone()));
+    entries.extend(manifest.extras.iter().map(|f| f.stored.clone()));
     for stored in entries {
         manifest::safe_relative(&stored)?;
         zip.start_file(format!("{id}/{stored}"), options)
