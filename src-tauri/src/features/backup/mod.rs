@@ -148,6 +148,22 @@ pub async fn list_phone_backups(
     .await
 }
 
+/// System snapshot files (`system_*.json`) on the phone that are not on the PC yet.
+#[tauri::command]
+#[specta::specta]
+pub async fn list_phone_system(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    serial: String,
+) -> AppResult<Vec<String>> {
+    let runner = state.runner()?;
+    blocking(move || {
+        let root = backup_root(&app)?;
+        Ok(phone::list_system(Device::new(&*runner, &serial), &root))
+    })
+    .await
+}
+
 #[tauri::command]
 #[specta::specta]
 pub async fn pull_phone_backups(
@@ -156,6 +172,7 @@ pub async fn pull_phone_backups(
     task_id: String,
     serial: String,
     ids: Vec<String>,
+    system: Vec<String>,
 ) -> AppResult<Vec<phone::PullOutcome>> {
     let runner = state.runner()?;
     let task = state.tasks.start(&task_id);
@@ -166,6 +183,7 @@ pub async fn pull_phone_backups(
             Device::new(&*runner, &serial),
             &root,
             &ids,
+            &system,
             &task,
             &reporter,
         );

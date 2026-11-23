@@ -26,7 +26,11 @@ export const commands = {
 	startRestore: (taskId: string, serial: string, backupId: string, options: RestoreOptions, _options?: InvokeOptions) => __TAURI_INVOKE<RestoreReport_Serialize>("start_restore", { taskId, serial, backupId, options }, _options),
 	/**  EasyAndroid backups that are on the phone, for the "copy to PC" prompt. */
 	listPhoneBackups: (serial: string, options?: InvokeOptions) => __TAURI_INVOKE<PhoneBackup_Serialize[]>("list_phone_backups", { serial }, options),
-	pullPhoneBackups: (taskId: string, serial: string, ids: string[], options?: InvokeOptions) => __TAURI_INVOKE<PullOutcome_Serialize[]>("pull_phone_backups", { taskId, serial, ids }, options),
+	/**  System snapshot files (`system_*.json`) on the phone that are not on the PC yet. */
+	listPhoneSystem: (serial: string, options?: InvokeOptions) => __TAURI_INVOKE<string[]>("list_phone_system", { serial }, options),
+	pullPhoneBackups: (taskId: string, serial: string, ids: string[], system: string[], options?: InvokeOptions) => __TAURI_INVOKE<PullOutcome_Serialize[]>("pull_phone_backups", { taskId, serial, ids, system }, options),
+	listSystemBackups: (options?: InvokeOptions) => __TAURI_INVOKE<SystemSummary[]>("list_system_backups", undefined, options),
+	restoreSystemBackup: (taskId: string, serial: string, id: string, options: SystemOptions, _options?: InvokeOptions) => __TAURI_INVOKE<SystemReport>("restore_system_backup", { taskId, serial, id, options }, _options),
 	deleteBackup: (backupId: string, options?: InvokeOptions) => __TAURI_INVOKE<null>("delete_backup", { backupId }, options),
 	exportBackup: (backupId: string, dest: string, options?: InvokeOptions) => __TAURI_INVOKE<null>("export_backup", { backupId, dest }, options),
 	importBackup: (src: string, options?: InvokeOptions) => __TAURI_INVOKE<string>("import_backup", { src }, options),
@@ -546,6 +550,32 @@ export type Storage = {
 };
 
 export type StreamKind = "stdout" | "stderr" | "exit";
+
+export type SystemFailure = {
+	item: string,
+	error: AppError,
+};
+
+export type SystemOptions = {
+	settings: boolean,
+	roles: boolean,
+	wifi: boolean,
+};
+
+export type SystemReport = {
+	applied: number,
+	failed: SystemFailure[],
+};
+
+export type SystemSummary = {
+	/**  File name inside the backup folder. */
+	id: string,
+	createdAt: string,
+	deviceModel: string,
+	settingsCount: number,
+	rolesCount: number,
+	wifiCount: number,
+};
 
 /**  Progress of a long-running task. `stage` is a stable key the frontend translates. */
 export type TaskProgress = {

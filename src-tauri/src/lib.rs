@@ -13,8 +13,8 @@ use tauri_plugin_log::{RotationStrategy, Target, TargetKind};
 use tauri_specta::{Builder, collect_commands, collect_events};
 
 use features::{
-    backup, debloat, device, files, logcat, packages, performance, settings, sideload, terminal,
-    wireless,
+    backup, debloat, device, files, logcat, packages, performance, settings, sideload,
+    system_backup, terminal, wireless,
 };
 
 pub fn specta_builder() -> Builder<Wry> {
@@ -37,7 +37,10 @@ pub fn specta_builder() -> Builder<Wry> {
             backup::start_backup,
             backup::start_restore,
             backup::list_phone_backups,
+            backup::list_phone_system,
             backup::pull_phone_backups,
+            system_backup::list_system_backups,
+            system_backup::restore_system_backup,
             backup::delete_backup,
             backup::export_backup,
             backup::import_backup,

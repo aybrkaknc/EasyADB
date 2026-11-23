@@ -7,5 +7,6 @@ pub mod packages;
 pub mod performance;
 pub mod settings;
 pub mod sideload;
+pub mod system_backup;
 pub mod terminal;
 pub mod wireless;

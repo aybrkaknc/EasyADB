@@ -19,6 +19,7 @@ import { Badge, EmptyState, Spinner, TaskBar } from "../../shared/ui/Feedback";
 import { restoreWarnings } from "./report";
 import { RootStatus } from "./RootStatus";
 import { RestoreDialog } from "./RestoreDialog";
+import { SystemSection } from "./SystemSection";
 
 export function ArchiveTab({ device }: { device: DeviceEntry | null }) {
   const { t, i18n } = useTranslation();
@@ -222,6 +223,7 @@ export function ArchiveTab({ device }: { device: DeviceEntry | null }) {
           ))}
         </ul>
       )}
+      <SystemSection device={device} />
       {task.running && <TaskBar progress={task.progress} onCancel={task.cancel} />}
       {restoring && device && (
         <RestoreDialog

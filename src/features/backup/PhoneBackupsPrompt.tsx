@@ -29,8 +29,18 @@ export function PhoneBackupsPrompt() {
     staleTime: Infinity,
     retry: false,
   });
+  const system = useQuery({
+    queryKey: ["phoneSystem", serial],
+    queryFn: () => commands.listPhoneSystem(serial!),
+    enabled: serial !== null,
+    staleTime: Infinity,
+    retry: false,
+  });
   const fresh = (found.data ?? []).filter((b) => !b.onPc);
-  if (serial === null || fresh.length === 0 || dismissed.includes(serial)) return null;
+  const files = system.data ?? [];
+  if (serial === null || (fresh.length === 0 && files.length === 0) || dismissed.includes(serial)) {
+    return null;
+  }
 
   const dismiss = () => setDismissed((list) => [...list, serial]);
   const pull = async () => {
@@ -40,6 +50,7 @@ export function PhoneBackupsPrompt() {
           id,
           serial,
           fresh.map((b) => b.id),
+          files,
         ),
       );
       const failed = outcomes.filter((o) => o.error);
@@ -49,7 +60,9 @@ export function PhoneBackupsPrompt() {
       );
       failed.forEach((o) => feedback.failure(o.error));
       void client.invalidateQueries({ queryKey: ["backups"] });
+      void client.invalidateQueries({ queryKey: ["systemBackups"] });
       void client.invalidateQueries({ queryKey: ["phoneBackups", serial] });
+      void client.invalidateQueries({ queryKey: ["phoneSystem", serial] });
     } catch (error) {
       feedback.failure(error, true);
     }
@@ -72,7 +85,8 @@ export function PhoneBackupsPrompt() {
         </>
       }
     >
-      <p className="text-sm">{t("phone.body", { count: fresh.length })}</p>
+      {fresh.length > 0 && <p className="text-sm">{t("phone.body", { count: fresh.length })}</p>}
+      {files.length > 0 && <p className="text-sm">{t("phone.system", { count: files.length })}</p>}
       <ul className="flex flex-col gap-1 text-white/70">
         {fresh.slice(0, SHOWN).map((b) => (
           <li key={b.id} className="truncate">

@@ -142,6 +142,19 @@ test("offers to copy phone backups and warns about root", async ({ page }) => {
   await expect(page.getByText("Backups found on the phone")).toHaveCount(0);
 });
 
+test("restores a system settings snapshot", async ({ page }) => {
+  await page.goto("/?scenario=systembackup");
+  await openModule(page, "Backup");
+  await page.getByRole("tab", { name: "Restore" }).click();
+  await expect(page.getByText("System settings")).toBeVisible();
+  await page.getByRole("button", { name: "Restore", exact: true }).click();
+  await expect(page.getByText("Restore system settings")).toBeVisible();
+  await page.getByRole("dialog").getByRole("button", { name: "Restore" }).click();
+  await page.getByRole("button", { name: "Confirm" }).click();
+  await expect.poll(() => calls(page)).toContain("restore_system_backup");
+  await expect(page.getByText(/1 could not be applied/)).toBeVisible();
+});
+
 test("stays quiet when the phone has no backups", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { name: /Device/ }).first()).toBeVisible();

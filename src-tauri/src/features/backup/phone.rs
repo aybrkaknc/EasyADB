@@ -13,7 +13,7 @@ use super::manifest::{self, Manifest};
 use super::transfer;
 use crate::adb::{Device, shell};
 use crate::error::{AppError, AppResult, ErrorCode};
-use crate::features::device;
+use crate::features::{device, system_backup};
 use crate::tasks::{Reporter, TaskHandle};
 
 /// EasyAndroid's default backup folder.
@@ -96,12 +96,74 @@ pub fn list(device: Device, local_root: &Path) -> Vec<PhoneBackup> {
     found
 }
 
+/// System snapshot files on the phone that are not on the PC yet.
+pub fn list_system(device: Device, local_root: &Path) -> Vec<String> {
+    device
+        .script(&format!("ls -1 {PHONE_ROOT} 2>/dev/null"))
+        .map(|out| {
+            out.lines()
+                .map(str::trim)
+                .filter(|name| system_backup::is_file_name(name))
+                .filter(|name| !local_root.join(name).exists())
+                .map(String::from)
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+/// Copies one system snapshot next to the backups. A file that is not a snapshot is removed again.
+fn pull_system(
+    device: Device,
+    root: &Path,
+    name: &str,
+    use_root: bool,
+    task: &TaskHandle,
+) -> AppResult<()> {
+    if !system_backup::is_file_name(name) {
+        return Err(AppError::new(ErrorCode::InvalidPath, name));
+    }
+    let dest = root.join(name);
+    if dest.exists() {
+        return Err(AppError::new(
+            ErrorCode::Io,
+            format!("{name} already exists"),
+        ));
+    }
+    let plain = format!("cat {}", shell::quote(&format!("{PHONE_ROOT}/{name}")));
+    let mut ignore = |_: u64| {};
+    let first = transfer::pull(device, &plain, &dest, task, &mut ignore);
+    let got = match first {
+        Err(e) if e.code == ErrorCode::Cancelled => Err(e),
+        Ok(v) if v.0 > 0 => Ok(v),
+        other if use_root => transfer::pull(
+            device,
+            &shell::join(&["su", "-c", &plain]),
+            &dest,
+            task,
+            &mut ignore,
+        )
+        .or_else(|err| other.and(Err(err))),
+        other => other,
+    };
+    let checked = got.and_then(|(bytes, _)| {
+        if bytes == 0 {
+            return Err(AppError::new(ErrorCode::BackupInvalid, name));
+        }
+        system_backup::parse(&fs::read_to_string(&dest)?).map(|_| ())
+    });
+    if checked.is_err() {
+        let _ = fs::remove_file(&dest);
+    }
+    checked
+}
+
 /// Copies the chosen backups into `root`. Root is only asked for when a backup holds app data,
 /// and only used for files the plain shell cannot read.
 pub fn pull(
     device: Device,
     root: &Path,
     ids: &[String],
+    system: &[String],
     task: &TaskHandle,
     reporter: &Reporter,
 ) -> AppResult<Vec<PullOutcome>> {
@@ -117,9 +179,11 @@ pub fn pull(
             (id, manifest)
         })
         .collect();
-    let needs_root = chosen
-        .iter()
-        .any(|(_, m)| m.as_ref().is_ok_and(Manifest::has_data));
+    // System snapshots are written by root too, so root is asked for them as well.
+    let needs_root = !system.is_empty()
+        || chosen
+            .iter()
+            .any(|(_, m)| m.as_ref().is_ok_and(Manifest::has_data));
     let use_root = needs_root && device::check_root(device);
 
     let mut outcomes = Vec::new();
@@ -138,6 +202,16 @@ pub fn pull(
         outcomes.push(PullOutcome {
             id: id.clone(),
             error,
+        });
+    }
+    for name in system {
+        if task.is_cancelled() {
+            break;
+        }
+        reporter.progress("pull", name, 0.0, 0.0);
+        outcomes.push(PullOutcome {
+            id: name.clone(),
+            error: pull_system(device, root, name, use_root, task).err(),
         });
     }
     if task.is_cancelled() {
@@ -321,6 +395,7 @@ mod tests {
             Device::new(&fake, "X"),
             root.path(),
             &["nope_1".to_string()],
+            &[],
             &TaskHandle::default(),
             &Reporter::silent(),
         )
@@ -329,5 +404,36 @@ mod tests {
             outcomes[0].error.as_ref().unwrap().code,
             ErrorCode::NotFound
         );
+    }
+
+    #[test]
+    fn lists_system_snapshots_missing_on_the_pc() {
+        let fake = FakeAdb::new().on(
+            "ls -1",
+            "com.a_1\nsystem_20260101-100000.json\nsystem_20260202-100000.json\nnotes.txt\n",
+        );
+        let root = tempfile::tempdir().unwrap();
+        fs::write(root.path().join("system_20260101-100000.json"), "{}").unwrap();
+        assert_eq!(
+            list_system(Device::new(&fake, "X"), root.path()),
+            ["system_20260202-100000.json"]
+        );
+    }
+
+    #[test]
+    fn refuses_system_names_that_are_not_snapshots() {
+        let fake = FakeAdb::new();
+        let root = tempfile::tempdir().unwrap();
+        for bad in ["../system_1.json", "system_1.txt", "other.json"] {
+            let err = pull_system(
+                Device::new(&fake, "X"),
+                root.path(),
+                bad,
+                false,
+                &TaskHandle::default(),
+            )
+            .unwrap_err();
+            assert_eq!(err.code, ErrorCode::InvalidPath, "{bad}");
+        }
     }
 }

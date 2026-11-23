@@ -35,6 +35,7 @@
     "title": "Backups found on the phone",
     "body": "{{count}} EasyAndroid backups were found on this phone. Copy them to the backup folder on this PC? You can restore them later from the Restore tab.",
     "rootWarning": "Some of these backups contain app data that needs root. Allow root for the shell on the phone when it asks; without it those files may not be readable and you can get errors.",
+    "system": "{{count}} system settings files were found too. They can hold saved Wi-Fi passwords in plain text.",
     "more": "and {{count}} more",
     "later": "Not now",
     "pull": "Copy to PC",
@@ -162,7 +163,8 @@
       "sideload": "Sideloading",
       "pull": "Downloading",
       "push": "Uploading",
-      "permissions": "Granting permissions"
+      "permissions": "Granting permissions",
+      "system": "Applying settings"
     }
   },
   "notify": {
@@ -246,6 +248,21 @@
       "batchConfirm": "Restore {{count}} backups to the device? Apps are installed; where a backup has data and root is available, the app data is replaced.",
       "batchDone": "{{ok}} restored, {{failed}} failed",
       "batchPermissions": "Also grant saved permissions"
+    },
+    "system": {
+      "title": "System settings",
+      "summary": "{{settings}} settings, {{roles}} default apps, {{wifi}} Wi-Fi networks",
+      "restore": "Restore",
+      "dialogTitle": "Restore system settings",
+      "settings": "Common settings ({{count}})",
+      "roles": "Default apps ({{count}})",
+      "wifi": "Wi-Fi networks ({{count}})",
+      "wifiHint": "The backup file keeps Wi-Fi passwords as plain text.",
+      "note": "Only common preferences such as screen timeout, font size and dark mode are applied. Identity, security and SIM settings are never copied.",
+      "confirm": "Apply these settings to the device? Their current values are replaced.",
+      "start": "Restore",
+      "done": "{{count}} settings applied.",
+      "failed": "{{count}} could not be applied: {{items}}"
     },
     "restore": {
       "title": "Restore {{name}}",

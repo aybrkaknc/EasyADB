@@ -94,7 +94,26 @@ const handlers: Record<string, (args: Args) => unknown> = {
           },
         ]
       : [],
-  pull_phone_backups: (a) => (a.ids as string[]).map((id) => ({ id, error: null })),
+  list_phone_system: () => (scenario === "phonebackups" ? ["system_20260101-100000.json"] : []),
+  pull_phone_backups: (a) =>
+    [...(a.ids as string[]), ...(a.system as string[])].map((id) => ({ id, error: null })),
+  list_system_backups: () =>
+    scenario === "systembackup"
+      ? [
+          {
+            id: "system_20260101-100000.json",
+            createdAt: "2026-01-01T10:00:00+03:00",
+            deviceModel: "POCO F4",
+            settingsCount: 4,
+            rolesCount: 1,
+            wifiCount: 2,
+          },
+        ]
+      : [],
+  restore_system_backup: () => ({
+    applied: 3,
+    failed: [{ item: "global/private_dns_mode", error: { code: "adb_failed", detail: "x" } }],
+  }),
   open_web_search: () => null,
   get_settings: () => state.settings,
   save_settings: (a) => {

@@ -35,6 +35,7 @@
     "title": "Telefonda yedekler bulundu",
     "body": "Bu telefonda {{count}} EasyAndroid yedeği bulundu. Bu bilgisayardaki yedek klasörüne çekilsin mi? Daha sonra Geri yükle sekmesinden geri yükleyebilirsiniz.",
     "rootWarning": "Bu yedeklerin bir kısmı root gerektiren uygulama verisi içeriyor. Telefon sorduğunda kabuğa (shell) root izni verin; vermezseniz bu dosyalar okunamayabilir ve hata alabilirsiniz.",
+    "system": "{{count}} sistem ayarı dosyası da bulundu. Kayıtlı Wi-Fi şifrelerini düz metin olarak içerebilirler.",
     "more": "ve {{count}} tane daha",
     "later": "Şimdi değil",
     "pull": "PC'ye çek",
@@ -162,7 +163,8 @@
       "sideload": "Sideload yapılıyor",
       "pull": "İndiriliyor",
       "push": "Yükleniyor",
-      "permissions": "İzinler veriliyor"
+      "permissions": "İzinler veriliyor",
+      "system": "Ayarlar uygulanıyor"
     }
   },
   "notify": {
@@ -246,6 +248,21 @@
       "batchConfirm": "{{count}} yedek cihaza geri yüklensin mi? Uygulamalar kurulur; verisi olan yedeklerde root varsa uygulama verisi değiştirilir.",
       "batchDone": "{{ok}} geri yüklendi, {{failed}} başarısız",
       "batchPermissions": "Kayıtlı izinleri de ver"
+    },
+    "system": {
+      "title": "Sistem ayarları",
+      "summary": "{{settings}} ayar, {{roles}} varsayılan uygulama, {{wifi}} Wi-Fi ağı",
+      "restore": "Geri yükle",
+      "dialogTitle": "Sistem ayarlarını geri yükle",
+      "settings": "Yaygın ayarlar ({{count}})",
+      "roles": "Varsayılan uygulamalar ({{count}})",
+      "wifi": "Wi-Fi ağları ({{count}})",
+      "wifiHint": "Yedek dosyası Wi-Fi şifrelerini düz metin olarak saklar.",
+      "note": "Yalnızca ekran zaman aşımı, yazı boyutu ve koyu tema gibi yaygın tercihler uygulanır. Kimlik, güvenlik ve SIM ayarları hiçbir zaman kopyalanmaz.",
+      "confirm": "Bu ayarlar cihaza uygulansın mı? Mevcut değerleri değiştirilir.",
+      "start": "Geri yükle",
+      "done": "{{count}} ayar uygulandı.",
+      "failed": "{{count}} ayar uygulanamadı: {{items}}"
     },
     "restore": {
       "title": "{{name}} geri yükle",
