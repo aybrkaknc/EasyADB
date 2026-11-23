@@ -275,6 +275,8 @@ export type DeviceDetails_Deserialize = {
 	build: string,
 	abi: string,
 	hasSu: boolean,
+	/**  The EasyAndroid companion app is installed on the device. */
+	easyAndroid: boolean,
 	bootloaderLocked?: boolean | null,
 	verifiedBoot: string,
 	selinux: string,
@@ -289,6 +291,8 @@ export type DeviceDetails_Serialize = {
 	build: string,
 	abi: string,
 	hasSu: boolean,
+	/**  The EasyAndroid companion app is installed on the device. */
+	easyAndroid: boolean,
 	bootloaderLocked: boolean | null,
 	verifiedBoot: string,
 	selinux: string,

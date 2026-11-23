@@ -185,7 +185,10 @@
       "locked": "Kilitli",
       "unlocked": "Kilidi açık",
       "found": "Var",
-      "notFound": "Yok"
+      "notFound": "Yok",
+      "easyAndroid": "EasyAndroid",
+      "installed": "Kurulu",
+      "notInstalled": "Kurulu değil"
     },
     "reboot": {
       "title": "Yeniden başlat",

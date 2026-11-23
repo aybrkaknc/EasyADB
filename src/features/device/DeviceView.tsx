@@ -37,6 +37,10 @@ function DeviceInfo({ device }: { device: DeviceEntry }) {
         [t("device.info.build"), d.build],
         [t("device.info.abi"), d.abi],
         [t("device.info.root"), t(d.hasSu ? "device.info.found" : "device.info.notFound")],
+        [
+          t("device.info.easyAndroid"),
+          t(d.easyAndroid ? "device.info.installed" : "device.info.notInstalled"),
+        ],
         [t("device.info.bootloader"), locked],
         [t("device.info.verifiedBoot"), d.verifiedBoot],
         [t("device.info.selinux"), d.selinux],

@@ -185,7 +185,10 @@
       "locked": "Locked",
       "unlocked": "Unlocked",
       "found": "Found",
-      "notFound": "Not found"
+      "notFound": "Not found",
+      "easyAndroid": "EasyAndroid",
+      "installed": "Installed",
+      "notInstalled": "Not installed"
     },
     "reboot": {
       "title": "Reboot",

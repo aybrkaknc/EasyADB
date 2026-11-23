@@ -29,10 +29,15 @@ pub struct DeviceDetails {
     pub build: String,
     pub abi: String,
     pub has_su: bool,
+    /// The EasyAndroid companion app is installed on the device.
+    pub easy_android: bool,
     pub bootloader_locked: Option<bool>,
     pub verified_boot: String,
     pub selinux: String,
 }
+
+/// Package name of the EasyAndroid companion app.
+pub const EASYANDROID_PACKAGE: &str = "com.aybrkaknc.easyandroid";
 
 pub fn details(device: Device) -> AppResult<DeviceDetails> {
     let props = parse::parse_getprop(&device.shell(&["getprop"])?);
@@ -41,6 +46,9 @@ pub fn details(device: Device) -> AppResult<DeviceDetails> {
         .script("command -v su")
         .map(|out| !out.trim().is_empty())
         .unwrap_or(false);
+    let easy_android = device
+        .shell(&["pm", "path", EASYANDROID_PACKAGE])
+        .is_ok_and(|out| !parse::parse_pm_path(&out).is_empty());
     let locked = match (
         prop("ro.boot.flash.locked").as_str(),
         prop("ro.boot.vbmeta.device_state").as_str(),
@@ -62,6 +70,7 @@ pub fn details(device: Device) -> AppResult<DeviceDetails> {
         build: prop("ro.build.display.id"),
         abi: prop("ro.product.cpu.abi"),
         has_su,
+        easy_android,
         bootloader_locked: locked,
         verified_boot: prop("ro.boot.verifiedbootstate"),
         selinux,
@@ -170,6 +179,24 @@ mod tests {
         let devices = list(&fake).unwrap();
         assert_eq!(devices.len(), 2);
         assert_eq!(devices[1].serial, "XYZ");
+    }
+
+    #[test]
+    fn detects_the_easyandroid_app() {
+        let props = "[ro.product.model]: [Pixel 7]\n[ro.build.version.sdk]: [34]\n";
+        let with = FakeAdb::new()
+            .on(
+                "pm path com.aybrkaknc.easyandroid",
+                "package:/data/app/x/base.apk\n",
+            )
+            .on("getprop", props);
+        assert!(details(Device::new(&with, "X")).unwrap().easy_android);
+        let without = FakeAdb::new()
+            .on_fail("pm path com.aybrkaknc.easyandroid", "")
+            .on("getprop", props);
+        let d = details(Device::new(&without, "X")).unwrap();
+        assert!(!d.easy_android);
+        assert_eq!((d.model.as_str(), d.sdk), ("Pixel 7", 34));
     }
 
     #[test]

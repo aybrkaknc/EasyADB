@@ -111,6 +111,7 @@ const handlers: Record<string, (args: Args) => unknown> = {
     build: "UQ1A.240205.002",
     abi: "arm64-v8a",
     hasSu: true,
+    easyAndroid: scenario === "phonebackups",
     bootloaderLocked: false,
     verifiedBoot: "orange",
     selinux: "Enforcing",
