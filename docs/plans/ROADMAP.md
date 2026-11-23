@@ -1,58 +1,38 @@
-# 🗺️ EasyADB Proje Yol Haritası (Roadmap)
+# EasyADB Yol Haritası
 
-> **Hedef:** Tauri 2.0 & Rust kullanarak HyperOS/AOSP uyumlu, güçlü ve modern bir Android yönetim aracı inşa etmek.
+## v0.2.0 (tamamlandı)
 
----
+Sıfırdan yeniden yazım. Ayrıntılar için [REFACTOR_PLAN.md](REFACTOR_PLAN.md).
 
-## ✅ TAMAMLANAN ÖZELLİKLER (COMPLETED)
+- [x] Tek ADB istemcisi, tipli hatalar, üretilen TypeScript tipleri
+- [x] Birden fazla cihaz, cihaz seçici, bağlantı rehberi
+- [x] Klasör tabanlı hızlı yedekleme, SHA-256, isteğe bağlı şifreleme, `.easybckp` dışa/içe aktarma
+- [x] UAD-NG tabanlı debloat, profiller
+- [x] Kablosuz hata ayıklama: eşleştirme kodu, QR, IP, `adb tcpip`
+- [x] Canlı çıktılı terminal, sideload, APK kurma
+- [x] Dosya yöneticisi, logcat, performans
+- [x] İngilizce ve Türkçe arayüz, klavye kısayolları, tepsi, bildirimler
+- [x] Sidecar ADB, `.msi` kurulum paketi, CI
 
-### 🏗️ 1. Temel Altyapı & Cihaz Yönetimi
-- [x] **Framework:** Tauri 2.0 + React + TypeScript + Tailwind CSS entegrasyonu.
-- [x] **ADB Engine:** Gömülü ADB binary yönetimi ve server kontrolü.
-- [x] **Smart Monitoring:** CPU, RAM ve Pil durumunu gösteren Gerçek Zamanlı Dashboard.
-- [x] **Hardware Inventory:** Detaylı SoC, ekran ve işletim sistemi raporlama.
-- [x] **Connection:** Cihaz bağlantı/durum takibi ve anlık bildirimler.
+## Sonraki sürümler
 
-### 📦 2. Uygulama & Yedekleme Motoru
-- [x] **Yedekleme:** Batch APK yedekleme ve özel `.easybckp` formatı.
-- [x] **Geri Yükleme:** Yedek dosyalarını listeleme ve tek tıkla kurulum.
-- [x] **Universal Backup:** App Bundle (Split APK), OBB ve Root Data desteği.
-- [x] **App Management:** Yedekleri uygulama içinden silme ve yönetme.
-- [x] **Optimization:** Toplu seçimlerde asenkron boyut hesaplama motoru (BIT_SIZE).
+### Dosya yöneticisi
+- [ ] Sürükle-bırak ile yükleme
+- [ ] Resim ve APK önizlemeleri
 
-### 🛡️ 3. Sistem & Güçlü Kullanıcı Araçları
-- [x] **Debloater:** Sistem/Kullanıcı uygulamalarını ayrıştırma ve toplu Uninstall/Disable.
-- [x] **Safety First:** Kritik paketler için güvenlik uyarıları ve "Geri Getir" (Enable) desteği.
-- [x] **Interactive Terminal:** Komut geçmişini takip eden, kelime kelime öneri sunan akıllı terminal.
-- [x] **Sideload Engine:** OTA/ROM yüklemeleri için % ilerleme çubuklu stream desteği.
-- [x] **Macros:** Tek tıkla Reboot, Recovery ve Diagnostic komutları.
+### Logcat
+- [ ] Uygulama veya PID filtresi
 
-### 🎨 4. Tasarım & UX (ADB_UI Spec v1.5)
-- [x] **Unified HUD:** Tüm modüllerde ortak başlık ve navigasyon dili.
-- [x] **Modern Estetik:** No-Footer politikası, kutusuz metin göstergeleri ve responsive tasarım.
-- [x] **Performance UI:** Responsive dikey akordeon yapısı (System Monitor).
-- [x] **Smart Fix:** ADB hatalarını insan diline çeviren çözüm merkezi (Smart Error Analysis).
+### Kurulum
+- [ ] Bölünmüş ve çoklu APK kurma
+- [ ] Sürükle-bırak ile APK/ZIP kurma
 
----
+### Erişilebilirlik
+- [ ] Yüksek kontrast modu
 
-## 🚀 GELECEK PLANLAR (PENDING / BACKLOG)
+## Fikirler (planlanmadı)
 
-### 📡 Faz 1: Bağlantı & Dağıtım (Sıradaki)
-- [ ] **Kablosuz Hata Ayıklama:** QR kod veya IP ile kablosuz bağlantı sihirbazı.
-- [ ] **Dağıtım:** `.exe` ve `.msi` paketleme (Portable Mode optimizasyonu).
-- [ ] **Profil Yönetimi:** Debloat listelerini dışa/içe aktarma (Import/Export Preset).
+Bu maddeler açıkça istenmeden geliştirmeye alınmaz.
 
-### 📂 Faz 2: Dosya Yönetimi (File Explorer) [PLANLANDI]
-- [ ] **Live Navigation:** Cihaz klasörleri arasında akıcı gezinme.
-- [ ] **File Operations:** Klasör oluşturma, silme, taşıma ve yeniden adlandırma.
-- [ ] **Smart Push/Pull:** Sürükle-bırak ile dosya transferi ve progress monitoring.
-- [ ] **Media Preview:** Resim ve APK dosyaları için önizleme desteği.
-
-### 🔍 Faz 3: Sistem Günlüğü (Logcat Viewer) [PLANLANDI]
-- [ ] **Real-time Stream:** Yüksek performanslı, sanallaştırılmış log akışı.
-- [ ] **Smart Filtering:** Seviye (Level) ve Etiket (Tag) bazlı anlık filtreleme.
-- [ ] **Search & Highlight:** Regex destekli gelişmiş arama.
-- [ ] **Session Export:** Log çıktılarını dışa aktarma ve analiz raporu.
-
----
-*Son Güncelleme: 28 Ocak 2026*
+- Wi-Fi (SMB veya FTP) ile alınan yedekleri bilgisayara taşıma
+- Daha fazla özelliğe erişim için yardımcı bir Android uygulaması

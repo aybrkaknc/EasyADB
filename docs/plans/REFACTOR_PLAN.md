@@ -70,16 +70,16 @@ src/
 ```
 
 ## Aşamalar
-- [ ] 0. Hazırlık: bu belge, `LICENSE`, `.gitattributes`, CI iskeleti, ADB indirme betiği
-- [ ] 1. Temiz zemin: `.agent/`, eski docs, eski `src/` ve `src-tauri/src/` silinir; bağımlılıklar güncellenir
-- [ ] 2. Rust çekirdek: hata tipi, tek ADB istemcisi, ayrıştırıcılar + testler, depo
-- [ ] 3. Rust özellikler (sıra: device, backup, debloat, wireless, terminal + sideload, performance, files, logcat)
-- [ ] 4. Bindings: `tauri-specta` ile `src/bindings.ts`
-- [ ] 5. Frontend altyapı: kabuk, başlık çubuğu, depo, Query, i18n, tema, ortak UI
-- [ ] 6. Frontend özellikler
-- [ ] 7. Testler: Vitest, Playwright e2e
-- [ ] 8. CI ve `.msi` yayını
-- [ ] 9. Belgeler: README (EN/TR), CONTRIBUTING (EN/TR), SECURITY, şablonlar, ARCHITECTURE, ROADMAP, CHANGELOG
+- [x] 0. Hazırlık: bu belge, `LICENSE`, `.gitattributes`, CI iskeleti, ADB indirme betiği
+- [x] 1. Temiz zemin: `.agent/`, eski docs, eski `src/` ve `src-tauri/src/` silinir; bağımlılıklar güncellenir
+- [x] 2. Rust çekirdek: hata tipi, tek ADB istemcisi, ayrıştırıcılar + testler, depo
+- [x] 3. Rust özellikler (sıra: device, backup, debloat, wireless, terminal + sideload, performance, files, logcat)
+- [x] 4. Bindings: `tauri-specta` ile `src/bindings.ts`
+- [x] 5. Frontend altyapı: kabuk, başlık çubuğu, depo, Query, i18n, tema, ortak UI
+- [x] 6. Frontend özellikler
+- [x] 7. Testler: Vitest, Playwright e2e
+- [x] 8. CI ve `.msi` yayını
+- [x] 9. Belgeler: README (EN/TR), CONTRIBUTING (EN/TR), SECURITY, şablonlar, ARCHITECTURE, ROADMAP, CHANGELOG
 
 ## Bitti tanımı
 - `cargo clippy -D warnings`, `cargo test`, `tsc --noEmit`, `eslint`, `npm test`, Playwright hatasız

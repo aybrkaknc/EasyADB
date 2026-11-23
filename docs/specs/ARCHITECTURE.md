@@ -1,65 +1,91 @@
-# Mimari & Tasarım (EasyADB)
+# EasyADB Mimarisi (v0.2.0)
 
-## 1. ADB Yönetim Stratejisi (Embedded Storage)
+## 1. Genel bakış
 
-Uygulama, "Sidecar" yerine "Resource Embedding" kullanarak tam taşınabilirlik sağlar.
+EasyADB bir Tauri 2 uygulamasıdır. Rust tarafı ADB ile konuşur, dosya işlerini yapar ve tipli komutlar sunar. React tarafı yalnızca arayüzdür. İki taraf arasındaki tüm tipler `tauri-specta` ile Rust'tan üretilir (`src/bindings.ts`).
 
-1.  **Gömme (Embedding):** `adb.exe` ve gerekli DLL'ler Rust binary'si içine gömülür.
-2.  **Çıkarma (Extraction):** Uygulama başladığında bu binary'ler sistem `%TEMP%` dizinine çıkarılır.
-3.  **Yürütme (Execution):** Backend, tüm ADB isteklerini bu geçici yoldaki binary üzerinden yönetir.
-4.  **Güvenlik:** ADB server'ın çökmesi durumunda backend otomatik olarak yeniden başlatma dener.
-
-## 2. Yedekleme Formatı (`.easybckp` v3.0)
-
-Standart bir ZIP arşivi olan `.easybckp`, modern Android (Split APK) ve Root (Data) yapılarını destekler.
-
-**Dosya Yapısı (Hybrid Format):**
 ```
-[package_name]_[timestamp].easybckp (ZIP)
-├── apks/                  (Uygulama parçaları)
-│   ├── base.apk           (Ana modül)
-│   └── split_config.xxx.apk
-├── obb/                   (Opsiyonel - Büyük oyun verileri)
-│   └── main.xxx.obb
-├── data.tar.gz            (Opsiyonel - Root ile alınan uygulama verileri)
-└── metadata.json          (Paket ismi, tarih, versiyon, isSplit, hasObb, hasData)
+React (src/)  --commands-->  Rust (src-tauri/src/)  --process-->  adb.exe / fastboot.exe
+              <--events----
 ```
 
-## 3. Kullanıcı Arayüzü Mimarisi (ADB_UI Design System)
+## 2. Rust tarafı
 
-Uygulama, **ADB_UI** adını verdiğimiz özel bir tasarım dili üzerine kuruludur. Detaylı teknik spektrum için `docs/ui-ux/ADB_UI.md` dosyasına bakılabilir.
+```
+src-tauri/src/
+  lib.rs        eklentiler, komut ve olay kaydı, kurulum
+  error.rs      AppError { code, detail }; code arayüzde çevrilir
+  state.rs      AppState: adb istemcisi, görev kaydı; blocking() yardımcısı
+  tasks.rs      iptal edilebilir görevler ve TaskProgress olayları
+  stream.rs     süreç çıktısını satır satır akıtma
+  store.rs      tauri-plugin-store ile ayarlar ve kayıtlı veriler
+  tray.rs       tepsi simgesi ve menüsü
+  events.rs     TaskProgress, CommandOutput
+  adb/
+    client.rs   Adb (tek giriş noktası), AdbRunner trait'i, Device
+    shell.rs    cihaz kabuğu için tırnaklama ve doğrulama
+    parse.rs    ortak ayrıştırıcılar (devices, packages, getprop)
+    fake.rs     testler için sahte AdbRunner
+  features/     device, packages, backup/, debloat, wireless, terminal,
+                sideload, performance, files, logcat, settings
+```
 
-*   **Hybrid Typography:** UI etiketleri için `Space Grotesk`, teknik veriler için `JetBrains Mono`.
-*   **Aesthetic:** Keskin köşeler, neon parlamalar ve scanline efektli terminal arayüzü.
-*   **Sidebar Tabs:** Yedekleme ve Geri Yükleme modları arasında geçiş yapar.
-*   **Search & Filter:** Büyük uygulama listelerinde paket ismine göre hızlı arama sağlar.
-*   **Log Panel:** Tüm arka plan işlemlerini (ADB komutları, dosya yazımları) gerçek zamanlı olarak kullanıcıya raporlar.
-*   **Refresh Mechanism:** Manuel yenileme butonları üzerinden cihaz listesini veya yerel yedekleri tetikler.
+### 2.1 ADB çağrıları
 
-## 4. Geri Yükleme Akışı
+* Tüm süreçler `Adb` üzerinden `CREATE_NO_WINDOW` ile, argüman dizisi olarak başlatılır.
+* `adb shell` argümanlarını tek bir metin olarak cihaza gönderdiği için cihaz tarafındaki her argüman `shell::quote` ile tırnaklanır. Paket adları ve cihaz yolları kullanılmadan önce doğrulanır.
+* Özellik mantığı `&dyn AdbRunner` veya `Device` alır. Böylece birim testleri `FakeAdb` ile cihazsız çalışır.
+* Uzun işler `blocking()` ile ayrı iş parçacığında çalışır ve `TaskProgress` olayı gönderir. `cancel_task` görevi işaretler ve bağlı süreci öldürür.
 
-1.  **Tarama:** Backend, `Downloads` klasörünü periyodik olarak veya istek üzerine `.easybckp` dosyaları için tarar.
-2.  **Ayrıştırma:** ZIP içindeki `metadata.json` okunarak frontend'e liste gönderilir.
-3.  **Yükleme:** Seçilen yedekler geçici bir klasöre açılır.
-4.  **APK Kurulumu:** `adb install` veya `adb install-multiple` (Split APK ise) kullanılır.
-5.  **OBB Restore:** Varsa OBB klasörü `/sdcard/Android/obb/` dizinine `push` edilir.
-6.  **Data Restore:** Root varsa `data.tar.gz` arşivi `/data/data/` dizinine açılır, `chown` ve `restorecon` ile izinler düzeltilir.
-7.  **Temizlik:** İşlem bittiğinde geçici dosyalar sistemden temizlenir.
-8.  **Yedek Silme:** İstenmeyen `.easybckp` dosyaları Rust asenkron komutuyla diskten kalıcı olarak silinir.
-+
-+## 5. Gerçek Zamanlı Sideload Akışı
-+
-+1.  **Intercept:** Frontend `useTerminal` hook'u üzerinden `sideload` komutunu yakalar.
-+2.  **Rust Threading:** Backend'de `spawn_blocking` ile yeni bir thread açılır (UI donmaması için).
-+3.  **Progess Parsing:** ADB çıktısı (stdout) anlık okunur ve `(~45%)` gibi ifadeler Regex ile parse edilir.
-+4.  **Tauri Events:** Ayrıştırılan yüzde verisi `app.emit` ile frontend'e "sideload-progress" eventi olarak gönderilir.
-+5.  **UI Feedback:** Terminalin altında sabit bir progress overlay (neon bar) belirir.
-+
-+## 6. Debloater İstihbarat Portalı (v1.0)
-+
-+1.  **Knowledge Base:** UAD-NG listeleri baz alınarak hazırlanan `knowledge_base.json` Rust binary'si içine gömülür (`include_str!`).
-+2.  **Indexing:** Paket listesi istenirken paket ID'leri Hashmap üzerinden bilgi bankasıyla eşleştirilir.
-+3.  **Risk Scoping:** Paketlere `SAFE`, `RECOMMENDED`, `ADVANCED`, `EXPERT` veya `UNSAFE` etiketleri atanır.
-+4.  **UI Tooltip:** Paketlerin altında topluluk açıklamaları gösterilir.
-+
+### 2.2 ADB ikilileri
 
+`scripts/fetch-platform-tools.ps1` sabit sürümlü platform-tools paketini indirir, SHA-256 ile doğrular ve `src-tauri/binaries` içine koyar. `adb.exe` ve `fastboot.exe` Tauri sidecar (`externalBin`), DLL'ler `resources` olarak paketlenir ve uygulamanın yanına kurulur. Çalışma anında `AppState::new` bunları uygulama klasöründe bulur.
+
+### 2.3 Windows test manifest'i
+
+`tauri-build` Common Controls v6 manifest'ini yalnızca çalıştırılabilir dosyaya gömer. Birim test dosyaları da tauri'ye bağlandığı için manifest olmadan `0xc0000139` hatasıyla çöker. `build.rs` bu yüzden aynı manifest'i `embed-resource` ile tüm hedeflere gömer.
+
+## 3. Yedek biçimi (v1)
+
+Her yedek bir klasördür:
+
+```
+<kök>/<paket>_<YYYYMMDD-HHMMSS>/
+  manifest.json
+  apk/base.apk, apk/split_*.apk
+  obb/<dosyalar>          (isteğe bağlı)
+  data.tar                (isteğe bağlı, root)
+```
+
+* `manifest.json` biçim sürümünü, paket bilgisini, cihaz özetini ve her dosyanın düz metin boyutu ile SHA-256 değerini tutar.
+* Dosyalar `adb exec-out cat` ile akıtılır; özet ve (seçildiyse) şifreleme aynı geçişte yapılır. Uygulama verisi `su -c "tar -cf - ..."` ile doğrudan bilgisayara akar, telefona geçici dosya yazılmaz.
+* Şifreleme isteğe bağlıdır: Argon2id ile anahtar türetilir, dosyalar 1 MiB'lık AES-256-GCM parçalarıyla şifrelenir (`.enc`). Her parçanın nonce'u ve ek verisi sıra numarasını ve son parça bilgisini içerir; sıra değişikliği, kesme ve ekleme algılanır. Manifest'teki kontrol değeri yanlış parolayı geri yüklemeden önce yakalar.
+* Geri yüklemede varsayılan olarak boyut kontrol edilir, istenirse tam SHA-256 doğrulanır. Tek dosya gerektiğinde klasör sıkıştırmasız bir zip (`.easybckp`) olarak dışa aktarılır; içe aktarmada yol geçişi engellenir.
+
+## 4. Frontend
+
+```
+src/
+  app/          App, zustand deposu (modül, seçili cihaz), i18n, kabuk
+  features/     her modül için ekran ve yardımcıları
+  shared/
+    hooks/      useDevices, useSettings, useTask, useSelection, useConfirm, useFeedback
+    ui/         Radix tabanlı bileşenler, DeviceGuard, TaskBar, Toaster
+    lib/        biçimlendirme ve hata metinleri
+  bindings.ts   üretilir, elle düzenlenmez
+```
+
+* Sunucu durumu TanStack Query ile tutulur. Cihaz listesi 2 saniyede bir yenilenir; seçili cihaz kaybolursa hazır bir cihaz seçilir.
+* `DeviceGuard`, modüllerin yalnızca uygun durumda bir cihazla açılmasını sağlar; aksi durumda adım adım rehber gösterir.
+* Bir modül ilk açıldıktan sonra bağlı kalır, böylece terminal geçmişi ve logcat akışı modül değiştirince kaybolmaz.
+* Tüm metinler `en.json` ve `tr.json` içindedir; dil ayarı yoksa sistem dili kullanılır.
+
+## 5. Testler
+
+* Rust: ayrıştırıcılar, şifreleme, manifest, arşiv, sahte ADB ile komut mantığı. `export_bindings` testi `src/bindings.ts` dosyasını yeniden üretir.
+* Vitest: çeviri anahtarları, yardımcılar, hook'lar ve bileşenler.
+* Playwright: arayüz `vite --mode e2e` ile tarayıcıda açılır, Tauri IPC `src/test/e2e/mockBackend.ts` tarafından yanıtlanır.
+
+## 6. Arayüz tasarımı
+
+Görsel dil için [ADB_UI.md](../ui-ux/ADB_UI.md) dosyasına bakın.

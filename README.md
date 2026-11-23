@@ -8,6 +8,7 @@
 [![Forks][forks-shield]][forks-url]
 [![Stargazers][stars-shield]][stars-url]
 [![Issues][issues-shield]][issues-url]
+[![License][license-shield]][license-url]
 
 
 
@@ -16,11 +17,13 @@
   <h3 align="center">EasyADB</h3>
 
   <p align="center">
-    A desktop GUI for backing up, restoring, debloating and managing Android devices over ADB, without typing ADB commands.
+    A Windows desktop app for backing up, restoring, debloating and managing Android devices over ADB, without typing ADB commands.
     <br />
-    <a href="https://github.com/aybrkaknc/EasyADB/issues/new?labels=bug">Report Bug</a>
+    <a href="https://github.com/aybrkaknc/EasyADB/releases">Download</a>
     |
-    <a href="https://github.com/aybrkaknc/EasyADB/issues/new?labels=enhancement">Request Feature</a>
+    <a href="https://github.com/aybrkaknc/EasyADB/issues/new?template=bug_report.md">Report Bug</a>
+    |
+    <a href="https://github.com/aybrkaknc/EasyADB/issues/new?template=feature_request.md">Request Feature</a>
   </p>
 </div>
 
@@ -32,17 +35,20 @@
     <li>
       <a href="#about-the-project">About The Project</a>
       <ul>
+        <li><a href="#features">Features</a></li>
         <li><a href="#built-with">Built With</a></li>
       </ul>
     </li>
     <li>
       <a href="#getting-started">Getting Started</a>
       <ul>
+        <li><a href="#installer">Installer</a></li>
         <li><a href="#prerequisites">Prerequisites</a></li>
         <li><a href="#installation">Installation</a></li>
       </ul>
     </li>
     <li><a href="#usage">Usage</a></li>
+    <li><a href="#development">Development</a></li>
     <li><a href="#roadmap">Roadmap</a></li>
     <li><a href="#contributing">Contributing</a></li>
     <li><a href="#license">License</a></li>
@@ -55,12 +61,24 @@
 
 ## About The Project
 
-I switch ROMs often. Backing up a phone usually means backing up to the phone first (with SwiftBackup or similar apps) and then copying huge files to the PC over USB. EasyADB removes that middle step.
+Switching ROMs usually means backing up to the phone first and then copying large files to the PC. EasyADB backs apps up straight to your PC over ADB and restores them after a fresh flash. It bundles ADB, so nothing else has to be installed.
 
-EasyADB lets you:
-- Back up apps and data **directly** to your PC storage.
-- Restore them back to the device with a single click.
-- Debloat, sideload and inspect the device from a GUI.
+### Screenshots
+
+Screenshots will be added with the next release.
+
+### Features
+
+* **Multiple devices:** USB and Wi-Fi devices at the same time, with a device selector and step-by-step help for unauthorized or offline devices.
+* **Backup and restore:** APKs and split APKs, OBB files and, with root, app data. Backups are plain folders with a versioned manifest and SHA-256 checksums, so restoring is fast. Optional AES-256-GCM encryption with a password. Export or import a single `.easybckp` file.
+* **Debloater:** Package descriptions and safety levels from the UAD-NG list, batch disable, enable, remove and restore, and profiles you can save and re-apply after a new ROM.
+* **Wireless debugging:** Pairing code, QR code, manual IP and `adb tcpip` for older devices. Saved devices reconnect with one click.
+* **Terminal:** Runs adb and fastboot commands with live output, history, completion and cancel.
+* **Files:** Browse the device, create, rename, move and delete, and copy files between PC and device.
+* **Logcat:** Live log with level and tag filters, regex search with highlighting, recording to a file and export.
+* **Performance:** Live CPU, RAM, battery and storage, hardware inventory and network details.
+* **Install and reboot:** Install an APK, sideload a ZIP and reboot into system, recovery, bootloader, sideload or fastbootd.
+* **Comfort:** English and Turkish, keyboard shortcuts, tray icon, Windows notifications and confirmations for irreversible actions.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -73,6 +91,7 @@ EasyADB lets you:
 [![React][react-shield]][react-url]
 [![TypeScript][typescript-shield]][typescript-url]
 [![Vite][vite-shield]][vite-url]
+[![Tailwind CSS][tailwind-shield]][tailwind-url]
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -80,48 +99,48 @@ EasyADB lets you:
 
 ## Getting Started
 
-Follow these steps to run EasyADB locally.
+### Installer
+
+Download the latest `.msi` from the [Releases](https://github.com/aybrkaknc/EasyADB/releases) page. The installer is available in English and Turkish and installs WebView2 if it is missing.
 
 ### Prerequisites
+
+To build from source on Windows 10 or 11 (x64):
 
 * Node.js (LTS)
   ```sh
   winget install OpenJS.NodeJS.LTS
   ```
-* Rust (stable), installed with rustup
+* Rust (stable)
   ```sh
   winget install Rustlang.Rustup
   ```
-* Tauri 2 prerequisites for Windows (WebView2 and the MSVC build tools). See the [Tauri prerequisites guide](https://v2.tauri.app/start/prerequisites/).
-
-ADB is embedded in the app, so you do not need to install it separately.
+* Visual Studio Build Tools with the C++ workload
+  ```sh
+  winget install Microsoft.VisualStudio.2022.BuildTools --override "--wait --passive --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
+  ```
 
 ### Installation
 
 1. Clone the repo
    ```sh
    git clone https://github.com/aybrkaknc/EasyADB.git
-   ```
-2. Enter the project folder
-   ```sh
    cd EasyADB
    ```
-3. Install NPM packages
+2. Install NPM packages
    ```sh
    npm install
    ```
-4. Start the app in development mode
+3. Start the app. The first run downloads a pinned, SHA-256 verified copy of Android platform-tools into `src-tauri/binaries`.
    ```sh
    npm run tauri dev
    ```
-5. Build a release binary (optional)
+4. Build the installer (optional). The `.msi` is written to `src-tauri/target/release/bundle/msi`.
    ```sh
    npm run tauri build
    ```
-6. Run the tests (optional)
-   ```sh
-   npm test
-   ```
+
+`cargo` commands inside `src-tauri` need the binaries too. Run `npm run adb:fetch` once before using them.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -129,14 +148,43 @@ ADB is embedded in the app, so you do not need to install it separately.
 
 ## Usage
 
-* **Direct Backup and Restore:** Streams APKs, split APKs (App Bundles), OBB files and, with root access, app data straight to your PC. Restore from `.easybckp` backups in one click.
-* **Smart Debloater:** Separates system and user packages, uninstalls or disables them in batches, and re-enables them when needed. A safety list (based on UAD-NG) warns before you touch critical packages.
-* **Terminal:** An ADB terminal with command history, word suggestions and package name completion.
-* **Sideload:** Flash ZIP/OTA/ROM files and install APKs with a progress bar. Detects Recovery, Sideload and Bootloader mode.
-* **Performance and Hardware:** Live CPU, RAM and battery monitoring, plus SoC, screen and OS details.
-* **Smart Error Analysis:** Translates ADB errors into plain-language explanations and suggested fixes.
+1. Enable Developer options and USB debugging on the phone, connect it and accept the authorization prompt.
+2. Pick the device in the selector at the top. Every module works on the selected device.
+3. Use the icon rail or `Ctrl+1` to `Ctrl+9` to switch modules. `F5` refreshes, `Ctrl+F` focuses the search box.
 
-_Debloating system packages can break your device. Back up first and read the warnings before you act._
+Backups are saved to `Documents\EasyADB\Backups` by default. You can change the folder in Settings.
+
+_Removing system packages can break your device. Read the safety level of each package before you remove it. Removed packages can be restored from the Debloat module._
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
+
+## Development
+
+```
+src-tauri/src/
+  adb/        single adb client, shell quoting, shared parsers
+  features/   one module per feature: commands and logic
+  lib.rs      plugin setup and command registration
+src/
+  app/        shell, store, i18n
+  features/   one folder per module view
+  shared/     hooks, UI components, helpers
+  bindings.ts generated from Rust by tauri-specta
+e2e/          Playwright tests against a mocked backend
+```
+
+| Command | Purpose |
+| --- | --- |
+| `npm run lint` | ESLint |
+| `npm run format` | Prettier |
+| `npm test` | Vitest unit and component tests |
+| `npm run test:e2e` | Playwright end-to-end tests (`npx playwright install chromium` once) |
+| `npm run test:rust` | Rust unit tests; also regenerates `src/bindings.ts` |
+| `npm run test:all` | All of the above tests |
+
+See [docs/specs/ARCHITECTURE.md](docs/specs/ARCHITECTURE.md) (Turkish) for the design.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -144,20 +192,12 @@ _Debloating system packages can break your device. Back up first and read the wa
 
 ## Roadmap
 
-- [ ] **Phase 1: Connection and Distribution (next)**
-    - [ ] Wireless debugging wizard (QR code or IP)
-    - [ ] Packaging as `.exe` and `.msi` (portable mode)
-    - [ ] Import/export debloat profiles
-- [ ] **Phase 2: File Explorer (planned)**
-    - [ ] Live folder navigation
-    - [ ] Create, delete, move and rename files and folders
-    - [ ] Drag-and-drop push/pull with progress
-    - [ ] Preview for images and APK files
-- [ ] **Phase 3: Logcat Viewer (planned)**
-    - [ ] Real-time virtualized log stream
-    - [ ] Filtering by level and tag
-    - [ ] Regex search and highlighting
-    - [ ] Session export
+- [x] v0.2.0: rewrite with the features listed above
+- [ ] Drag and drop upload in the file manager
+- [ ] Image and APK previews
+- [ ] Logcat filter by app or PID
+- [ ] Split APK and multiple APK install
+- [ ] High contrast mode
 
 See the [open issues](https://github.com/aybrkaknc/EasyADB/issues) for a full list of proposed features and known issues.
 
@@ -167,13 +207,7 @@ See the [open issues](https://github.com/aybrkaknc/EasyADB/issues) for a full li
 
 ## Contributing
 
-Contributions are welcome. If you have a suggestion, fork the repo and create a pull request, or open an issue with the tag "enhancement".
-
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add: AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request. Report security issues as described in [SECURITY.md](SECURITY.md).
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -181,7 +215,11 @@ Contributions are welcome. If you have a suggestion, fork the repo and create a 
 
 ## License
 
-No license has been chosen for this project yet.
+Distributed under the GNU General Public License v3.0. See [LICENSE](LICENSE) for more information.
+
+EasyADB bundles:
+* [Android SDK Platform-Tools](https://developer.android.com/tools/releases/platform-tools), Apache License 2.0. Its notice file is installed as `licenses/platform-tools-NOTICE.txt`.
+* Package data from [Universal Android Debloater Next Generation](https://github.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation), GPL-3.0.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -200,8 +238,8 @@ Project Link: [https://github.com/aybrkaknc/EasyADB](https://github.com/aybrkakn
 ## Acknowledgments
 
 * [Best-README-Template](https://github.com/othneildrew/Best-README-Template) by othneildrew
-* [Universal Android Debloater Next Generation](https://github.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation) for the debloat safety list
-* [Tauri](https://tauri.app/), [React](https://react.dev/) and [Android Platform Tools](https://developer.android.com/tools/releases/platform-tools)
+* [Universal Android Debloater Next Generation](https://github.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation)
+* [Tauri](https://tauri.app/), [tauri-specta](https://github.com/specta-rs/tauri-specta), [Radix](https://www.radix-ui.com/) and [TanStack Query](https://tanstack.com/query)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -216,6 +254,8 @@ Project Link: [https://github.com/aybrkaknc/EasyADB](https://github.com/aybrkakn
 [stars-url]: https://github.com/aybrkaknc/EasyADB/stargazers
 [issues-shield]: https://img.shields.io/github/issues/aybrkaknc/EasyADB.svg?style=for-the-badge
 [issues-url]: https://github.com/aybrkaknc/EasyADB/issues
+[license-shield]: https://img.shields.io/github/license/aybrkaknc/EasyADB.svg?style=for-the-badge
+[license-url]: https://github.com/aybrkaknc/EasyADB/blob/main/LICENSE
 [tauri-shield]: https://img.shields.io/badge/Tauri_2-24C8DB?style=for-the-badge&logo=tauri&logoColor=white
 [tauri-url]: https://tauri.app/
 [rust-shield]: https://img.shields.io/badge/Rust-000000?style=for-the-badge&logo=rust&logoColor=white
@@ -226,3 +266,5 @@ Project Link: [https://github.com/aybrkaknc/EasyADB](https://github.com/aybrkakn
 [typescript-url]: https://www.typescriptlang.org/
 [vite-shield]: https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white
 [vite-url]: https://vitejs.dev/
+[tailwind-shield]: https://img.shields.io/badge/Tailwind_CSS_4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white
+[tailwind-url]: https://tailwindcss.com/

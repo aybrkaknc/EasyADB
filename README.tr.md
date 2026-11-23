@@ -8,6 +8,7 @@
 [![Fork'lar][forks-shield]][forks-url]
 [![Yıldızlar][stars-shield]][stars-url]
 [![Sorunlar][issues-shield]][issues-url]
+[![Lisans][license-shield]][license-url]
 
 
 
@@ -16,11 +17,13 @@
   <h3 align="center">EasyADB</h3>
 
   <p align="center">
-    ADB komutu yazmadan Android cihazları ADB üzerinden yedeklemek, geri yüklemek, gereksiz uygulamalardan arındırmak ve yönetmek için masaüstü arayüzü.
+    ADB komutu yazmadan Android cihazları ADB üzerinden yedeklemek, geri yüklemek, gereksiz uygulamalardan arındırmak ve yönetmek için Windows masaüstü uygulaması.
     <br />
-    <a href="https://github.com/aybrkaknc/EasyADB/issues/new?labels=bug">Hata Bildir</a>
+    <a href="https://github.com/aybrkaknc/EasyADB/releases">İndir</a>
     |
-    <a href="https://github.com/aybrkaknc/EasyADB/issues/new?labels=enhancement">Özellik İste</a>
+    <a href="https://github.com/aybrkaknc/EasyADB/issues/new?template=bug_report.md">Hata Bildir</a>
+    |
+    <a href="https://github.com/aybrkaknc/EasyADB/issues/new?template=feature_request.md">Özellik İste</a>
   </p>
 </div>
 
@@ -32,17 +35,20 @@
     <li>
       <a href="#proje-hakkında">Proje Hakkında</a>
       <ul>
+        <li><a href="#özellikler">Özellikler</a></li>
         <li><a href="#kullanılan-teknolojiler">Kullanılan Teknolojiler</a></li>
       </ul>
     </li>
     <li>
       <a href="#başlarken">Başlarken</a>
       <ul>
+        <li><a href="#kurulum-paketi">Kurulum Paketi</a></li>
         <li><a href="#gereksinimler">Gereksinimler</a></li>
-        <li><a href="#kurulum">Kurulum</a></li>
+        <li><a href="#kaynaktan-kurulum">Kaynaktan Kurulum</a></li>
       </ul>
     </li>
     <li><a href="#kullanım">Kullanım</a></li>
+    <li><a href="#geliştirme">Geliştirme</a></li>
     <li><a href="#yol-haritası">Yol Haritası</a></li>
     <li><a href="#katkıda-bulunma">Katkıda Bulunma</a></li>
     <li><a href="#lisans">Lisans</a></li>
@@ -55,12 +61,24 @@
 
 ## Proje Hakkında
 
-ROM'ları sık sık değiştiriyorum. Telefonu yedeklemek genellikle önce telefona yedek almak (SwiftBackup gibi uygulamalarla) ve sonra büyük dosyaları USB ile bilgisayara kopyalamak demek. EasyADB bu ara adımı ortadan kaldırıyor.
+ROM değiştirmek genellikle önce telefona yedek almak, sonra büyük dosyaları bilgisayara kopyalamak demektir. EasyADB uygulamaları ADB üzerinden doğrudan bilgisayara yedekler ve yeni bir ROM'dan sonra geri yükler. ADB'yi kendi içinde getirir, ayrıca bir şey kurmanız gerekmez.
 
-EasyADB ile:
-- Uygulamaları ve verileri **doğrudan** bilgisayarınızdaki depolamaya yedekleyebilirsiniz.
-- Yedekleri tek tıkla cihaza geri yükleyebilirsiniz.
-- Gereksiz uygulamaları kaldırabilir, dosya yükleyebilir ve cihazı arayüzden inceleyebilirsiniz.
+### Ekran Görüntüleri
+
+Ekran görüntüleri bir sonraki sürümle eklenecek.
+
+### Özellikler
+
+* **Birden fazla cihaz:** USB ve Wi-Fi cihazları aynı anda, cihaz seçici ve yetkisiz ya da çevrimdışı cihazlar için adım adım yardım.
+* **Yedekleme ve geri yükleme:** APK ve bölünmüş APK'lar, OBB dosyaları ve root varsa uygulama verisi. Yedekler sürümlü bir manifest ve SHA-256 sağlama toplamlarıyla düz klasörlerdir, bu yüzden geri yükleme hızlıdır. İsteğe bağlı parola ile AES-256-GCM şifreleme. Tek bir `.easybckp` dosyası olarak dışa veya içe aktarma.
+* **Debloater:** UAD-NG listesinden paket açıklamaları ve güvenlik seviyeleri, toplu devre dışı bırakma, etkinleştirme, kaldırma ve geri getirme, yeni bir ROM'dan sonra tekrar uygulanabilen profiller.
+* **Kablosuz hata ayıklama:** Eşleştirme kodu, QR kod, elle IP ve eski cihazlar için `adb tcpip`. Kayıtlı cihazlar tek tıkla yeniden bağlanır.
+* **Terminal:** adb ve fastboot komutlarını canlı çıktı, geçmiş, tamamlama ve iptal ile çalıştırır.
+* **Dosyalar:** Cihaza göz atma, oluşturma, yeniden adlandırma, taşıma ve silme, bilgisayar ile cihaz arasında dosya kopyalama.
+* **Logcat:** Seviye ve etiket filtreli canlı günlük, vurgulamalı regex arama, dosyaya kaydetme ve dışa aktarma.
+* **Performans:** Canlı CPU, RAM, pil ve depolama, donanım bilgileri ve ağ ayrıntıları.
+* **Kurulum ve yeniden başlatma:** APK kurma, ZIP sideload ve sistem, kurtarma, önyükleyici, sideload veya fastbootd moduna yeniden başlatma.
+* **Kolaylık:** İngilizce ve Türkçe, klavye kısayolları, tepsi simgesi, Windows bildirimleri ve geri alınamaz işlemler için onay.
 
 <p align="right">(<a href="#readme-top">başa dön</a>)</p>
 
@@ -73,6 +91,7 @@ EasyADB ile:
 [![React][react-shield]][react-url]
 [![TypeScript][typescript-shield]][typescript-url]
 [![Vite][vite-shield]][vite-url]
+[![Tailwind CSS][tailwind-shield]][tailwind-url]
 
 <p align="right">(<a href="#readme-top">başa dön</a>)</p>
 
@@ -80,48 +99,48 @@ EasyADB ile:
 
 ## Başlarken
 
-EasyADB'yi yerel olarak çalıştırmak için bu adımları izleyin.
+### Kurulum Paketi
+
+En son `.msi` dosyasını [Releases](https://github.com/aybrkaknc/EasyADB/releases) sayfasından indirin. Kurulum İngilizce ve Türkçe olarak sunulur ve eksikse WebView2'yi kurar.
 
 ### Gereksinimler
+
+Windows 10 veya 11 (x64) üzerinde kaynaktan derlemek için:
 
 * Node.js (LTS)
   ```sh
   winget install OpenJS.NodeJS.LTS
   ```
-* Rust (stable), rustup ile kurulmuş
+* Rust (stable)
   ```sh
   winget install Rustlang.Rustup
   ```
-* Windows için Tauri 2 gereksinimleri (WebView2 ve MSVC derleme araçları). Ayrıntılar için [Tauri gereksinimleri rehberine](https://v2.tauri.app/start/prerequisites/) bakın.
+* C++ iş yüküyle Visual Studio Build Tools
+  ```sh
+  winget install Microsoft.VisualStudio.2022.BuildTools --override "--wait --passive --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
+  ```
 
-ADB uygulamanın içine gömülü olduğu için ayrıca kurmanız gerekmez.
-
-### Kurulum
+### Kaynaktan Kurulum
 
 1. Depoyu klonlayın
    ```sh
    git clone https://github.com/aybrkaknc/EasyADB.git
-   ```
-2. Proje klasörüne girin
-   ```sh
    cd EasyADB
    ```
-3. NPM paketlerini kurun
+2. NPM paketlerini kurun
    ```sh
    npm install
    ```
-4. Uygulamayı geliştirme modunda başlatın
+3. Uygulamayı başlatın. İlk çalıştırma, sabit sürümlü ve SHA-256 ile doğrulanmış Android platform-tools kopyasını `src-tauri/binaries` içine indirir.
    ```sh
    npm run tauri dev
    ```
-5. Sürüm derlemesi oluşturun (isteğe bağlı)
+4. Kurulum paketini derleyin (isteğe bağlı). `.msi` dosyası `src-tauri/target/release/bundle/msi` içine yazılır.
    ```sh
    npm run tauri build
    ```
-6. Testleri çalıştırın (isteğe bağlı)
-   ```sh
-   npm test
-   ```
+
+`src-tauri` içindeki `cargo` komutları da bu dosyalara ihtiyaç duyar. Kullanmadan önce bir kez `npm run adb:fetch` çalıştırın.
 
 <p align="right">(<a href="#readme-top">başa dön</a>)</p>
 
@@ -129,14 +148,43 @@ ADB uygulamanın içine gömülü olduğu için ayrıca kurmanız gerekmez.
 
 ## Kullanım
 
-* **Doğrudan Yedekleme ve Geri Yükleme:** APK'ları, bölünmüş APK'ları (App Bundle), OBB dosyalarını ve root erişimi varsa uygulama verilerini doğrudan bilgisayarınıza aktarır. `.easybckp` yedeklerini tek tıkla geri yükleyebilirsiniz.
-* **Akıllı Debloater:** Sistem ve kullanıcı paketlerini ayırır, toplu olarak kaldırmanızı veya devre dışı bırakmanızı sağlar, gerektiğinde yeniden etkinleştirir. Güvenlik listesi (UAD-NG temelli), kritik paketlere dokunmadan önce uyarır.
-* **Terminal:** Komut geçmişi, kelime önerileri ve paket adı tamamlama özellikleri olan bir ADB terminali.
-* **Sideload:** ZIP/OTA/ROM dosyalarını yükler ve APK'ları ilerleme çubuğuyla kurar. Recovery, Sideload ve Bootloader modlarını algılar.
-* **Performans ve Donanım:** CPU, RAM ve pil durumunu canlı izler; SoC, ekran ve işletim sistemi bilgilerini gösterir.
-* **Akıllı Hata Analizi:** ADB hatalarını anlaşılır açıklamalara ve önerilen çözümlere çevirir.
+1. Telefonda Geliştirici seçeneklerini ve USB hata ayıklamayı açın, telefonu bağlayın ve yetki isteğini onaylayın.
+2. Üstteki seçiciden cihazı seçin. Tüm modüller seçili cihaz üzerinde çalışır.
+3. Modül değiştirmek için simge çubuğunu veya `Ctrl+1` ile `Ctrl+9` arasını kullanın. `F5` yeniler, `Ctrl+F` arama kutusuna odaklanır.
 
-_Sistem paketlerini kaldırmak cihazınızın çalışmamasına neden olabilir. İşlem yapmadan önce yedek alın ve uyarıları okuyun._
+Yedekler varsayılan olarak `Belgeler\EasyADB\Backups` klasörüne kaydedilir. Klasörü Ayarlar'dan değiştirebilirsiniz.
+
+_Sistem paketlerini kaldırmak cihazınızın çalışmamasına neden olabilir. Kaldırmadan önce her paketin güvenlik seviyesini okuyun. Kaldırılan paketler Debloat modülünden geri getirilebilir._
+
+<p align="right">(<a href="#readme-top">başa dön</a>)</p>
+
+
+
+## Geliştirme
+
+```
+src-tauri/src/
+  adb/        tek adb istemcisi, kabuk tırnaklama, ortak ayrıştırıcılar
+  features/   her özellik için bir modül: komutlar ve mantık
+  lib.rs      eklenti kurulumu ve komut kaydı
+src/
+  app/        kabuk, durum deposu, i18n
+  features/   her modül ekranı için bir klasör
+  shared/     hook'lar, UI bileşenleri, yardımcılar
+  bindings.ts tauri-specta ile Rust'tan üretilir
+e2e/          sahte arka uca karşı Playwright testleri
+```
+
+| Komut | Amaç |
+| --- | --- |
+| `npm run lint` | ESLint |
+| `npm run format` | Prettier |
+| `npm test` | Vitest birim ve bileşen testleri |
+| `npm run test:e2e` | Playwright uçtan uca testleri (bir kez `npx playwright install chromium`) |
+| `npm run test:rust` | Rust birim testleri; `src/bindings.ts` dosyasını da yeniden üretir |
+| `npm run test:all` | Yukarıdaki tüm testler |
+
+Tasarım ayrıntıları için [docs/specs/ARCHITECTURE.md](docs/specs/ARCHITECTURE.md) dosyasına bakın.
 
 <p align="right">(<a href="#readme-top">başa dön</a>)</p>
 
@@ -144,20 +192,12 @@ _Sistem paketlerini kaldırmak cihazınızın çalışmamasına neden olabilir. 
 
 ## Yol Haritası
 
-- [ ] **Faz 1: Bağlantı ve Dağıtım (sıradaki)**
-    - [ ] Kablosuz hata ayıklama sihirbazı (QR kod veya IP ile)
-    - [ ] `.exe` ve `.msi` olarak paketleme (taşınabilir mod)
-    - [ ] Debloat profillerini içe/dışa aktarma
-- [ ] **Faz 2: Dosya Yöneticisi (planlandı)**
-    - [ ] Canlı klasör gezintisi
-    - [ ] Dosya ve klasör oluşturma, silme, taşıma ve yeniden adlandırma
-    - [ ] Sürükle-bırak ile ilerleme takibli gönderme/alma
-    - [ ] Resim ve APK dosyaları için önizleme
-- [ ] **Faz 3: Sistem Günlüğü (Logcat) Görüntüleyici (planlandı)**
-    - [ ] Gerçek zamanlı, sanallaştırılmış log akışı
-    - [ ] Seviye ve etikete göre filtreleme
-    - [ ] Regex destekli arama ve vurgulama
-    - [ ] Oturum dışa aktarma
+- [x] v0.2.0: yukarıdaki özelliklerle yeniden yazım
+- [ ] Dosya yöneticisinde sürükle-bırak ile yükleme
+- [ ] Resim ve APK önizlemeleri
+- [ ] Logcat'te uygulama veya PID filtresi
+- [ ] Bölünmüş ve çoklu APK kurma
+- [ ] Yüksek kontrast modu
 
 Önerilen özelliklerin ve bilinen sorunların tam listesi için [açık sorunlara](https://github.com/aybrkaknc/EasyADB/issues) bakın.
 
@@ -167,13 +207,7 @@ _Sistem paketlerini kaldırmak cihazınızın çalışmamasına neden olabilir. 
 
 ## Katkıda Bulunma
 
-Katkılarınızı memnuniyetle karşılıyoruz. Bir öneriniz varsa depoyu fork'layıp bir pull request açabilir ya da "enhancement" etiketiyle bir sorun açabilirsiniz.
-
-1. Projeyi Fork'layın
-2. Özellik dalınızı oluşturun (`git checkout -b feature/HarikaOzellik`)
-3. Değişikliklerinizi commit'leyin (`git commit -m 'Ekle: HarikaOzellik'`)
-4. Dalı push'layın (`git push origin feature/HarikaOzellik`)
-5. Pull Request açın
+Katkılarınızı memnuniyetle karşılıyoruz. Pull request açmadan önce [CONTRIBUTING.tr.md](CONTRIBUTING.tr.md) dosyasını okuyun. Güvenlik sorunlarını [SECURITY.md](SECURITY.md) dosyasında anlatıldığı gibi bildirin.
 
 <p align="right">(<a href="#readme-top">başa dön</a>)</p>
 
@@ -181,7 +215,11 @@ Katkılarınızı memnuniyetle karşılıyoruz. Bir öneriniz varsa depoyu fork'
 
 ## Lisans
 
-Bu proje için henüz bir lisans seçilmedi.
+GNU General Public License v3.0 ile dağıtılır. Ayrıntılar için [LICENSE](LICENSE) dosyasına bakın.
+
+EasyADB şunları içerir:
+* [Android SDK Platform-Tools](https://developer.android.com/tools/releases/platform-tools), Apache License 2.0. Bildirim dosyası `licenses/platform-tools-NOTICE.txt` olarak kurulur.
+* [Universal Android Debloater Next Generation](https://github.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation) paket verileri, GPL-3.0.
 
 <p align="right">(<a href="#readme-top">başa dön</a>)</p>
 
@@ -200,8 +238,8 @@ Proje Bağlantısı: [https://github.com/aybrkaknc/EasyADB](https://github.com/a
 ## Teşekkürler
 
 * [Best-README-Template](https://github.com/othneildrew/Best-README-Template) - othneildrew
-* [Universal Android Debloater Next Generation](https://github.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation) - debloat güvenlik listesi
-* [Tauri](https://tauri.app/), [React](https://react.dev/) ve [Android Platform Tools](https://developer.android.com/tools/releases/platform-tools)
+* [Universal Android Debloater Next Generation](https://github.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation)
+* [Tauri](https://tauri.app/), [tauri-specta](https://github.com/specta-rs/tauri-specta), [Radix](https://www.radix-ui.com/) ve [TanStack Query](https://tanstack.com/query)
 
 <p align="right">(<a href="#readme-top">başa dön</a>)</p>
 
@@ -216,6 +254,8 @@ Proje Bağlantısı: [https://github.com/aybrkaknc/EasyADB](https://github.com/a
 [stars-url]: https://github.com/aybrkaknc/EasyADB/stargazers
 [issues-shield]: https://img.shields.io/github/issues/aybrkaknc/EasyADB.svg?style=for-the-badge
 [issues-url]: https://github.com/aybrkaknc/EasyADB/issues
+[license-shield]: https://img.shields.io/github/license/aybrkaknc/EasyADB.svg?style=for-the-badge
+[license-url]: https://github.com/aybrkaknc/EasyADB/blob/main/LICENSE
 [tauri-shield]: https://img.shields.io/badge/Tauri_2-24C8DB?style=for-the-badge&logo=tauri&logoColor=white
 [tauri-url]: https://tauri.app/
 [rust-shield]: https://img.shields.io/badge/Rust-000000?style=for-the-badge&logo=rust&logoColor=white
@@ -226,3 +266,5 @@ Proje Bağlantısı: [https://github.com/aybrkaknc/EasyADB](https://github.com/a
 [typescript-url]: https://www.typescriptlang.org/
 [vite-shield]: https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white
 [vite-url]: https://vitejs.dev/
+[tailwind-shield]: https://img.shields.io/badge/Tailwind_CSS_4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white
+[tailwind-url]: https://tailwindcss.com/

@@ -7,6 +7,34 @@ Versiyon numaralandırması [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.2.0] - 2026-11-23
+
+Uygulama sıfırdan yeniden yazıldı. Eski `.easybckp` yedekleri bu sürümle okunmaz.
+
+### Eklenenler
+- Birden fazla cihaz desteği, cihaz seçici ve yetkisiz/çevrimdışı cihazlar için adım adım rehber
+- Klasör tabanlı yedek biçimi (v1): akışlı aktarım, SHA-256, isteğe bağlı AES-256-GCM şifreleme, `.easybckp` dışa/içe aktarma
+- UAD-NG verileriyle debloat, toplu işlemler ve profiller
+- Kablosuz hata ayıklama: eşleştirme kodu, QR kod, IP ve `adb tcpip`
+- Canlı çıktılı ve iptal edilebilir terminal
+- Dosya yöneticisi ve logcat görüntüleyici
+- Ağ, depolama ve sıcaklık bilgileriyle performans modülü
+- İngilizce ve Türkçe arayüz, klavye kısayolları, sistem tepsisi, Windows bildirimleri
+- Sabit sürümlü ve SHA-256 doğrulamalı platform-tools; sidecar olarak paketleme
+- `.msi` kurulum paketi (TR/EN, WebView2 bootstrapper), GitHub Actions CI ve yayın
+- Rust, Vitest ve Playwright testleri
+
+### Değişenler
+- Lisans GPL-3.0 oldu
+- Tüm ADB çağrıları tek istemciden geçiyor; cihaz kabuk argümanları tırnaklanıyor
+- Sıkı CSP ve minimum Tauri izinleri
+
+### Kaldırılanlar
+- Play Store'dan uygulama adı çekme
+- Eski yedek biçimi ve gömülü `include_bytes!` ADB
+
+---
+
 ## [0.1.1] - 2026-01-28
 
 ### 🐛 Bug Fixes
