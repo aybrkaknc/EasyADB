@@ -31,6 +31,15 @@
       "no": "No root access"
     }
   },
+  "phone": {
+    "title": "Backups found on the phone",
+    "body": "{{count}} EasyAndroid backups were found on this phone. Copy them to the backup folder on this PC? You can restore them later from the Restore tab.",
+    "rootWarning": "Some of these backups contain app data that needs root. Allow root for the shell on the phone when it asks; without it those files may not be readable and you can get errors.",
+    "more": "and {{count}} more",
+    "later": "Not now",
+    "pull": "Copy to PC",
+    "done": "{{ok}} backups copied, {{failed}} failed."
+  },
   "tray": {
     "show": "Show EasyADB",
     "quit": "Quit"

@@ -79,6 +79,22 @@ const state = {
 const handlers: Record<string, (args: Args) => unknown> = {
   list_devices: () => (scenario === "nodevice" ? [] : [device]),
   check_device_root: () => scenario !== "noroot",
+  list_phone_backups: () =>
+    scenario === "phonebackups"
+      ? [
+          {
+            id: "com.old.app_20260101-100000",
+            package: "com.old.app",
+            label: "Old App",
+            versionName: "1.0",
+            createdAt: "2026-01-01T10:00:00+03:00",
+            totalBytes: 5242880,
+            needsRoot: true,
+            onPc: false,
+          },
+        ]
+      : [],
+  pull_phone_backups: (a) => (a.ids as string[]).map((id) => ({ id, error: null })),
   open_web_search: () => null,
   get_settings: () => state.settings,
   save_settings: (a) => {

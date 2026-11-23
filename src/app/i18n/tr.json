@@ -31,6 +31,15 @@
       "no": "Root erişimi yok"
     }
   },
+  "phone": {
+    "title": "Telefonda yedekler bulundu",
+    "body": "Bu telefonda {{count}} EasyAndroid yedeği bulundu. Bu bilgisayardaki yedek klasörüne çekilsin mi? Daha sonra Geri yükle sekmesinden geri yükleyebilirsiniz.",
+    "rootWarning": "Bu yedeklerin bir kısmı root gerektiren uygulama verisi içeriyor. Telefon sorduğunda kabuğa (shell) root izni verin; vermezseniz bu dosyalar okunamayabilir ve hata alabilirsiniz.",
+    "more": "ve {{count}} tane daha",
+    "later": "Şimdi değil",
+    "pull": "PC'ye çek",
+    "done": "{{ok}} yedek çekildi, {{failed}} başarısız."
+  },
   "tray": {
     "show": "EasyADB'yi göster",
     "quit": "Çık"

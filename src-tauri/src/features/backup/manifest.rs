@@ -128,7 +128,12 @@ impl Manifest {
 pub fn read(dir: &Path) -> AppResult<Manifest> {
     let text = fs::read_to_string(dir.join(MANIFEST))
         .map_err(|e| AppError::new(ErrorCode::BackupInvalid, e.to_string()))?;
-    let manifest: Manifest = serde_json::from_str(&text)
+    parse(&text)
+}
+
+/// Parses and checks manifest text, wherever it was read from.
+pub fn parse(text: &str) -> AppResult<Manifest> {
+    let manifest: Manifest = serde_json::from_str(text)
         .map_err(|e| AppError::new(ErrorCode::BackupInvalid, e.to_string()))?;
     if !(FORMAT_VERSION..=MAX_FORMAT_VERSION).contains(&manifest.format_version) {
         return Err(AppError::new(

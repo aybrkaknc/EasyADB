@@ -132,6 +132,22 @@ test("opens a web search for the selected app", async ({ page }) => {
   await expect.poll(() => calls(page)).toContain("open_web_search");
 });
 
+test("offers to copy phone backups and warns about root", async ({ page }) => {
+  await page.goto("/?scenario=phonebackups");
+  await expect(page.getByText("Backups found on the phone")).toBeVisible();
+  await expect(page.getByText("Old App")).toBeVisible();
+  await expect(page.getByText(/Allow root for the shell/)).toBeVisible();
+  await page.getByRole("button", { name: "Copy to PC" }).click();
+  await expect.poll(() => calls(page)).toContain("pull_phone_backups");
+  await expect(page.getByText("Backups found on the phone")).toHaveCount(0);
+});
+
+test("stays quiet when the phone has no backups", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByRole("heading", { name: /Device/ }).first()).toBeVisible();
+  await expect(page.getByText("Backups found on the phone")).toHaveCount(0);
+});
+
 test("asks whether to restore saved permissions", async ({ page }) => {
   await page.goto("/");
   await openModule(page, "Backup");

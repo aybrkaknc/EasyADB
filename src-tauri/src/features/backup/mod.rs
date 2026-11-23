@@ -5,6 +5,7 @@ mod archive;
 pub mod create;
 pub mod manifest;
 mod permissions;
+pub mod phone;
 pub mod restore;
 mod transfer;
 
@@ -120,6 +121,51 @@ pub async fn start_restore(
             Device::new(&*runner, &serial),
             &dir,
             &options,
+            &task,
+            &reporter,
+        );
+        reporter.finish(&result);
+        result
+    })
+    .await;
+    state.tasks.finish(&task_id);
+    result
+}
+
+/// EasyAndroid backups that are on the phone, for the "copy to PC" prompt.
+#[tauri::command]
+#[specta::specta]
+pub async fn list_phone_backups(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    serial: String,
+) -> AppResult<Vec<phone::PhoneBackup>> {
+    let runner = state.runner()?;
+    blocking(move || {
+        let root = backup_root(&app)?;
+        Ok(phone::list(Device::new(&*runner, &serial), &root))
+    })
+    .await
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn pull_phone_backups(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    task_id: String,
+    serial: String,
+    ids: Vec<String>,
+) -> AppResult<Vec<phone::PullOutcome>> {
+    let runner = state.runner()?;
+    let task = state.tasks.start(&task_id);
+    let reporter = Reporter::new(app.clone(), &task_id);
+    let result = blocking(move || {
+        let root = backup_root(&app)?;
+        let result = phone::pull(
+            Device::new(&*runner, &serial),
+            &root,
+            &ids,
             &task,
             &reporter,
         );

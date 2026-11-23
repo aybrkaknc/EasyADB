@@ -36,6 +36,8 @@ pub fn specta_builder() -> Builder<Wry> {
             backup::list_backups,
             backup::start_backup,
             backup::start_restore,
+            backup::list_phone_backups,
+            backup::pull_phone_backups,
             backup::delete_backup,
             backup::export_backup,
             backup::import_backup,

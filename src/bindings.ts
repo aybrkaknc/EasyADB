@@ -24,6 +24,9 @@ export const commands = {
 	listBackups: (options?: InvokeOptions) => __TAURI_INVOKE<BackupSummary_Serialize[]>("list_backups", undefined, options),
 	startBackup: (taskId: string, serial: string, packages: string[], options: BackupOptions, _options?: InvokeOptions) => __TAURI_INVOKE<BackupOutcome_Serialize[]>("start_backup", { taskId, serial, packages, options }, _options),
 	startRestore: (taskId: string, serial: string, backupId: string, options: RestoreOptions, _options?: InvokeOptions) => __TAURI_INVOKE<RestoreReport_Serialize>("start_restore", { taskId, serial, backupId, options }, _options),
+	/**  EasyAndroid backups that are on the phone, for the "copy to PC" prompt. */
+	listPhoneBackups: (serial: string, options?: InvokeOptions) => __TAURI_INVOKE<PhoneBackup_Serialize[]>("list_phone_backups", { serial }, options),
+	pullPhoneBackups: (taskId: string, serial: string, ids: string[], options?: InvokeOptions) => __TAURI_INVOKE<PullOutcome_Serialize[]>("pull_phone_backups", { taskId, serial, ids }, options),
 	deleteBackup: (backupId: string, options?: InvokeOptions) => __TAURI_INVOKE<null>("delete_backup", { backupId }, options),
 	exportBackup: (backupId: string, dest: string, options?: InvokeOptions) => __TAURI_INVOKE<null>("export_backup", { backupId, dest }, options),
 	importBackup: (src: string, options?: InvokeOptions) => __TAURI_INVOKE<string>("import_backup", { src }, options),
@@ -404,9 +407,49 @@ export type NetworkInfo_Serialize = {
 	frequencyMhz: number | null,
 };
 
+export type PhoneBackup = PhoneBackup_Serialize | PhoneBackup_Deserialize;
+
+export type PhoneBackup_Deserialize = {
+	id: string,
+	package: string,
+	label?: string | null,
+	versionName?: string | null,
+	createdAt: string,
+	totalBytes: number | null,
+	/**  Holds app data. Root may be needed to read the files, and to restore them. */
+	needsRoot: boolean,
+	/**  A backup with this id is already in the PC backup folder. */
+	onPc: boolean,
+};
+
+export type PhoneBackup_Serialize = {
+	id: string,
+	package: string,
+	label: string | null,
+	versionName: string | null,
+	createdAt: string,
+	totalBytes: number | null,
+	/**  Holds app data. Root may be needed to read the files, and to restore them. */
+	needsRoot: boolean,
+	/**  A backup with this id is already in the PC backup folder. */
+	onPc: boolean,
+};
+
 export type ProfileEntry = {
 	package: string,
 	action: DebloatAction,
+};
+
+export type PullOutcome = PullOutcome_Serialize | PullOutcome_Deserialize;
+
+export type PullOutcome_Deserialize = {
+	id: string,
+	error?: AppError | null,
+};
+
+export type PullOutcome_Serialize = {
+	id: string,
+	error: AppError | null,
 };
 
 export type QrPairing = {
