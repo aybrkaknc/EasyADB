@@ -31,6 +31,7 @@ export function DebloatDetails({ item }: { item: DebloatApp | null }) {
       <p className="whitespace-pre-wrap text-white/80">
         {info?.description || t("debloat.noInfo")}
       </p>
+      {item.protected && <p className="text-[11px] text-warn/90">{t("debloat.protected")}</p>}
       {info && info.neededBy.length > 0 && (
         <div>
           <p className="label mb-1">{t("debloat.neededBy")}</p>

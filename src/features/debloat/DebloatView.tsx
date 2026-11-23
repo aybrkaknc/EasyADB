@@ -23,7 +23,7 @@ import { DeviceGuard } from "../../shared/ui/DeviceGuard";
 import { useConfirm } from "../../shared/hooks/useConfirm";
 import { Badge, EmptyState, Spinner, TaskBar } from "../../shared/ui/Feedback";
 import { ModuleHeader } from "../../shared/ui/ModuleHeader";
-import { canApply, REMOVAL_TONE, statusKey } from "./debloat";
+import { canApplyTo, REMOVAL_TONE, statusKey } from "./debloat";
 import { DebloatDetails } from "./DebloatDetails";
 
 const FILTERS = [
@@ -109,17 +109,13 @@ function Debloater({ device }: { device: DeviceEntry }) {
   const eligibleFor = (action: DebloatAction) =>
     selection.ids.filter((id) => {
       const item = byPackage.get(id);
-      return item !== undefined && canApply(action, item.app);
+      return item !== undefined && canApplyTo(action, item);
     });
 
   /** Runs an action on the selection, or on `only` when a single row's button was used. */
   const run = async (action: DebloatAction, only?: string) => {
     const ids = only ? [only] : eligibleFor(action);
     if (ids.length === 0) return;
-    if (action === "uninstall" || action === "disable") {
-      const unsafe = ids.filter((id) => byPackage.get(id)?.info?.removal === "Unsafe").length;
-      if (unsafe > 0 && !(await confirm(t("debloat.confirmUnsafe", { count: unsafe })))) return;
-    }
     if (
       action === "uninstall" &&
       !(await confirm(t("debloat.confirmUninstall", { count: ids.length })))
@@ -282,7 +278,7 @@ function Debloater({ device }: { device: DeviceEntry }) {
                     )}
                   </div>
                   <div className="flex shrink-0 gap-1.5" onClick={(e) => e.stopPropagation()}>
-                    {ROW_ACTIONS.filter((action) => canApply(action, item.app)).map((action) => (
+                    {ROW_ACTIONS.filter((action) => canApplyTo(action, item)).map((action) => (
                       <Button
                         key={action}
                         size="sm"

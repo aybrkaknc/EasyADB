@@ -35,11 +35,29 @@ static DB: LazyLock<HashMap<String, DebloatInfo>> = LazyLock::new(|| {
     serde_json::from_str(include_str!("../../assets/debloat_db.json")).unwrap_or_default()
 });
 
+/// Packages that are never disabled or removed, whatever the list says.
+const ALWAYS_PROTECTED: &[&str] = &[
+    "com.android.systemui",
+    "com.android.settings",
+    "com.android.shell",
+];
+
+/// The same rule as EasyAndroid (`docs/specs/EASYANDROID_INTEROP.md`): the system packages
+/// above and everything the UAD-NG list marks Unsafe.
+pub fn is_protected(package: &str) -> bool {
+    ALWAYS_PROTECTED.contains(&package)
+        || DB
+            .get(package)
+            .is_some_and(|info| info.removal == Removal::Unsafe)
+}
+
 #[derive(Debug, Clone, Serialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct DebloatApp {
     pub app: AppInfo,
     pub info: Option<DebloatInfo>,
+    /// Disabling and removing are refused for this package.
+    pub protected: bool,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, Type, PartialEq, Eq)]
@@ -62,6 +80,10 @@ fn pm_ok(out: String) -> AppResult<()> {
 
 pub fn apply(device: Device, package: &str, action: DebloatAction) -> AppResult<()> {
     shell::validate_package(package)?;
+    let removes = matches!(action, DebloatAction::Disable | DebloatAction::Uninstall);
+    if removes && is_protected(package) {
+        return Err(AppError::new(ErrorCode::Protected, package));
+    }
     match action {
         DebloatAction::Disable => {
             pm_ok(device.shell(&["pm", "disable-user", "--user", "0", package])?)
@@ -133,6 +155,7 @@ pub async fn list_debloat_apps(
             .into_iter()
             .map(|app| DebloatApp {
                 info: DB.get(&app.package).cloned(),
+                protected: is_protected(&app.package),
                 app,
             })
             .collect())
@@ -237,6 +260,34 @@ mod tests {
         apply(device, "com.a", DebloatAction::Restore).unwrap();
         assert_eq!(fake.calls()[1], "-s X shell pm uninstall -k --user 0 com.a");
         assert_eq!(fake.calls().len(), 4);
+    }
+
+    #[test]
+    fn refuses_to_remove_protected_packages() {
+        let fake = FakeAdb::new();
+        let device = Device::new(&fake, "X");
+        let unsafe_package = DB
+            .iter()
+            .find(|(_, info)| info.removal == Removal::Unsafe)
+            .map(|(package, _)| package.as_str())
+            .unwrap();
+        for package in ALWAYS_PROTECTED.iter().copied().chain([unsafe_package]) {
+            assert!(is_protected(package), "{package}");
+            for action in [DebloatAction::Disable, DebloatAction::Uninstall] {
+                let err = apply(device, package, action).unwrap_err();
+                assert_eq!(err.code, ErrorCode::Protected, "{package}");
+            }
+        }
+        assert!(fake.calls().is_empty());
+        assert!(!is_protected("com.example.unknown"));
+
+        let allowed = FakeAdb::new().on("enable", "Package x new state: enabled\n");
+        apply(
+            Device::new(&allowed, "X"),
+            "com.android.systemui",
+            DebloatAction::Enable,
+        )
+        .unwrap();
     }
 
     #[test]

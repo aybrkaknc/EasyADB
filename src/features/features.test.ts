@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { LogLine } from "../bindings";
-import { canApply, statusKey, webSearchUrl } from "./debloat/debloat";
+import { canApply, canApplyTo, statusKey, webSearchUrl } from "./debloat/debloat";
 import { parentPath } from "./files/paths";
 import { compileSearch, filterLines, formatLine, highlight } from "./logcat/filter";
 import { complete } from "./terminal/completion";
@@ -103,6 +103,15 @@ describe("debloat actions", () => {
     expect(canApply("enable", removed)).toBe(false);
     expect(canApply("uninstall", removed)).toBe(false);
     expect(canApply("restore", removed)).toBe(true);
+  });
+
+  it("never offers to disable or remove protected packages", () => {
+    const item = { app: base, info: null, protected: true };
+    expect(canApplyTo("disable", item)).toBe(false);
+    expect(canApplyTo("uninstall", item)).toBe(false);
+    expect(canApplyTo("enable", { ...item, app: disabled })).toBe(true);
+    expect(canApplyTo("restore", { ...item, app: removed })).toBe(true);
+    expect(canApplyTo("disable", { ...item, protected: false })).toBe(true);
   });
 
   it("builds a Google search from name and package", () => {

@@ -234,11 +234,15 @@ export type DebloatApp = DebloatApp_Serialize | DebloatApp_Deserialize;
 export type DebloatApp_Deserialize = {
 	app: AppInfo_Deserialize,
 	info?: DebloatInfo | null,
+	/**  Disabling and removing are refused for this package. */
+	protected: boolean,
 };
 
 export type DebloatApp_Serialize = {
 	app: AppInfo_Serialize,
 	info: DebloatInfo | null,
+	/**  Disabling and removing are refused for this package. */
+	protected: boolean,
 };
 
 export type DebloatInfo = {
@@ -308,7 +312,9 @@ export type DeviceEntry_Serialize = {
 export type DeviceState = "device" | "unauthorized" | "offline" | "recovery" | "sideload" | "bootloader" | "unknown";
 
 /**  Stable error codes. The frontend translates them; `detail` carries the raw context. */
-export type ErrorCode = "adb_missing" | "adb_failed" | "device_not_found" | "device_unauthorized" | "device_offline" | "invalid_input" | "invalid_path" | "io" | "parse" | "backup_invalid" | "integrity_failed" | "install_failed" | "pair_failed" | "connect_failed" | "cancelled" | "not_found" | "internal";
+export type ErrorCode = "adb_missing" | "adb_failed" | "device_not_found" | "device_unauthorized" | "device_offline" | "invalid_input" | "invalid_path" | "io" | "parse" | "backup_invalid" | "integrity_failed" | "install_failed" | "pair_failed" | "connect_failed" | "cancelled" | "not_found" | 
+/**  A package that must not be disabled or removed. */
+"protected" | "internal";
 
 export type FileEntry = {
 	name: string,

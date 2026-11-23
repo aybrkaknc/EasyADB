@@ -135,6 +135,7 @@
     "connect_failed": "Bağlanılamadı.",
     "cancelled": "İptal edildi.",
     "not_found": "Bulunamadı.",
+    "protected": "Bu paket korumalıdır, devre dışı bırakılamaz veya kaldırılamaz.",
     "internal": "Beklenmeyen hata."
   },
   "task": {
@@ -289,7 +290,7 @@
       "restore": "Geri getir"
     },
     "confirmUninstall": "{{count}} paket mevcut kullanıcı için kaldırılsın mı? Bu ekrandan geri getirilebilirler.",
-    "confirmUnsafe": "Seçili {{count}} paket Güvensiz olarak işaretli ve cihazı bozabilir. Yine de devam edilsin mi?",
+    "protected": "Korumalı: bu paket cihazı bozabileceği için devre dışı bırakılamaz veya kaldırılamaz.",
     "result": "{{ok}} tamamlandı, {{failed}} başarısız",
     "noInfo": "UAD-NG listesinde bilgi yok.",
     "neededBy": "Gerektiren",

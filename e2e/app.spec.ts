@@ -47,18 +47,27 @@ test("backs up a selected app and lists it in the archive", async ({ page }) => 
   await expect(page.getByText("com.spotify.music | ")).toBeVisible();
 });
 
-test("asks before removing packages and respects cancel", async ({ page }) => {
+test("protected packages cannot be disabled or removed", async ({ page }) => {
   await page.goto("/");
   await openModule(page, "Debloat");
   await page.getByRole("radio", { name: /All/ }).first().click();
   await page.getByText("com.android.systemui").first().click();
   await expect(page.getByText(/bootloops the device/)).toBeVisible();
+  await expect(page.getByText(/Protected: this package cannot be disabled/)).toBeVisible();
 
+  const row = page.locator("div.cursor-pointer", { hasText: "com.android.systemui" });
+  await expect(row.getByRole("button", { name: "Remove", exact: true })).toHaveCount(0);
+  await expect(row.getByRole("button", { name: "Disable", exact: true })).toHaveCount(0);
+});
+
+test("asks before removing packages and respects cancel", async ({ page }) => {
+  await page.goto("/");
+  await openModule(page, "Debloat");
+  await page.getByRole("radio", { name: /All/ }).first().click();
   await page
-    .locator("div.cursor-pointer", { hasText: "com.android.systemui" })
+    .locator("div.cursor-pointer", { hasText: "com.facebook.services" })
     .getByRole("button", { name: "Remove", exact: true })
     .click();
-  await expect(page.getByText(/marked Unsafe/)).toBeVisible();
   await page.getByRole("button", { name: "Cancel" }).click();
   expect(await calls(page)).not.toContain("apply_debloat");
 });

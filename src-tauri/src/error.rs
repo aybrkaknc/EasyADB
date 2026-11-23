@@ -21,6 +21,8 @@ pub enum ErrorCode {
     ConnectFailed,
     Cancelled,
     NotFound,
+    /// A package that must not be disabled or removed.
+    Protected,
     Internal,
 }
 

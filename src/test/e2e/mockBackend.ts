@@ -146,7 +146,12 @@ const handlers: Record<string, (args: Args) => unknown> = {
     permissionsTotal: 0,
     specialFailed: 0,
   }),
-  list_debloat_apps: () => apps.map((app) => ({ app, info: debloatInfo[app.package] ?? null })),
+  list_debloat_apps: () =>
+    apps.map((app) => ({
+      app,
+      info: debloatInfo[app.package] ?? null,
+      protected: app.package === "com.android.systemui",
+    })),
   apply_debloat: (a) =>
     (a.entries as { package: string }[]).map((e) => ({ package: e.package, error: null })),
   wireless_saved: () => [],

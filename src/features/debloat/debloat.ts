@@ -1,4 +1,4 @@
-import type { AppInfo, DebloatAction, Removal } from "../../bindings";
+import type { AppInfo, DebloatAction, DebloatApp, Removal } from "../../bindings";
 
 export const REMOVAL_TONE: Record<Removal, "neon" | "warn" | "danger" | "muted"> = {
   Recommended: "neon",
@@ -24,6 +24,12 @@ export function canApply(action: DebloatAction, app: AppInfo): boolean {
     case "restore":
       return !app.installed;
   }
+}
+
+/** `canApply`, and protected packages (system UI, Unsafe in the list) are never disabled or removed. */
+export function canApplyTo(action: DebloatAction, item: DebloatApp): boolean {
+  const removes = action === "disable" || action === "uninstall";
+  return canApply(action, item.app) && !(removes && item.protected);
 }
 
 /** Google search for an app: its name (when known) and package name. */

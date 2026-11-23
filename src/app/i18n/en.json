@@ -135,6 +135,7 @@
     "connect_failed": "Could not connect.",
     "cancelled": "Cancelled.",
     "not_found": "Not found.",
+    "protected": "This package is protected and cannot be disabled or removed.",
     "internal": "Unexpected error."
   },
   "task": {
@@ -289,7 +290,7 @@
       "restore": "Restore"
     },
     "confirmUninstall": "Remove {{count}} packages for the current user? They can be restored from this screen.",
-    "confirmUnsafe": "{{count}} selected packages are marked Unsafe and can break the device. Continue anyway?",
+    "protected": "Protected: this package cannot be disabled or removed because it can break the device.",
     "result": "{{ok}} done, {{failed}} failed",
     "noInfo": "No information in the UAD-NG list.",
     "neededBy": "Needed by",
