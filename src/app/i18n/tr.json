@@ -1,0 +1,404 @@
+{
+  "common": {
+    "refresh": "Yenile",
+    "cancel": "İptal",
+    "confirm": "Onayla",
+    "close": "Kapat",
+    "save": "Kaydet",
+    "delete": "Sil",
+    "retry": "Tekrar dene",
+    "search": "Ara",
+    "selectAll": "Tümünü seç",
+    "clearSelection": "Seçimi temizle",
+    "selected": "{{count}} seçili",
+    "loading": "Yükleniyor...",
+    "none": "Yok",
+    "yes": "Evet",
+    "no": "Hayır",
+    "browse": "Gözat",
+    "unknown": "Bilinmiyor",
+    "clear": "Temizle",
+    "items": "{{count}} öğe",
+    "openFolder": "Klasörü aç"
+  },
+  "titlebar": {
+    "minimize": "Küçült",
+    "maximize": "Büyüt",
+    "close": "Kapat"
+  },
+  "tray": {
+    "show": "EasyADB'yi göster",
+    "quit": "Çık"
+  },
+  "modules": {
+    "device": { "title": "Cihaz", "subtitle": "Genel bakış, kurulum ve yeniden başlatma" },
+    "backup": {
+      "title": "Yedekleme",
+      "subtitle": "Uygulamaları bu bilgisayara yedekle ve geri yükle"
+    },
+    "debloat": {
+      "title": "Debloat",
+      "subtitle": "İstenmeyen paketleri devre dışı bırak veya kaldır"
+    },
+    "terminal": { "title": "Terminal", "subtitle": "adb ve fastboot komutları çalıştır" },
+    "files": { "title": "Dosyalar", "subtitle": "Cihaz dosyalarına göz at ve aktar" },
+    "logcat": { "title": "Logcat", "subtitle": "Canlı sistem günlüğü" },
+    "performance": { "title": "Performans", "subtitle": "Canlı ölçümler ve donanım" },
+    "wireless": { "title": "Kablosuz", "subtitle": "Wi-Fi üzerinden bağlan" },
+    "settings": { "title": "Ayarlar", "subtitle": "Tercihler ve hakkında" }
+  },
+  "devices": {
+    "label": "Cihaz",
+    "none": "Cihaz yok",
+    "state": {
+      "device": "Hazır",
+      "unauthorized": "Yetkisiz",
+      "offline": "Çevrimdışı",
+      "recovery": "Kurtarma",
+      "sideload": "Sideload",
+      "bootloader": "Önyükleyici",
+      "unknown": "Bilinmiyor"
+    },
+    "kind": { "usb": "USB", "wifi": "Wi-Fi", "emulator": "Emülatör" }
+  },
+  "guide": {
+    "noDevice": {
+      "title": "Bağlı cihaz yok",
+      "step1": "Geliştirici seçeneklerini açın: Ayarlar > Telefon hakkında > Yapı numarasına yedi kez dokunun.",
+      "step2": "Geliştirici seçeneklerinde USB hata ayıklamayı açın.",
+      "step3": "Veri aktarımı destekleyen bir USB kablosuyla bağlayın, sorulursa Dosya aktarımı'nı seçin.",
+      "step4": "Windows telefonu görmüyorsa üreticinin USB sürücüsünü kurun veya başka bir bağlantı noktası deneyin."
+    },
+    "unauthorized": {
+      "title": "Yetki gerekiyor",
+      "step1": "Telefonun kilidini açın.",
+      "step2": "\"USB hata ayıklamaya izin verilsin mi?\" sorusunu onaylayın ve Her zaman izin ver'i işaretleyin.",
+      "step3": "Soru gelmiyor mu? Geliştirici seçeneklerinde USB hata ayıklama yetkilerini iptal edip yeniden bağlayın."
+    },
+    "offline": {
+      "title": "Cihaz çevrimdışı",
+      "step1": "Kabloyu çıkarıp yeniden takın.",
+      "step2": "USB hata ayıklamayı kapatıp yeniden açın.",
+      "step3": "Terminal'den adb sunucusunu yeniden başlatın: adb kill-server"
+    },
+    "adbMissing": {
+      "title": "ADB bulunamadı",
+      "step1": "EasyADB.exe yanındaki gömülü adb.exe eksik. Uygulamayı yeniden kurun."
+    },
+    "wrongMode": "Bu cihaz {{state}} modunda. Bu modülü kullanmak için Android'e yeniden başlatın.",
+    "wireless": "Wi-Fi mi tercih edersiniz? Kablosuz modülünü kullanın."
+  },
+  "errors": {
+    "adb_missing": "ADB uygulamanın yanında bulunamadı.",
+    "adb_failed": "adb komutu başarısız oldu.",
+    "device_not_found": "Cihaz bulunamadı. Hâlâ bağlı mı?",
+    "device_unauthorized": "Cihaz bu bilgisayara yetki vermedi.",
+    "device_offline": "Cihaz çevrimdışı.",
+    "root_required": "Root erişimi gerekiyor. Cihazdaki root isteğine izin verin.",
+    "invalid_input": "Geçersiz giriş.",
+    "invalid_path": "Geçersiz veya korunan yol.",
+    "io": "Bir dosya işlemi başarısız oldu.",
+    "parse": "Veri okunamadı.",
+    "backup_invalid": "Bu yedek geçersiz veya desteklenmeyen bir sürümden.",
+    "wrong_password": "Parola yanlış.",
+    "integrity_failed": "Yedek bozuk veya değiştirilmiş.",
+    "install_failed": "Kurulum başarısız oldu.",
+    "pair_failed": "Eşleştirme başarısız oldu.",
+    "connect_failed": "Bağlanılamadı.",
+    "cancelled": "İptal edildi.",
+    "not_found": "Bulunamadı.",
+    "internal": "Beklenmeyen hata."
+  },
+  "task": {
+    "cancel": "İptal",
+    "cancelled": "İptal edildi",
+    "failed": "Başarısız",
+    "done": "Tamamlandı",
+    "stage": {
+      "apk": "APK kopyalanıyor",
+      "obb": "OBB kopyalanıyor",
+      "data": "Uygulama verisi kopyalanıyor",
+      "verify": "Doğrulanıyor",
+      "install": "Kuruluyor",
+      "debloat": "Uygulanıyor",
+      "sideload": "Sideload yapılıyor",
+      "pull": "İndiriliyor",
+      "push": "Yükleniyor"
+    }
+  },
+  "notify": {
+    "done": "Görev tamamlandı",
+    "failed": "Görev başarısız oldu"
+  },
+  "device": {
+    "info": {
+      "title": "Cihaz bilgileri",
+      "model": "Model",
+      "manufacturer": "Üretici",
+      "android": "Android",
+      "sdk": "SDK",
+      "build": "Yapı",
+      "abi": "ABI",
+      "root": "Root (su)",
+      "bootloader": "Önyükleyici",
+      "verifiedBoot": "Doğrulanmış önyükleme",
+      "selinux": "SELinux",
+      "locked": "Kilitli",
+      "unlocked": "Kilidi açık",
+      "found": "Var",
+      "notFound": "Yok"
+    },
+    "reboot": {
+      "title": "Yeniden başlat",
+      "system": "Sistem",
+      "recovery": "Kurtarma",
+      "bootloader": "Önyükleyici",
+      "sideload": "Sideload",
+      "fastbootd": "Fastbootd",
+      "confirm": "{{device}} {{mode}} moduna yeniden başlatılsın mı?"
+    },
+    "install": {
+      "title": "Kurulum",
+      "apk": "APK kur",
+      "apkHint": "Tek bir APK dosyasını kurar veya günceller.",
+      "sideload": "ZIP sideload",
+      "sideloadHint": "Cihaz sideload modunda olmalı (Kurtarma > ADB'den güncelleme uygula).",
+      "apkDone": "APK kuruldu",
+      "sideloadDone": "Sideload tamamlandı"
+    }
+  },
+  "backup": {
+    "tabs": { "apps": "Uygulamalar", "archive": "Arşiv" },
+    "filter": { "user": "Kullanıcı", "system": "Sistem", "all": "Tümü" },
+    "search": "Uygulama ara",
+    "options": {
+      "title": "Seçenekler",
+      "obb": "OBB dosyalarını ekle",
+      "data": "Uygulama verisini ekle (root)",
+      "encrypt": "Parola ile şifrele",
+      "password": "Parola",
+      "passwordConfirm": "Parolayı onayla",
+      "mismatch": "Parolalar eşleşmiyor"
+    },
+    "start": "{{count}} uygulamayı yedekle",
+    "estimate": "Tahmini boyut: {{size}}",
+    "location": "Yedekler şuraya kaydedilir: {{path}}",
+    "result": "{{ok}} yedeklendi, {{failed}} başarısız",
+    "systemHint": "Sistem uygulamaları genellikle başka bir cihaza kurulamaz.",
+    "empty": "Uygulama bulunamadı",
+    "archive": {
+      "empty": "Henüz yedek yok",
+      "restore": "Geri yükle",
+      "export": "Dışa aktar",
+      "import": ".easybckp içe aktar",
+      "delete": "Sil",
+      "deleteConfirm": "{{name}} yedeği silinsin mi? Bu işlem geri alınamaz.",
+      "encrypted": "Şifreli",
+      "data": "Veri",
+      "obb": "OBB",
+      "exported": "Şuraya aktarıldı: {{path}}",
+      "imported": "Yedek içe aktarıldı"
+    },
+    "restore": {
+      "title": "{{name}} geri yükle",
+      "obb": "OBB dosyalarını geri yükle",
+      "data": "Uygulama verisini geri yükle (root)",
+      "dataConfirm": "Uygulama verisini geri yüklemek {{name}} için mevcut verinin yerine geçer. Devam edilsin mi?",
+      "verify": "Geri yüklemeden önce SHA-256 doğrula",
+      "password": "Yedek parolası",
+      "start": "Geri yükle",
+      "done": "{{name}} geri yüklendi"
+    }
+  },
+  "debloat": {
+    "search": "Paket ara",
+    "filter": {
+      "all": "Tümü",
+      "Recommended": "Önerilen",
+      "Advanced": "İleri",
+      "Expert": "Uzman",
+      "Unsafe": "Güvensiz",
+      "unknown": "Listede yok",
+      "disabled": "Devre dışı",
+      "uninstalled": "Kaldırılmış"
+    },
+    "removal": {
+      "Recommended": "Kaldırması güvenli",
+      "Advanced": "Bazı özellikleri bozabilir",
+      "Expert": "Uzmanlar için",
+      "Unsafe": "Cihazı bozabilir",
+      "unknown": "Bilgi yok"
+    },
+    "status": { "enabled": "Etkin", "disabled": "Devre dışı", "uninstalled": "Kaldırılmış" },
+    "action": {
+      "disable": "Devre dışı bırak",
+      "enable": "Etkinleştir",
+      "uninstall": "Kaldır",
+      "restore": "Geri getir"
+    },
+    "confirmUninstall": "{{count}} paket mevcut kullanıcı için kaldırılsın mı? Bu ekrandan geri getirilebilirler.",
+    "confirmUnsafe": "Seçili {{count}} paket Güvensiz olarak işaretli ve cihazı bozabilir. Yine de devam edilsin mi?",
+    "result": "{{ok}} tamamlandı, {{failed}} başarısız",
+    "noInfo": "UAD-NG listesinde bilgi yok.",
+    "neededBy": "Gerektiren",
+    "dependencies": "Bağımlılıklar",
+    "list": "Liste",
+    "profile": {
+      "save": "Profili kaydet",
+      "load": "Profil yükle",
+      "saved": "Profil kaydedildi",
+      "loaded": "Profil yüklendi: {{count}} paket seçildi",
+      "name": "EasyADB debloat profili"
+    },
+    "source": "Paket bilgileri Universal Android Debloater Next Generation projesinden alınmıştır (GPL-3.0)."
+  },
+  "wireless": {
+    "tabs": { "code": "Eşleştirme kodu", "qr": "QR kod", "ip": "IP adresi", "usb": "USB ile" },
+    "code": {
+      "intro": "Telefonda: Geliştirici seçenekleri > Kablosuz hata ayıklama > Cihazı eşleme koduyla eşle.",
+      "address": "Eşleştirme adresi (IP:port)",
+      "code": "Eşleştirme kodu",
+      "pair": "Eşleştir",
+      "paired": "Eşleştirildi. Şimdi Kablosuz hata ayıklama altında görünen adresle bağlanın."
+    },
+    "qr": {
+      "intro": "Telefonda: Kablosuz hata ayıklama > Cihazı QR koduyla eşle, ardından bu kodu tarayın.",
+      "waiting": "Telefon bekleniyor...",
+      "pairing": "Telefon bulundu, eşleştiriliyor...",
+      "done": "Eşleştirildi. Cihaz kısa süre içinde listede görünecek.",
+      "timeout": "Telefon bulunamadı. İki cihaz da aynı ağda olmalı.",
+      "renew": "Yeni kod",
+      "note": "mDNS keşfi kullanır. Bazı ağlar bunu engeller; o durumda eşleştirme kodunu kullanın."
+    },
+    "ip": {
+      "intro": "Eşleştirilmiş veya TCP modundaki bir cihaza bağlanın.",
+      "address": "Adres (IP:port)",
+      "connect": "Bağlan",
+      "done": "{{address}} adresine bağlanıldı"
+    },
+    "usb": {
+      "intro": "Android 10 ve öncesi için: önce USB ile bağlayın, sonra cihazı TCP moduna geçirin.",
+      "enable": "Wi-Fi hata ayıklamayı aç",
+      "needUsb": "Önce bir USB cihazı seçin.",
+      "done": "{{address}} adresine bağlanıldı. Kabloyu çıkarabilirsiniz."
+    },
+    "saved": {
+      "title": "Kayıtlı cihazlar",
+      "empty": "Kayıtlı cihaz yok",
+      "reconnect": "Yeniden bağlan",
+      "disconnect": "Bağlantıyı kes",
+      "forget": "Unut"
+    }
+  },
+  "terminal": {
+    "placeholder": "adb veya fastboot komutu, örneğin shell getprop ro.product.model",
+    "run": "Çalıştır",
+    "stop": "Durdur",
+    "export": "Dışa aktar",
+    "exit": "{{code}} koduyla sonlandı",
+    "hint": "Yukarı/Aşağı: geçmiş, Tab: tamamla",
+    "noDevice": "Cihaz seçili değil: yalnızca devices gibi genel komutlar çalışır."
+  },
+  "files": {
+    "up": "Yukarı",
+    "path": "Yol",
+    "newFolder": "Yeni klasör",
+    "folderName": "Klasör adı",
+    "rename": "Yeniden adlandır",
+    "newName": "Yeni ad",
+    "deleteConfirm": "Cihazdan {{count}} öğe silinsin mi? Bu işlem geri alınamaz.",
+    "download": "İndir",
+    "upload": "Dosya yükle",
+    "empty": "Bu klasör boş",
+    "name": "Ad",
+    "size": "Boyut",
+    "modified": "Değiştirilme",
+    "done": "Aktarım tamamlandı"
+  },
+  "logcat": {
+    "start": "Başlat",
+    "stop": "Durdur",
+    "clearView": "Görünümü temizle",
+    "clearDevice": "Cihaz günlüğünü temizle",
+    "record": "Dosyaya kaydet",
+    "recording": "Şuraya kaydediliyor: {{path}}",
+    "export": "Görünümü dışa aktar",
+    "tag": "Etiket filtresi",
+    "search": "Ara (regex)",
+    "invalidRegex": "Geçersiz düzenli ifade",
+    "autoscroll": "Otomatik kaydır",
+    "lines": "{{count}} satır",
+    "level": {
+      "V": "Ayrıntılı",
+      "D": "Hata ayıklama",
+      "I": "Bilgi",
+      "W": "Uyarı",
+      "E": "Hata",
+      "F": "Ölümcül"
+    }
+  },
+  "performance": {
+    "cpu": "CPU",
+    "ram": "RAM",
+    "battery": "Pil",
+    "temperature": "Sıcaklık",
+    "storage": "Depolama",
+    "load": "Yük",
+    "voltage": "Voltaj",
+    "plugged": "Şarja takılı",
+    "batteryStatus": {
+      "charging": "Şarj oluyor",
+      "discharging": "Deşarj oluyor",
+      "not_charging": "Şarj olmuyor",
+      "full": "Dolu",
+      "unknown": "Bilinmiyor"
+    },
+    "hardware": {
+      "title": "Donanım",
+      "brand": "Marka",
+      "soc": "Yonga seti",
+      "cores": "CPU çekirdeği",
+      "kernel": "Çekirdek",
+      "resolution": "Çözünürlük",
+      "density": "Yoğunluk",
+      "ram": "Toplam RAM",
+      "storage": "Toplam depolama"
+    },
+    "network": {
+      "title": "Ağ",
+      "ip": "Wi-Fi IP",
+      "ssid": "Ağ",
+      "rssi": "Sinyal",
+      "speed": "Bağlantı hızı",
+      "frequency": "Frekans",
+      "offline": "Wi-Fi'ye bağlı değil"
+    }
+  },
+  "settings": {
+    "language": "Dil",
+    "system": "Sistem varsayılanı",
+    "backupDir": "Yedek klasörü",
+    "change": "Değiştir",
+    "reset": "Varsayılanı kullan",
+    "notifications": "Görev bitince Windows bildirimi göster",
+    "sound": "Görev bitince ses çal",
+    "confirm": "Geri alınamaz işlemlerden önce sor",
+    "fileLogging": "Günlük dosyası yaz",
+    "openLogs": "Günlük klasörünü aç",
+    "verifyHash": "Geri yüklerken varsayılan olarak SHA-256 doğrula",
+    "closeToTray": "Pencere kapatılınca EasyADB tepside çalışmaya devam etsin",
+    "saved": "Ayarlar kaydedildi",
+    "shortcuts": {
+      "title": "Klavye kısayolları",
+      "modules": "Ctrl+1 ... Ctrl+9: modül değiştir",
+      "refresh": "F5: yenile",
+      "search": "Ctrl+F: ara"
+    },
+    "about": {
+      "title": "Hakkında",
+      "version": "Sürüm {{version}}",
+      "license": "GPL-3.0 lisansı ile dağıtılır.",
+      "credits": "Android SDK Platform-Tools ve Universal Android Debloater Next Generation verilerini içerir."
+    }
+  }
+}

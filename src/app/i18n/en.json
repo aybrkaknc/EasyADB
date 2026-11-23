@@ -1,0 +1,398 @@
+{
+  "common": {
+    "refresh": "Refresh",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "close": "Close",
+    "save": "Save",
+    "delete": "Delete",
+    "retry": "Retry",
+    "search": "Search",
+    "selectAll": "Select all",
+    "clearSelection": "Clear selection",
+    "selected": "{{count}} selected",
+    "loading": "Loading...",
+    "none": "None",
+    "yes": "Yes",
+    "no": "No",
+    "browse": "Browse",
+    "unknown": "Unknown",
+    "clear": "Clear",
+    "items": "{{count}} items",
+    "openFolder": "Open folder"
+  },
+  "titlebar": {
+    "minimize": "Minimize",
+    "maximize": "Maximize",
+    "close": "Close"
+  },
+  "tray": {
+    "show": "Show EasyADB",
+    "quit": "Quit"
+  },
+  "modules": {
+    "device": { "title": "Device", "subtitle": "Overview, install and reboot" },
+    "backup": { "title": "Backup", "subtitle": "Back up and restore apps on this PC" },
+    "debloat": { "title": "Debloat", "subtitle": "Disable or remove unwanted packages" },
+    "terminal": { "title": "Terminal", "subtitle": "Run adb and fastboot commands" },
+    "files": { "title": "Files", "subtitle": "Browse and transfer device files" },
+    "logcat": { "title": "Logcat", "subtitle": "Live system log" },
+    "performance": { "title": "Performance", "subtitle": "Live metrics and hardware" },
+    "wireless": { "title": "Wireless", "subtitle": "Connect over Wi-Fi" },
+    "settings": { "title": "Settings", "subtitle": "Preferences and about" }
+  },
+  "devices": {
+    "label": "Device",
+    "none": "No device",
+    "state": {
+      "device": "Ready",
+      "unauthorized": "Unauthorized",
+      "offline": "Offline",
+      "recovery": "Recovery",
+      "sideload": "Sideload",
+      "bootloader": "Bootloader",
+      "unknown": "Unknown"
+    },
+    "kind": { "usb": "USB", "wifi": "Wi-Fi", "emulator": "Emulator" }
+  },
+  "guide": {
+    "noDevice": {
+      "title": "No device connected",
+      "step1": "Enable Developer options: Settings > About phone > tap Build number seven times.",
+      "step2": "Turn on USB debugging in Developer options.",
+      "step3": "Connect a data-capable USB cable and choose File transfer if asked.",
+      "step4": "If Windows does not detect the phone, install the manufacturer's USB driver or try another port."
+    },
+    "unauthorized": {
+      "title": "Authorization needed",
+      "step1": "Unlock the phone.",
+      "step2": "Accept the \"Allow USB debugging?\" prompt and tick Always allow.",
+      "step3": "No prompt? Revoke USB debugging authorizations in Developer options and reconnect."
+    },
+    "offline": {
+      "title": "Device is offline",
+      "step1": "Unplug the cable and connect it again.",
+      "step2": "Turn USB debugging off and on again.",
+      "step3": "Restart the adb server from the Terminal with: adb kill-server"
+    },
+    "adbMissing": {
+      "title": "ADB not found",
+      "step1": "The bundled adb.exe is missing next to EasyADB.exe. Reinstall the application."
+    },
+    "wrongMode": "This device is in {{state}} mode. Reboot it into Android to use this module.",
+    "wireless": "Prefer Wi-Fi? Use the Wireless module."
+  },
+  "errors": {
+    "adb_missing": "ADB was not found next to the application.",
+    "adb_failed": "The adb command failed.",
+    "device_not_found": "The device was not found. Is it still connected?",
+    "device_unauthorized": "The device has not authorized this computer.",
+    "device_offline": "The device is offline.",
+    "root_required": "Root access is required. Allow the root prompt on the device.",
+    "invalid_input": "Invalid input.",
+    "invalid_path": "Invalid or protected path.",
+    "io": "A file operation failed.",
+    "parse": "Could not read the data.",
+    "backup_invalid": "This backup is invalid or from an unsupported version.",
+    "wrong_password": "Wrong password.",
+    "integrity_failed": "The backup is damaged or was modified.",
+    "install_failed": "Installation failed.",
+    "pair_failed": "Pairing failed.",
+    "connect_failed": "Could not connect.",
+    "cancelled": "Cancelled.",
+    "not_found": "Not found.",
+    "internal": "Unexpected error."
+  },
+  "task": {
+    "cancel": "Cancel",
+    "cancelled": "Cancelled",
+    "failed": "Failed",
+    "done": "Done",
+    "stage": {
+      "apk": "Copying APK",
+      "obb": "Copying OBB",
+      "data": "Copying app data",
+      "verify": "Verifying",
+      "install": "Installing",
+      "debloat": "Applying",
+      "sideload": "Sideloading",
+      "pull": "Downloading",
+      "push": "Uploading"
+    }
+  },
+  "notify": {
+    "done": "Task finished",
+    "failed": "Task failed"
+  },
+  "device": {
+    "info": {
+      "title": "Device information",
+      "model": "Model",
+      "manufacturer": "Manufacturer",
+      "android": "Android",
+      "sdk": "SDK",
+      "build": "Build",
+      "abi": "ABI",
+      "root": "Root (su)",
+      "bootloader": "Bootloader",
+      "verifiedBoot": "Verified boot",
+      "selinux": "SELinux",
+      "locked": "Locked",
+      "unlocked": "Unlocked",
+      "found": "Found",
+      "notFound": "Not found"
+    },
+    "reboot": {
+      "title": "Reboot",
+      "system": "System",
+      "recovery": "Recovery",
+      "bootloader": "Bootloader",
+      "sideload": "Sideload",
+      "fastbootd": "Fastbootd",
+      "confirm": "Reboot {{device}} into {{mode}}?"
+    },
+    "install": {
+      "title": "Install",
+      "apk": "Install APK",
+      "apkHint": "Installs or updates a single APK file.",
+      "sideload": "Sideload ZIP",
+      "sideloadHint": "The device must be in sideload mode (Recovery > Apply update from ADB).",
+      "apkDone": "APK installed",
+      "sideloadDone": "Sideload completed"
+    }
+  },
+  "backup": {
+    "tabs": { "apps": "Apps", "archive": "Archive" },
+    "filter": { "user": "User", "system": "System", "all": "All" },
+    "search": "Search apps",
+    "options": {
+      "title": "Options",
+      "obb": "Include OBB files",
+      "data": "Include app data (root)",
+      "encrypt": "Encrypt with a password",
+      "password": "Password",
+      "passwordConfirm": "Confirm password",
+      "mismatch": "Passwords do not match"
+    },
+    "start": "Back up {{count}} apps",
+    "estimate": "Estimated size: {{size}}",
+    "location": "Backups are saved to {{path}}",
+    "result": "{{ok}} backed up, {{failed}} failed",
+    "systemHint": "System apps usually cannot be installed on another device.",
+    "empty": "No apps found",
+    "archive": {
+      "empty": "No backups yet",
+      "restore": "Restore",
+      "export": "Export",
+      "import": "Import .easybckp",
+      "delete": "Delete",
+      "deleteConfirm": "Delete the backup of {{name}}? This cannot be undone.",
+      "encrypted": "Encrypted",
+      "data": "Data",
+      "obb": "OBB",
+      "exported": "Exported to {{path}}",
+      "imported": "Backup imported"
+    },
+    "restore": {
+      "title": "Restore {{name}}",
+      "obb": "Restore OBB files",
+      "data": "Restore app data (root)",
+      "dataConfirm": "Restoring app data replaces the current data of {{name}}. Continue?",
+      "verify": "Verify SHA-256 before restoring",
+      "password": "Backup password",
+      "start": "Restore",
+      "done": "{{name}} restored"
+    }
+  },
+  "debloat": {
+    "search": "Search packages",
+    "filter": {
+      "all": "All",
+      "Recommended": "Recommended",
+      "Advanced": "Advanced",
+      "Expert": "Expert",
+      "Unsafe": "Unsafe",
+      "unknown": "Unlisted",
+      "disabled": "Disabled",
+      "uninstalled": "Removed"
+    },
+    "removal": {
+      "Recommended": "Safe to remove",
+      "Advanced": "May break features",
+      "Expert": "For experts",
+      "Unsafe": "Can break the device",
+      "unknown": "No information"
+    },
+    "status": { "enabled": "Enabled", "disabled": "Disabled", "uninstalled": "Removed" },
+    "action": {
+      "disable": "Disable",
+      "enable": "Enable",
+      "uninstall": "Remove",
+      "restore": "Restore"
+    },
+    "confirmUninstall": "Remove {{count}} packages for the current user? They can be restored from this screen.",
+    "confirmUnsafe": "{{count}} selected packages are marked Unsafe and can break the device. Continue anyway?",
+    "result": "{{ok}} done, {{failed}} failed",
+    "noInfo": "No information in the UAD-NG list.",
+    "neededBy": "Needed by",
+    "dependencies": "Depends on",
+    "list": "List",
+    "profile": {
+      "save": "Save profile",
+      "load": "Load profile",
+      "saved": "Profile saved",
+      "loaded": "Profile loaded: {{count}} packages selected",
+      "name": "EasyADB debloat profile"
+    },
+    "source": "Package information from Universal Android Debloater Next Generation (GPL-3.0)."
+  },
+  "wireless": {
+    "tabs": { "code": "Pairing code", "qr": "QR code", "ip": "IP address", "usb": "Via USB" },
+    "code": {
+      "intro": "On the phone: Developer options > Wireless debugging > Pair device with pairing code.",
+      "address": "Pairing address (IP:port)",
+      "code": "Pairing code",
+      "pair": "Pair",
+      "paired": "Paired. Now connect with the address shown under Wireless debugging."
+    },
+    "qr": {
+      "intro": "On the phone: Wireless debugging > Pair device with QR code, then scan this code.",
+      "waiting": "Waiting for the phone...",
+      "pairing": "Phone found, pairing...",
+      "done": "Paired. The device appears in the list shortly.",
+      "timeout": "No phone found. Both devices must be on the same network.",
+      "renew": "New code",
+      "note": "Uses mDNS discovery. Some networks block it; use the pairing code instead."
+    },
+    "ip": {
+      "intro": "Connect to a paired device or one in TCP mode.",
+      "address": "Address (IP:port)",
+      "connect": "Connect",
+      "done": "Connected to {{address}}"
+    },
+    "usb": {
+      "intro": "For Android 10 and older: connect over USB first, then switch the device to TCP mode.",
+      "enable": "Enable Wi-Fi debugging",
+      "needUsb": "Select a USB device first.",
+      "done": "Connected to {{address}}. You can unplug the cable."
+    },
+    "saved": {
+      "title": "Saved devices",
+      "empty": "No saved devices",
+      "reconnect": "Reconnect",
+      "disconnect": "Disconnect",
+      "forget": "Forget"
+    }
+  },
+  "terminal": {
+    "placeholder": "adb or fastboot command, e.g. shell getprop ro.product.model",
+    "run": "Run",
+    "stop": "Stop",
+    "export": "Export",
+    "exit": "Exited with code {{code}}",
+    "hint": "Up/Down: history, Tab: complete",
+    "noDevice": "No device selected: only global commands such as devices will work."
+  },
+  "files": {
+    "up": "Up",
+    "path": "Path",
+    "newFolder": "New folder",
+    "folderName": "Folder name",
+    "rename": "Rename",
+    "newName": "New name",
+    "deleteConfirm": "Delete {{count}} items from the device? This cannot be undone.",
+    "download": "Download",
+    "upload": "Upload files",
+    "empty": "This folder is empty",
+    "name": "Name",
+    "size": "Size",
+    "modified": "Modified",
+    "done": "Transfer finished"
+  },
+  "logcat": {
+    "start": "Start",
+    "stop": "Stop",
+    "clearView": "Clear view",
+    "clearDevice": "Clear device log",
+    "record": "Record to file",
+    "recording": "Recording to {{path}}",
+    "export": "Export view",
+    "tag": "Tag filter",
+    "search": "Search (regex)",
+    "invalidRegex": "Invalid regular expression",
+    "autoscroll": "Auto-scroll",
+    "lines": "{{count}} lines",
+    "level": {
+      "V": "Verbose",
+      "D": "Debug",
+      "I": "Info",
+      "W": "Warning",
+      "E": "Error",
+      "F": "Fatal"
+    }
+  },
+  "performance": {
+    "cpu": "CPU",
+    "ram": "RAM",
+    "battery": "Battery",
+    "temperature": "Temperature",
+    "storage": "Storage",
+    "load": "Load",
+    "voltage": "Voltage",
+    "plugged": "Plugged in",
+    "batteryStatus": {
+      "charging": "Charging",
+      "discharging": "Discharging",
+      "not_charging": "Not charging",
+      "full": "Full",
+      "unknown": "Unknown"
+    },
+    "hardware": {
+      "title": "Hardware",
+      "brand": "Brand",
+      "soc": "SoC",
+      "cores": "CPU cores",
+      "kernel": "Kernel",
+      "resolution": "Resolution",
+      "density": "Density",
+      "ram": "Total RAM",
+      "storage": "Total storage"
+    },
+    "network": {
+      "title": "Network",
+      "ip": "Wi-Fi IP",
+      "ssid": "Network",
+      "rssi": "Signal",
+      "speed": "Link speed",
+      "frequency": "Frequency",
+      "offline": "Not connected to Wi-Fi"
+    }
+  },
+  "settings": {
+    "language": "Language",
+    "system": "System default",
+    "backupDir": "Backup folder",
+    "change": "Change",
+    "reset": "Use default",
+    "notifications": "Show a Windows notification when a task finishes",
+    "sound": "Play a sound when a task finishes",
+    "confirm": "Ask before irreversible actions",
+    "fileLogging": "Write log files",
+    "openLogs": "Open log folder",
+    "verifyHash": "Verify SHA-256 when restoring by default",
+    "closeToTray": "Closing the window keeps EasyADB running in the tray",
+    "saved": "Settings saved",
+    "shortcuts": {
+      "title": "Keyboard shortcuts",
+      "modules": "Ctrl+1 ... Ctrl+9: switch module",
+      "refresh": "F5: refresh",
+      "search": "Ctrl+F: search"
+    },
+    "about": {
+      "title": "About",
+      "version": "Version {{version}}",
+      "license": "Licensed under GPL-3.0.",
+      "credits": "Includes Android SDK Platform-Tools and data from Universal Android Debloater Next Generation."
+    }
+  }
+}
