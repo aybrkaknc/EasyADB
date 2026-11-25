@@ -4,12 +4,10 @@ import { useTranslation } from "react-i18next";
 
 import { commands, type PhoneBackup } from "../../bindings";
 import { useDevices } from "../../shared/hooks/useDevices";
-import { useFeedback } from "../../shared/hooks/useFeedback";
-import { useTask } from "../../shared/hooks/useTask";
+import { reportOutcomes, runJob, useIdle, useJobs } from "../../shared/jobs/store";
 import { appName, formatBytes } from "../../shared/lib/format";
 import { Button } from "../../shared/ui/Button";
 import { Dialog } from "../../shared/ui/Dialog";
-import { TaskBar } from "../../shared/ui/Feedback";
 import { PhoneCopiesDialog } from "./PhoneCopiesDialog";
 
 const SHOWN = 5;
@@ -23,8 +21,8 @@ function backupName(t: (key: string) => string, b: PhoneBackup) {
 export function PhoneBackupsPrompt() {
   const { t } = useTranslation();
   const client = useQueryClient();
-  const feedback = useFeedback();
-  const task = useTask();
+  const idle = useIdle();
+  const trustOpen = useJobs((s) => s.trustOpen);
   const { selected } = useDevices();
   const serial = selected?.state === "device" ? selected.serial : null;
   const [dismissed, setDismissed] = useState<string[]>([]);
@@ -46,6 +44,8 @@ export function PhoneBackupsPrompt() {
   });
   const fresh = (found.data ?? []).filter((b) => !b.onPc);
   const files = system.data ?? [];
+  // One window at a time: jobs and the question about trust come first.
+  if (!idle || trustOpen) return null;
   if (copied.length > 0 && serial !== null) {
     return (
       <PhoneCopiesDialog
@@ -65,47 +65,51 @@ export function PhoneBackupsPrompt() {
   }
 
   const dismiss = () => setDismissed((list) => [...list, serial]);
-  const pull = async () => {
-    try {
-      const outcomes = await task.run((id) =>
-        commands.pullPhoneBackups(
-          id,
-          serial,
-          fresh.map((b) => b.id),
-          files,
-        ),
-      );
-      const failed = outcomes.filter((o) => o.error);
-      feedback.success(
-        t("phone.done", { ok: outcomes.length - failed.length, failed: failed.length }),
-        true,
-      );
-      failed.forEach((o) => feedback.failure(o.error));
-      // Only what arrived whole is offered for removal; the delete step checks it once more.
-      const arrived = new Set(outcomes.filter((o) => !o.error).map((o) => o.id));
-      setCopied(fresh.filter((b) => arrived.has(b.id)));
-      void client.invalidateQueries({ queryKey: ["backups"] });
-      void client.invalidateQueries({ queryKey: ["fileSets"] });
-      void client.invalidateQueries({ queryKey: ["systemBackups"] });
-      void client.invalidateQueries({ queryKey: ["phoneBackups", serial] });
-      void client.invalidateQueries({ queryKey: ["phoneSystem", serial] });
-    } catch (error) {
-      feedback.failure(error, true);
-    }
+  const pull = async (ids: string[], snapshots: string[]) => {
     dismiss();
+    const name = (id: string) => {
+      const backup = fresh.find((b) => b.id === id);
+      return backup ? backupName(t, backup) : id;
+    };
+    const outcomes = await runJob({
+      kind: "pull",
+      serial,
+      device: selected?.model ?? serial,
+      items: [...ids, ...snapshots].map((id) => ({ key: id, name: name(id) })),
+      run: ({ taskId }) => commands.pullPhoneBackups(taskId, serial, ids, snapshots),
+      report: (list) => reportOutcomes(list, name),
+      retry: (keys) =>
+        void pull(
+          ids.filter((id) => keys.includes(id)),
+          snapshots.filter((id) => keys.includes(id)),
+        ),
+    });
+    // Only what arrived whole is offered for removal; the delete step checks it once more.
+    const arrived = new Set(outcomes?.filter((o) => !o.error).map((o) => o.id));
+    setCopied(fresh.filter((b) => arrived.has(b.id)));
+    for (const key of ["backups", "fileSets", "systemBackups", "phoneBackups", "phoneSystem"]) {
+      void client.invalidateQueries({ queryKey: [key] });
+    }
   };
 
   return (
     <Dialog
       open
-      onOpenChange={(open) => !open && !task.running && dismiss()}
+      onOpenChange={(open) => !open && dismiss()}
       title={t("phone.title")}
       footer={
         <>
-          <Button variant="ghost" onClick={dismiss} disabled={task.running}>
+          <Button variant="ghost" onClick={dismiss}>
             {t("phone.later")}
           </Button>
-          <Button onClick={() => void pull()} disabled={task.running}>
+          <Button
+            onClick={() =>
+              void pull(
+                fresh.map((b) => b.id),
+                files,
+              )
+            }
+          >
             {t("phone.pull")}
           </Button>
         </>
@@ -122,11 +126,6 @@ export function PhoneBackupsPrompt() {
         {fresh.length > SHOWN && <li>{t("phone.more", { count: fresh.length - SHOWN })}</li>}
       </ul>
       {fresh.some((b) => b.needsRoot) && <p className="text-warn/90">{t("phone.rootWarning")}</p>}
-      {task.running && (
-        <div className="-mx-6">
-          <TaskBar progress={task.progress} onCancel={task.cancel} />
-        </div>
-      )}
     </Dialog>
   );
 }

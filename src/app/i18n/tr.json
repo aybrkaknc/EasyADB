@@ -39,7 +39,6 @@
     "more": "ve {{count}} tane daha",
     "later": "Şimdi değil",
     "pull": "PC'ye çek",
-    "done": "{{ok}} yedek çekildi, {{failed}} başarısız.",
     "kind": {
       "messages": "Mesajlar",
       "calls": "Arama kayıtları",
@@ -50,8 +49,7 @@
     "deleteTitle": "Telefondaki kopyalar silinsin mi?",
     "deleteBody": "{{count}} yedek artık bu bilgisayarda ve doğrulandı. Telefondaki kopyalar silinsin mi? Bu geri alınamaz.",
     "keep": "Telefonda kalsın",
-    "delete": "Telefondan sil",
-    "deleted": "{{ok}} yedek telefondan silindi, {{failed}} başarısız."
+    "delete": "Telefondan sil"
   },
   "tray": {
     "show": "EasyADB'yi göster",
@@ -159,7 +157,10 @@
     "not_found": "Bulunamadı.",
     "no_space": "Bu bilgisayarda yeterli boş alan yok.",
     "protected": "Bu paket korumalıdır, devre dışı bırakılamaz veya kaldırılamaz.",
-    "internal": "Beklenmeyen hata."
+    "internal": "Beklenmeyen hata.",
+    "busy": "Bu telefonda başka bir iş sürüyor.",
+    "phone_rejected": "Telefonda reddedildi.",
+    "phone_expired": "Telefonda 2 dakika içinde yanıt verilmedi."
   },
   "task": {
     "cancel": "İptal",
@@ -178,7 +179,12 @@
       "push": "Yükleniyor",
       "permissions": "İzinler veriliyor",
       "system": "Ayarlar uygulanıyor",
-      "files": "Dosyalar kopyalanıyor"
+      "files": "Dosyalar kopyalanıyor",
+      "prepare": "Hazırlanıyor",
+      "speed": "Ölçülüyor",
+      "phone_wait": "Telefona iletildi",
+      "phone_open": "Telefonda EasyAndroid açılıyor",
+      "phone_approval": "Telefonda onay bekleniyor"
     }
   },
   "notify": {
@@ -247,7 +253,6 @@
     "start": "{{count}} uygulamayı yedekle",
     "estimate": "Tahmini boyut: {{size}}",
     "location": "Yedekler şuraya kaydedilir: {{path}}",
-    "result": "{{ok}} yedeklendi, {{failed}} başarısız",
     "systemHint": "Sistem uygulamaları genellikle başka bir cihaza kurulamaz.",
     "empty": "Uygulama bulunamadı",
     "archive": {
@@ -263,7 +268,6 @@
       "imported": "Yedek içe aktarıldı",
       "restoreSelected": "Seçilen {{count}} yedeği geri yükle",
       "batchConfirm": "{{count}} yedek cihaza geri yüklensin mi? Uygulamalar kurulur; verisi olan yedeklerde root varsa uygulama verisi değiştirilir.",
-      "batchDone": "{{ok}} geri yüklendi, {{failed}} başarısız",
       "batchPermissions": "Kayıtlı izinleri de ver"
     },
     "system": {
@@ -278,8 +282,7 @@
       "note": "Yalnızca ekran zaman aşımı, yazı boyutu ve koyu tema gibi yaygın tercihler uygulanır. Kimlik, güvenlik ve SIM ayarları hiçbir zaman kopyalanmaz.",
       "confirm": "Bu ayarlar cihaza uygulansın mı? Mevcut değerleri değiştirilir.",
       "start": "Geri yükle",
-      "done": "{{count}} ayar uygulandı.",
-      "failed": "{{count}} ayar uygulanamadı: {{items}}"
+      "done": "{{count}} ayar uygulandı."
     },
     "restore": {
       "title": "{{name}} geri yükle",
@@ -288,7 +291,6 @@
       "dataConfirm": "Uygulama verisini geri yüklemek {{name}} için mevcut verinin yerine geçer. Devam edilsin mi?",
       "verify": "Geri yüklemeden önce SHA-256 doğrula",
       "start": "Geri yükle",
-      "done": "{{name}} geri yüklendi",
       "permissions": "Uygulamanın kayıtlı izinlerini ver ({{count}})",
       "report": {
         "noRoot": "{{name}}: root yok veya izin reddedildi. Uygulama kuruldu, verisi yüklenmedi.",
@@ -297,7 +299,6 @@
         "special": "{{name}}: {{count}} özel erişim ayarı geri yüklenemedi."
       }
     },
-    "dataSkipped": "{{name}}: root yok veya izin reddedildi. Uygulama yedeklendi, verisi yedeklenmedi.",
     "root": {
       "checking": "Root kontrol ediliyor...",
       "available": "Root var: uygulama verisi kopyalanabilir.",
@@ -307,13 +308,11 @@
     "folders": {
       "hint": "Telefonun klasörlerini telefonda yer kaplamadan doğrudan bu bilgisayara aktarır. Android klasörü ve yedek klasörü hiçbir zaman dahil edilmez.",
       "start": "{{count}} klasörü yedekle",
-      "done": "Klasörler yedeklendi.",
       "empty": "Klasör bulunamadı"
     },
     "fileSets": {
       "title": "Dosya yedekleri",
-      "send": "Telefona gönder",
-      "sent": "Telefona gönderildi. EasyAndroid'de geri yükleyin."
+      "send": "Telefona gönder"
     },
     "phoneData": {
       "title": "Telefonun aldığı yedekler",
@@ -528,20 +527,116 @@
       "title": "Güvenilen telefonlar",
       "empty": "Henüz güvenilen telefon yok.",
       "forget": "Unut",
-      "hint": "Güvenilen telefon, sormadan EasyADB'den yedek isteyebilir."
+      "hint": "Güvenilen telefon, sormadan EasyADB'den yedek isteyebilir.",
+      "neverTitle": "Bir daha sorulmayacaklar",
+      "askAgain": "Yeniden sor"
     }
   },
-  "phoneRequest": {
+  "trustPhone": {
+    "title": "Bu telefona güvenilsin mi?",
+    "body": "Bu telefondaki EasyAndroid, bu PC'den yedek ve dosya işleri isteyebilir. Güvenilen telefonların işleri sormadan başlar. Hız testleri her zaman sorar.",
+    "yes": "Güven",
+    "no": "Şimdi değil",
+    "never": "Bir daha sorma"
+  },
+  "job": {
+    "title": {
+      "app": "Uygulama yedeği",
+      "folders": "Klasör yedeği",
+      "pull": "Telefondaki yedekler kopyalanıyor",
+      "speed": "Aktarım hız testi",
+      "phoneData": "Telefonun aldığı yedek",
+      "restore": "Geri yükleme",
+      "systemRestore": "Sistem ayarlarını geri yükleme",
+      "push": "Yedek telefona gönderiliyor",
+      "deleteCopies": "Telefondaki kopyalar siliniyor"
+    },
+    "running": "Süren işler",
+    "request": "Telefon isteği",
+    "position": "{{index}} / {{size}}",
+    "amount": "%{{percent}} ({{done}} / {{total}})",
+    "rate": "{{rate}} MB/sn",
+    "left": "yaklaşık {{time}} kaldı",
+    "elapsed": "Geçen süre {{time}}",
+    "took": "Süre {{time}}",
+    "cancelling": "İptal ediliyor...",
+    "more": "ve {{count}} tane daha",
+    "missing": "{{count}} tanesi denenmedi",
+    "retry": "Başarısızları yeniden dene",
+    "ok": "Tamam",
+    "kept": "Biten {{count}} yedek saklandı. Yalnızca yarım kalan silindi.",
+    "state": {
+      "waiting": "Denenmedi",
+      "running": "Sürüyor",
+      "done": "Tamamlandı",
+      "warning": "Uyarıyla tamamlandı",
+      "failed": "Başarısız",
+      "cancelled": "İptal edildi"
+    },
+    "outcome": {
+      "done": "Tamamlandı",
+      "warning": "Uyarıyla tamamlandı",
+      "incomplete": "Tamamlanmadı",
+      "cancelled": "İptal edildi",
+      "rejected": "Başlamadı"
+    },
+    "reason": {
+      "finished": "Bitti.",
+      "phone": "Telefondan iptal edildi.",
+      "pc": "Bu PC'den iptal edildi.",
+      "rejected": "Bu PC'de reddedildi.",
+      "expired": "2 dakika içinde yanıt verilmedi.",
+      "gone": "Telefon isteğini bıraktı.",
+      "disconnected": "Telefonla bağlantı koptu.",
+      "invalid": "İstek kabul edilemedi."
+    },
+    "note": {
+      "dataSkipped": "Uygulama verisi yedeklenmedi.",
+      "dataFailed": "Uygulama verisi okunamadı: {{detail}}"
+    }
+  },
+  "ask": {
     "title": "{{model}} telefonu yedek istiyor",
-    "appBody": "{{name}} bu bilgisayara yedeklensin.",
-    "foldersBody": "{{count}} klasör bu bilgisayara aktarılsın.",
-    "pullBody": "Telefondaki {{count}} yedek bu bilgisayara kopyalansın.",
+    "speedTitle": "{{model}} telefonu Wi-Fi aktarım hız testi başlatmak istiyor",
+    "body": {
+      "app": "{{count}} uygulama bu bilgisayara yedeklensin.",
+      "folders": "{{count}} klasör bu bilgisayara aktarılsın.",
+      "pull": "Telefondaki {{count}} yedek bu bilgisayara kopyalansın.",
+      "speed": "Her yönde {{count}} MB ile aktarım hızı ölçülsün."
+    },
+    "includes": "İçerik: {{list}}",
+    "option": {
+      "apk": "uygulama",
+      "obb": "OBB",
+      "data": "uygulama verisi",
+      "external": "Android/data"
+    },
     "trustHint": "Bir daha sorulmaması için bu telefona güvenin. Güvenilen telefon bu bilgisayarda kendi başına yedek başlatabilir. Ayarlar'dan geri alabilirsiniz.",
     "reject": "Reddet",
     "once": "Yalnızca bu sefer",
     "trust": "Bu telefona güven",
-    "done": "{{what}} yedeği tamamlandı.",
-    "whatFolders": "klasörlerin",
-    "whatPull": "telefon yedeklerinin"
+    "startSpeed": "Testi başlat",
+    "left": "{{time}} sonra kendiliğinden kapanır",
+    "late": "Telefon artık beklemiyordu."
+  },
+  "speed": {
+    "title": "Aktarım hız testi",
+    "intro": "Bu PC ile seçili telefon arasında, adb'nin şu an kullandığı bağlantı üzerinden her yönde 32 MB gönderir.",
+    "start": "Testi başlat",
+    "to_pc": "Telefondan PC'ye",
+    "to_phone": "PC'den telefona",
+    "waiting": "Bekleniyor",
+    "value": "{{mb}} MB/sn ({{mbit}} Mbit/sn)",
+    "link": {
+      "usb": "USB",
+      "wifi": "Wi-Fi",
+      "emulator": "Emülatör"
+    }
+  },
+  "quit": {
+    "title": "Süren işler var",
+    "body": "Çıkarsanız iptal edilirler. Bitmemiş olanlar silinir.",
+    "stay": "Kal",
+    "leave": "İptal et ve çık"
   }
 }

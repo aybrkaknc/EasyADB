@@ -4,6 +4,7 @@ use std::collections::HashMap;
 use std::process::Child;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
+use std::time::{Duration, Instant};
 
 use tauri::AppHandle;
 use tauri_specta::Event;
@@ -78,6 +79,13 @@ impl TaskRegistry {
         }
     }
 
+    /// Cancels everything that runs, before the app ends.
+    pub fn cancel_all(&self) {
+        for handle in self.tasks.lock().unwrap().values() {
+            handle.cancel();
+        }
+    }
+
     pub fn finish(&self, id: &str) {
         self.tasks.lock().unwrap().remove(id);
     }
@@ -86,11 +94,30 @@ impl TaskRegistry {
 /// Called with the stage, item and progress of every update.
 pub type Observer = Arc<dyn Fn(&str, &str, f64, f64) + Send + Sync>;
 
+/// The frontend gets at most one update of the same step in this time.
+const EVENT_GAP: Duration = Duration::from_millis(100);
+
+/// The step that was last sent, and when.
+type Sent = Option<(String, String, Instant)>;
+
 /// Emits progress events for one task.
 pub struct Reporter {
     app: Option<AppHandle>,
     task_id: String,
     observer: Option<Observer>,
+    last: Mutex<Sent>,
+}
+
+/// Whether an update is worth an event: a new step always is, the same step only now and then.
+fn is_due(last: &mut Sent, stage: &str, item: &str, now: Instant) -> bool {
+    let due = match last {
+        Some((s, i, at)) => s != stage || i != item || now.duration_since(*at) >= EVENT_GAP,
+        None => true,
+    };
+    if due {
+        *last = Some((stage.to_string(), item.to_string(), now));
+    }
+    due
 }
 
 impl Reporter {
@@ -99,6 +126,7 @@ impl Reporter {
             app: Some(app),
             task_id: task_id.to_string(),
             observer: None,
+            last: Mutex::new(None),
         }
     }
 
@@ -115,6 +143,7 @@ impl Reporter {
             app: None,
             task_id: String::new(),
             observer: None,
+            last: Mutex::new(None),
         }
     }
 
@@ -122,7 +151,9 @@ impl Reporter {
         if let Some(observer) = &self.observer {
             observer(stage, item, current, total);
         }
-        self.emit(TaskState::Running, stage, item, current, total);
+        if is_due(&mut self.last.lock().unwrap(), stage, item, Instant::now()) {
+            self.emit(TaskState::Running, stage, item, current, total);
+        }
     }
 
     pub fn finish(&self, result: &AppResult<impl Sized>) {
@@ -146,5 +177,23 @@ impl Reporter {
             };
             let _ = event.emit(app);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn the_same_step_is_reported_now_and_then() {
+        let start = Instant::now();
+        let mut last = None;
+        let at = |ms| start + Duration::from_millis(ms);
+        assert!(is_due(&mut last, "apk", "a", at(0)));
+        assert!(!is_due(&mut last, "apk", "a", at(50)));
+        assert!(is_due(&mut last, "data", "a", at(60)));
+        assert!(is_due(&mut last, "data", "b", at(70)));
+        assert!(!is_due(&mut last, "data", "b", at(80)));
+        assert!(is_due(&mut last, "data", "b", at(200)));
     }
 }

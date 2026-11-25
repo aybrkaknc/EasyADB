@@ -17,9 +17,17 @@ Versiyon numaralandırması [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `files.json` yedeklerini (mesaj, arama kaydı, klasör, duvar kâğıdı) telefondan çekme ve "Telefona gönder" ile telefona geri gönderme
 - Çekilen yedeklerin telefondaki kopyasını, PC kopyası doğrulandıktan sonra ve her seferinde sorarak silme
 - Yedek öncesi PC'de boş alan denetimi
+- Onay, süreç ve sonuç pencereleri: telefonun istediği ve PC'den başlatılan bütün yedek, geri yükleme ve gönderme işlerinde. Süreçte adımlar, öğe sırası, hız ve kalan süre; sonuçta öğe öğe durum, neden ve başarısızları yeniden deneme. Sorunsuz sonuç 10 saniyede kapanır
+- Telefonun çok uygulamalı isteği tek onay, tek süreç ve tek sonuçtur. Onay 2 dakika yanıtlanmazsa düşer
+- Telefon bağlandığında "Bu telefona güvenilsin mi?" sorusu (Güven, Şimdi değil, Bir daha sorma)
+- Aktarım hız testi: Kablosuz ekranından veya telefondan
+- PC'nin telefonda başlattığı iş telefonda da onaylanır; reddedildiği ve yanıtsız kaldığı PC'de görünür
+- Aynı telefonda ikinci iş sıraya girer. İş sürerken Windows uykuya geçmez ve çıkış sorulur
 
 ### Düzeltilenler
 - Telefondan akıtılan arşivlerin çıkış kodu denetleniyor. Yarıda kesilen bir `data.tar` artık sağlam yedek sayılmıyor
+- Uygulama verisi alınırken bağlantı koparsa yarım yedek "veri atlandı" diye saklanmıyor, siliniyor
+- Birden çok telefon bağlıyken işin durumu yalnızca kendi telefonuna yazılıyor
 
 ---
 

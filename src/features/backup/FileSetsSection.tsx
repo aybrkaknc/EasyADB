@@ -2,12 +2,10 @@ import { useQuery } from "@tanstack/react-query";
 import { Upload } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-import { commands, type DeviceEntry } from "../../bindings";
-import { useFeedback } from "../../shared/hooks/useFeedback";
-import { useTask } from "../../shared/hooks/useTask";
+import { commands, type DeviceEntry, type FileSetSummary } from "../../bindings";
+import { runJob } from "../../shared/jobs/store";
 import { formatBytes, formatDate } from "../../shared/lib/format";
 import { Button } from "../../shared/ui/Button";
-import { TaskBar } from "../../shared/ui/Feedback";
 
 /**
  * Messages, call logs, folders and wallpapers on this PC. EasyADB cannot restore them; it
@@ -15,20 +13,20 @@ import { TaskBar } from "../../shared/ui/Feedback";
  */
 export function FileSetsSection({ device }: { device: DeviceEntry | null }) {
   const { t, i18n } = useTranslation();
-  const feedback = useFeedback();
-  const task = useTask();
   const sets = useQuery({ queryKey: ["fileSets"], queryFn: () => commands.listFileSets() });
   if (!sets.data?.length) return null;
   const serial = device?.state === "device" ? device.serial : null;
 
-  const send = async (id: string) => {
+  const send = (set: FileSetSummary) => {
     if (!serial) return;
-    try {
-      await task.run((taskId) => commands.pushBackupToPhone(taskId, serial, id));
-      feedback.success(t("backup.fileSets.sent"), true);
-    } catch (error) {
-      feedback.failure(error, true);
-    }
+    void runJob({
+      kind: "push",
+      serial,
+      device: device?.model ?? serial,
+      items: [{ key: set.id, name: t(`phone.kind.${set.kind}`) }],
+      run: ({ taskId }) => commands.pushBackupToPhone(taskId, serial, set.id),
+      retry: () => send(set),
+    });
   };
 
   return (
@@ -44,18 +42,13 @@ export function FileSetsSection({ device }: { device: DeviceEntry | null }) {
                 {set.deviceModel && ` | ${set.deviceModel}`}
               </p>
             </div>
-            <Button size="sm" onClick={() => void send(set.id)} disabled={!serial || task.running}>
+            <Button size="sm" onClick={() => send(set)} disabled={!serial}>
               <Upload className="size-3" />
               {t("backup.fileSets.send")}
             </Button>
           </li>
         ))}
       </ul>
-      {task.running && (
-        <div className="-mx-6 mt-2">
-          <TaskBar progress={task.progress} onCancel={task.cancel} />
-        </div>
-      )}
     </section>
   );
 }

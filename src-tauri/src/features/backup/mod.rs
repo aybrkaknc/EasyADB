@@ -53,6 +53,7 @@ pub async fn start_backup(
     options: BackupOptions,
 ) -> AppResult<Vec<BackupOutcome>> {
     let runner = state.runner()?;
+    let _hold = state.requests.hold(&serial)?;
     let task = state.tasks.start(&task_id);
     let reporter = Reporter::new(app.clone(), &task_id);
     let result = blocking(move || {
@@ -118,6 +119,7 @@ pub async fn start_restore(
     options: RestoreOptions,
 ) -> AppResult<RestoreReport> {
     let runner = state.runner()?;
+    let _hold = state.requests.hold(&serial)?;
     let task = state.tasks.start(&task_id);
     let reporter = Reporter::new(app.clone(), &task_id);
     let result = blocking(move || {
@@ -180,6 +182,7 @@ pub async fn pull_phone_backups(
     system: Vec<String>,
 ) -> AppResult<Vec<phone::PullOutcome>> {
     let runner = state.runner()?;
+    let _hold = state.requests.hold(&serial)?;
     let task = state.tasks.start(&task_id);
     let reporter = Reporter::new(app.clone(), &task_id);
     let result = blocking(move || {
@@ -218,6 +221,7 @@ pub async fn delete_phone_backups(
     ids: Vec<String>,
 ) -> AppResult<Vec<phone::PullOutcome>> {
     let runner = state.runner()?;
+    let _hold = state.requests.hold(&serial)?;
     let task = state.tasks.start(&task_id);
     let reporter = Reporter::new(app.clone(), &task_id);
     let result = blocking(move || {
@@ -248,6 +252,7 @@ pub async fn push_backup_to_phone(
     backup_id: String,
 ) -> AppResult<()> {
     let runner = state.runner()?;
+    let _hold = state.requests.hold(&serial)?;
     let task = state.tasks.start(&task_id);
     let reporter = Reporter::new(app.clone(), &task_id);
     let result = blocking(move || {
@@ -278,6 +283,7 @@ pub async fn start_folder_backup(
     names: Vec<String>,
 ) -> AppResult<String> {
     let runner = state.runner()?;
+    let _hold = state.requests.hold(&serial)?;
     let task = state.tasks.start(&task_id);
     let reporter = Reporter::new(app.clone(), &task_id);
     let result = blocking(move || {

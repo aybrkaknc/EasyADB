@@ -9,13 +9,13 @@ import { useFeedback } from "../../shared/hooks/useFeedback";
 import { useRoot } from "../../shared/hooks/useRoot";
 import { useSelection } from "../../shared/hooks/useSelection";
 import { useSettings } from "../../shared/hooks/useSettings";
-import { useTask } from "../../shared/hooks/useTask";
-import { isAppError } from "../../shared/lib/errors";
+import { runJob } from "../../shared/jobs/store";
+import { errorText, isAppError } from "../../shared/lib/errors";
 import { appName, formatBytes, formatDate } from "../../shared/lib/format";
 import { Button } from "../../shared/ui/Button";
 import { Checkbox } from "../../shared/ui/Controls";
 import { useConfirm } from "../../shared/hooks/useConfirm";
-import { Badge, EmptyState, Spinner, TaskBar } from "../../shared/ui/Feedback";
+import { Badge, EmptyState, Spinner } from "../../shared/ui/Feedback";
 import { restoreWarnings } from "./report";
 import { FileSetsSection } from "./FileSetsSection";
 import { RootStatus } from "./RootStatus";
@@ -28,7 +28,6 @@ export function ArchiveTab({ device }: { device: DeviceEntry | null }) {
   const feedback = useFeedback();
   const confirm = useConfirm();
   const settings = useSettings();
-  const task = useTask();
   const selection = useSelection();
   const [restoring, setRestoring] = useState<BackupSummary | null>(null);
   const [restorePermissions, setRestorePermissions] = useState(true);
@@ -47,28 +46,45 @@ export function ArchiveTab({ device }: { device: DeviceEntry | null }) {
       batchItems.some((b) => b.hasData),
     );
     if (!ok) return;
-    let restored = 0;
-    let failed = 0;
-    for (const backup of batchItems) {
-      try {
-        const report = await task.run((id) =>
-          commands.startRestore(id, serial, backup.id, {
-            restoreObb: backup.hasObb,
-            restoreData: backup.hasData && rootAccess.isRoot,
-            restorePermissions: restorePermissions && backup.permissionCount > 0,
-            verifyHash: settings.verifyHashOnRestore,
-          }),
-        );
-        restored++;
-        restoreWarnings(t, appName(backup), report).forEach(feedback.warning);
-      } catch (error) {
-        if (isAppError(error) && error.code === "cancelled") break;
-        failed++;
-        feedback.failure(error);
-      }
-    }
-    feedback.success(t("backup.archive.batchDone", { ok: restored, failed }), true);
+    await restoreAll(serial, batchItems);
     selection.clear();
+  };
+
+  const restoreAll = async (serial: string, list: BackupSummary[]) => {
+    await runJob({
+      kind: "restore",
+      serial,
+      device: device?.model ?? serial,
+      items: list.map((b) => ({ key: b.package, name: appName(b) })),
+      run: async ({ taskId, isCancelled, mark }) => {
+        for (const backup of list) {
+          if (isCancelled()) throw { code: "cancelled", detail: "" };
+          mark(backup.package, "running");
+          try {
+            const report = await commands.startRestore(taskId, serial, backup.id, {
+              restoreObb: backup.hasObb,
+              restoreData: backup.hasData && rootAccess.isRoot,
+              restorePermissions: restorePermissions && backup.permissionCount > 0,
+              verifyHash: settings.verifyHashOnRestore,
+            });
+            const warnings = restoreWarnings(t, appName(backup), report);
+            mark(
+              backup.package,
+              warnings.length ? "warning" : "done",
+              warnings.join("\n") || undefined,
+            );
+          } catch (error) {
+            if (isAppError(error) && error.code === "cancelled") throw error;
+            mark(backup.package, "failed", errorText(t, error));
+          }
+        }
+      },
+      retry: (keys) =>
+        void restoreAll(
+          serial,
+          list.filter((b) => keys.includes(b.package)),
+        ),
+    });
   };
 
   const remove = async (backup: BackupSummary) => {
@@ -128,7 +144,7 @@ export function ArchiveTab({ device }: { device: DeviceEntry | null }) {
           <Button
             size="sm"
             onClick={() => void restoreSelected()}
-            disabled={!ready || batchItems.length === 0 || task.running}
+            disabled={!ready || batchItems.length === 0}
           >
             <RotateCcw className="size-3.5" />
             {t("backup.archive.restoreSelected", { count: batchItems.length })}
@@ -226,7 +242,6 @@ export function ArchiveTab({ device }: { device: DeviceEntry | null }) {
       )}
       <FileSetsSection device={device} />
       <SystemSection device={device} />
-      {task.running && <TaskBar progress={task.progress} onCancel={task.cancel} />}
       {restoring && device && (
         <RestoreDialog
           backup={restoring}

@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { commands } from "../../bindings";
 import { useDevices } from "../../shared/hooks/useDevices";
 import { useFeedback } from "../../shared/hooks/useFeedback";
+import { runJob } from "../../shared/jobs/store";
 import { Button } from "../../shared/ui/Button";
 import { Field, Input, Tabs, TabsContent, TabsList } from "../../shared/ui/Controls";
 import { ModuleHeader } from "../../shared/ui/ModuleHeader";
@@ -184,6 +185,32 @@ function SavedDevices() {
   );
 }
 
+/** Measures the connection to the selected phone, wireless or not. */
+function SpeedTest() {
+  const { t } = useTranslation();
+  const { selected } = useDevices();
+  const ready = selected?.state === "device" ? selected : null;
+  const start = () => {
+    if (!ready) return;
+    void runJob({
+      kind: "speed",
+      serial: ready.serial,
+      device: `${ready.model ?? ready.serial} - ${t(`speed.link.${ready.kind}`)}`,
+      items: [],
+      run: ({ taskId }) => commands.startSpeedTest(taskId, ready.serial),
+      speed: (speed) => speed,
+    });
+  };
+  return (
+    <Panel title={t("speed.title")}>
+      <p className="mb-3 text-xs text-white/60">{t("speed.intro")}</p>
+      <Button onClick={start} disabled={!ready}>
+        {t("speed.start")}
+      </Button>
+    </Panel>
+  );
+}
+
 export function WirelessView() {
   const { t } = useTranslation();
   const client = useQueryClient();
@@ -219,7 +246,8 @@ export function WirelessView() {
               <UsbTab onConnected={connected} />
             </TabsContent>
           </div>
-          <div className="w-80 shrink-0">
+          <div className="flex w-80 shrink-0 flex-col gap-4">
+            <SpeedTest />
             <SavedDevices />
           </div>
         </div>

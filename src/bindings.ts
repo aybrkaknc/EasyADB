@@ -15,6 +15,8 @@ export const commands = {
 	revealPath: (path: string, options?: InvokeOptions) => __TAURI_INVOKE<null>("reveal_path", { path }, options),
 	cancelTask: (taskId: string, options?: InvokeOptions) => __TAURI_INVOKE<boolean>("cancel_task", { taskId }, options),
 	setTrayLabels: (show: string, quit: string, options?: InvokeOptions) => __TAURI_INVOKE<null>("set_tray_labels", { show, quit }, options),
+	/**  Cancels what runs, lets it clean up for a moment and ends the app. */
+	quitApp: (options?: InvokeOptions) => __TAURI_INVOKE<void>("quit_app", undefined, options),
 	listDevices: (options?: InvokeOptions) => __TAURI_INVOKE<DeviceEntry_Serialize[]>("list_devices", undefined, options),
 	getDeviceDetails: (serial: string, options?: InvokeOptions) => __TAURI_INVOKE<DeviceDetails_Serialize>("get_device_details", { serial }, options),
 	checkDeviceRoot: (serial: string, options?: InvokeOptions) => __TAURI_INVOKE<boolean>("check_device_root", { serial }, options),
@@ -38,13 +40,23 @@ export const commands = {
 	/**  Streams folders of the phone's shared storage into one backup on the PC. */
 	startFolderBackup: (taskId: string, serial: string, names: string[], options?: InvokeOptions) => __TAURI_INVOKE<string>("start_folder_backup", { taskId, serial, names }, options),
 	startPhoneJob: (taskId: string, serial: string, kinds: string[], system: boolean, options?: InvokeOptions) => __TAURI_INVOKE<PullOutcome_Serialize[]>("start_phone_job", { taskId, serial, kinds, system }, options),
-	/**  The user's answer to a [`PhoneRequestAsk`]. */
-	answerPhoneRequest: (phone: string, id: string, decision: Decision, options?: InvokeOptions) => __TAURI_INVOKE<null>("answer_phone_request", { phone, id, decision }, options),
+	/**  The user's answer to a [`PhoneRequestAsk`]. False when the question had ended before. */
+	answerPhoneRequest: (phone: string, batch: string, decision: Decision, options?: InvokeOptions) => __TAURI_INVOKE<boolean>("answer_phone_request", { phone, batch, decision }, options),
 	listTrustedPhones: (options?: InvokeOptions) => __TAURI_INVOKE<string[]>("list_trusted_phones", undefined, options),
 	forgetTrustedPhone: (phone: string, options?: InvokeOptions) => __TAURI_INVOKE<null>("forget_trusted_phone", { phone }, options),
-	/**  Lets the user cancel from the PC a job that the phone asked for. */
-	cancelPhoneJob: (phone: string, options?: InvokeOptions) => __TAURI_INVOKE<boolean>("cancel_phone_job", { phone }, options),
+	/**  Lets the user cancel from the PC what the phone asked for, also between two of its requests. */
+	cancelPhoneJob: (phone: string, batch: string, options?: InvokeOptions) => __TAURI_INVOKE<void>("cancel_phone_job", { phone, batch }, options),
 	isEasyandroidReady: (serial: string, options?: InvokeOptions) => __TAURI_INVOKE<boolean>("is_easyandroid_ready", { serial }, options),
+	/**  For a phone with EasyAndroid that the PC does not trust yet: its id, which trust is kept by. */
+	newPhoneToTrust: (serial: string, options?: InvokeOptions) => __TAURI_INVOKE<string | null>("new_phone_to_trust", { serial }, options),
+	/**  Adds a phone to the trusted list. Its requests start without asking after this. */
+	trustPhone: (phone: string, options?: InvokeOptions) => __TAURI_INVOKE<null>("trust_phone", { phone }, options),
+	listNeverAskPhones: (options?: InvokeOptions) => __TAURI_INVOKE<string[]>("list_never_ask_phones", undefined, options),
+	/**  Stops or resumes asking whether a phone should be trusted. */
+	neverAskPhone: (phone: string, never: boolean, options?: InvokeOptions) => __TAURI_INVOKE<null>("never_ask_phone", { phone, never }, options),
+	phoneActivity: (options?: InvokeOptions) => __TAURI_INVOKE<PhoneActivity_Serialize>("phone_activity", undefined, options),
+	/**  The speed test started on the PC. It only needs adb, so EasyAndroid is not involved. */
+	startSpeedTest: (taskId: string, serial: string, options?: InvokeOptions) => __TAURI_INVOKE<Speed>("start_speed_test", { taskId, serial }, options),
 	listSystemBackups: (options?: InvokeOptions) => __TAURI_INVOKE<SystemSummary[]>("list_system_backups", undefined, options),
 	restoreSystemBackup: (taskId: string, serial: string, id: string, options: SystemOptions, _options?: InvokeOptions) => __TAURI_INVOKE<SystemReport>("restore_system_backup", { taskId, serial, id, options }, _options),
 	deleteBackup: (backupId: string, options?: InvokeOptions) => __TAURI_INVOKE<null>("delete_backup", { backupId }, options),
@@ -93,8 +105,10 @@ export const commands = {
 export const events = {
 	commandOutput: makeEvent<CommandOutput_Serialize, CommandOutput_Deserialize>("command-output"),
 	logcatBatch: makeEvent<LogcatBatch, LogcatBatch>("logcat-batch"),
+	phoneBatchEnd: makeEvent<PhoneBatchEnd, PhoneBatchEnd>("phone-batch-end"),
 	phoneJobEvent: makeEvent<PhoneJobEvent_Serialize, PhoneJobEvent_Deserialize>("phone-job-event"),
 	phoneRequestAsk: makeEvent<PhoneRequestAsk, PhoneRequestAsk>("phone-request-ask"),
+	quitAsk: makeEvent<QuitAsk, QuitAsk>("quit-ask"),
 	taskProgress: makeEvent<TaskProgress, TaskProgress>("task-progress"),
 };
 
@@ -353,12 +367,31 @@ export type DeviceEntry_Serialize = {
 
 export type DeviceState = "device" | "unauthorized" | "offline" | "recovery" | "sideload" | "bootloader" | "unknown";
 
+/**  Why a request or a group of them ended. */
+export type EndReason = 
+/**  Every request of the group was carried out, well or not. */
+"finished" | 
+/**  Cancelled on the phone. */
+"phone" | 
+/**  Cancelled on this PC. */
+"pc" | "rejected" | 
+/**  Nobody answered in time. */
+"expired" | 
+/**  The phone took its request back or sent no more of the group. */
+"gone" | "disconnected" | 
+/**  The request could not be read or is not allowed. */
+"invalid";
+
 /**  Stable error codes. The frontend translates them; `detail` carries the raw context. */
 export type ErrorCode = "adb_missing" | "adb_failed" | "device_not_found" | "device_unauthorized" | "device_offline" | "invalid_input" | "invalid_path" | "io" | "parse" | "backup_invalid" | "integrity_failed" | "install_failed" | "pair_failed" | "connect_failed" | "cancelled" | "not_found" | 
 /**  Not enough free space on the PC. */
 "no_space" | 
 /**  A package that must not be disabled or removed. */
-"protected" | "internal";
+"protected" | 
+/**  Another job runs on the same phone. */
+"busy" | 
+/**  The user of the phone said no, or did not answer. */
+"phone_rejected" | "phone_expired" | "internal";
 
 export type FileEntry = {
 	name: string,
@@ -459,6 +492,21 @@ export type NetworkInfo_Serialize = {
 	frequencyMhz: number | null,
 };
 
+/**  What is going on between the phones and this PC, for a window that was just opened. */
+export type PhoneActivity = PhoneActivity_Serialize | PhoneActivity_Deserialize;
+
+/**  What is going on between the phones and this PC, for a window that was just opened. */
+export type PhoneActivity_Deserialize = {
+	asks: PhoneRequestAsk[],
+	jobs: PhoneJobEvent_Deserialize[],
+};
+
+/**  What is going on between the phones and this PC, for a window that was just opened. */
+export type PhoneActivity_Serialize = {
+	asks: PhoneRequestAsk[],
+	jobs: PhoneJobEvent_Serialize[],
+};
+
 export type PhoneBackup = PhoneBackup_Serialize | PhoneBackup_Deserialize;
 
 export type PhoneBackup_Deserialize = {
@@ -493,27 +541,53 @@ export type PhoneBackup_Serialize = {
 	fileKind: Kind | null,
 };
 
+/**  A group of phone requests is over, or a request was refused before it became one (no `batch`). */
+export type PhoneBatchEnd = {
+	phone: string,
+	batch: string,
+	reason: EndReason,
+	detail: string,
+};
+
 /**  A job that the phone asked for started, ended or failed. */
 export type PhoneJobEvent = PhoneJobEvent_Serialize | PhoneJobEvent_Deserialize;
 
 /**  A job that the phone asked for started, ended or failed. */
 export type PhoneJobEvent_Deserialize = {
 	phone: string,
+	model: string,
+	batch: string,
+	/**  Place in the group, from 0. */
+	index: number,
+	size: number,
 	id: string,
 	kind: string,
-	package: string,
+	names: string[],
 	state: TaskState,
 	error?: AppError | null,
+	/**  Who cancelled it, or that the connection was lost. */
+	reason?: EndReason | null,
+	/**  What the job found out, as the notes the phone reads, e.g. `speed_to_pc:12.34`. */
+	notes: string[],
 };
 
 /**  A job that the phone asked for started, ended or failed. */
 export type PhoneJobEvent_Serialize = {
 	phone: string,
+	model: string,
+	batch: string,
+	/**  Place in the group, from 0. */
+	index: number,
+	size: number,
 	id: string,
 	kind: string,
-	package: string,
+	names: string[],
 	state: TaskState,
 	error: AppError | null,
+	/**  Who cancelled it, or that the connection was lost. */
+	reason: EndReason | null,
+	/**  What the job found out, as the notes the phone reads, e.g. `speed_to_pc:12.34`. */
+	notes: string[],
 };
 
 /**  A phone that has not been trusted yet asks the PC to do a job. */
@@ -521,12 +595,19 @@ export type PhoneRequestAsk = {
 	/**  `ro.serialno` of the phone, which is what trust is kept under. */
 	phone: string,
 	model: string,
-	id: string,
-	/**  `app`, `folders` or `pull`. */
+	/**  The group the request belongs to, which the answer covers. */
+	batch: string,
+	/**  `app`, `folders`, `pull` or `speed`. */
 	kind: string,
-	/**  The package for `app`, otherwise empty. */
-	package: string,
+	/**  The first few packages, folders or backups. */
+	names: string[],
+	/**  Apps, folders or backups in all; megabytes for `speed`. */
 	count: number,
+	data: boolean,
+	obb: boolean,
+	externalData: boolean,
+	/**  How long the user has to answer. */
+	seconds: number,
 };
 
 export type ProfileEntry = {
@@ -551,6 +632,9 @@ export type QrPairing = {
 	password: string,
 	qrText: string,
 };
+
+/**  The user wants to quit while jobs run. */
+export type QuitAsk = null;
 
 export type RebootMode = "system" | "recovery" | "bootloader" | "sideload" | "fastbootd";
 
@@ -628,6 +712,12 @@ export type Settings_Serialize = {
 	verifyHashOnRestore: boolean,
 	/**  Closing the window hides it to the tray instead of quitting. */
 	closeToTray: boolean,
+};
+
+/**  Measured speeds in megabytes per second (1 MB = 1,000,000 bytes). */
+export type Speed = {
+	toPc: number | null,
+	toPhone: number | null,
 };
 
 export type Storage = {

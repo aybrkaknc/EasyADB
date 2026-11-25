@@ -68,8 +68,19 @@ export function useFeedback() {
     [push, settings.sound, settings.notifications, t],
   );
 
+  /** Sound and notification only, for an end that has a window of its own. */
+  const announce = useCallback(
+    (ok: boolean, text: string) => {
+      if (settings.sound) beep(ok);
+      if (settings.notifications && !document.hasFocus()) {
+        void notify(t(ok ? "notify.done" : "notify.failed"), text);
+      }
+    },
+    [settings.sound, settings.notifications, t],
+  );
+
   /** Something worked but not completely, e.g. the app was installed but its data was not. */
   const warning = useCallback((text: string) => push("warning", text), [push]);
 
-  return { success, failure, warning };
+  return { success, failure, warning, announce };
 }

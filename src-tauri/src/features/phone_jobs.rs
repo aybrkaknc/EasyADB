@@ -15,7 +15,7 @@ use crate::adb::{Device, shell};
 use crate::error::{AppError, AppResult, ErrorCode};
 use crate::features::backup::phone::{self, PullOutcome};
 use crate::features::device::EASYANDROID_PACKAGE;
-use crate::features::phone_requests::BOX;
+use crate::features::phone_requests::{self, BOX};
 use crate::features::settings::backup_root;
 use crate::features::system_backup;
 use crate::state::{AppState, blocking};
@@ -26,7 +26,9 @@ const KINDS: [&str; 3] = ["messages", "calls", "wallpaper"];
 const TIMEOUT: Duration = Duration::from_secs(30 * 60);
 /// How long the phone gets to start the job before the app is opened on its screen.
 const START_WAIT: Duration = Duration::from_secs(15);
-const CANCEL_WAIT: Duration = Duration::from_secs(20);
+const CANCEL_WAIT: Duration = Duration::from_secs(5);
+/// A phone that cannot be read for this long is gone.
+const LOST_WAIT: Duration = Duration::from_secs(20);
 
 #[derive(Debug, Deserialize, PartialEq)]
 struct JobStatus {
@@ -46,7 +48,13 @@ struct JobStatus {
     notes: Vec<String>,
 }
 
-fn job_json(id: &str, created: u64, kind: &str, kinds: &[String]) -> String {
+/// Which PC asks, for the phone's question and its list of trusted PCs.
+pub struct Pc {
+    pub id: String,
+    pub name: String,
+}
+
+fn job_json(id: &str, created: u64, kind: &str, kinds: &[String], pc: &Pc) -> String {
     serde_json::json!({
         "format": JOB_FORMAT,
         "version": 1,
@@ -54,6 +62,8 @@ fn job_json(id: &str, created: u64, kind: &str, kinds: &[String]) -> String {
         "created": created,
         "type": kind,
         "kinds": kinds,
+        "pc": pc.id,
+        "pcName": pc.name,
     })
     .to_string()
 }
@@ -96,9 +106,35 @@ fn adb_script(device: Device, script: &str) -> AppResult<String> {
     device.script(script)
 }
 
+/// What the status of a phone job means for the wait.
+#[derive(Debug)]
+enum Told {
+    /// The phone asks its user. `true` means that it cannot show the question by itself.
+    Asking(bool),
+    Running,
+    Ended(AppResult<Vec<String>>),
+}
+
+fn told(status: JobStatus) -> Told {
+    let failed = |code| Told::Ended(Err(AppError::new(code, "")));
+    match status.state.as_str() {
+        "done" => Told::Ended(Ok(status.notes)),
+        "cancelled" => Told::Ended(Err(AppError::new(ErrorCode::Cancelled, "phone"))),
+        "rejected" => failed(ErrorCode::PhoneRejected),
+        "expired" => failed(ErrorCode::PhoneExpired),
+        "failed" => Told::Ended(Err(AppError::new(
+            ErrorCode::AdbFailed,
+            status.error.unwrap_or_default(),
+        ))),
+        "waiting" => Told::Asking(status.stage == "open"),
+        _ => Told::Running,
+    }
+}
+
 /// Hands one job to EasyAndroid and waits for it. Returns the notes of the finished job.
 fn one_job(
     device: Device,
+    pc: &Pc,
     kind: &str,
     kinds: &[String],
     task: &TaskHandle,
@@ -111,7 +147,8 @@ fn one_job(
         .parse()
         .map_err(|_| AppError::new(ErrorCode::AdbFailed, "phone clock"))?;
     let id = format!("pc-{now}-{}", COUNTER.fetch_add(1, Ordering::SeqCst));
-    let json = job_json(&id, now, kind, kinds);
+    let json = job_json(&id, now, kind, kinds, pc);
+    reporter.progress("phone_wait", "", 0.0, 0.0);
     adb_script(
         device,
         &format!(
@@ -135,6 +172,7 @@ fn one_job(
     let mut opened = false;
     let mut cancelled_at: Option<Instant> = None;
     let mut seen = false;
+    let mut heard = Instant::now();
     let result = loop {
         std::thread::sleep(Duration::from_secs(1));
         if task.is_cancelled() && cancelled_at.is_none() {
@@ -144,26 +182,28 @@ fn one_job(
             ));
             cancelled_at = Some(Instant::now());
         }
-        let text = device
-            .script(&format!("cat {BOX}/job-status.json 2>/dev/null"))
-            .unwrap_or_default();
+        let text = match device.script(&format!("cat {BOX}/job-status.json 2>/dev/null; true")) {
+            Ok(text) => {
+                heard = Instant::now();
+                text
+            }
+            Err(err) if heard.elapsed() > LOST_WAIT => break Err(err),
+            Err(_) => String::new(),
+        };
         if let Some(status) = parse_status(&text, &id) {
             seen = true;
-            match status.state.as_str() {
-                "done" => break Ok(status.notes),
-                "cancelled" => break Err(AppError::cancelled()),
-                "failed" => {
-                    break Err(AppError::new(
-                        ErrorCode::AdbFailed,
-                        status.error.unwrap_or_default(),
-                    ));
+            let (stage, item) = (stage_key(&status.stage), status.item.clone());
+            let (done, total) = (status.done as f64, status.total as f64);
+            match told(status) {
+                Told::Ended(result) => break result,
+                Told::Asking(open) => {
+                    reporter.progress("phone_approval", "", 0.0, 0.0);
+                    if open && !opened {
+                        opened = true;
+                        open_app(device);
+                    }
                 }
-                _ => reporter.progress(
-                    stage_key(&status.stage),
-                    &status.item,
-                    status.done as f64,
-                    status.total as f64,
-                ),
+                Told::Running => reporter.progress(stage, &item, done, total),
             }
         }
         if let Some(at) = cancelled_at {
@@ -173,14 +213,8 @@ fn one_job(
         }
         if !seen && !opened && started.elapsed() > START_WAIT {
             opened = true;
-            let _ = device.shell(&[
-                "am",
-                "start",
-                "--user",
-                "0",
-                "-n",
-                &format!("{EASYANDROID_PACKAGE}/.MainActivity"),
-            ]);
+            reporter.progress("phone_open", "", 0.0, 0.0);
+            open_app(device);
         }
         if started.elapsed() > TIMEOUT {
             break Err(AppError::new(
@@ -193,10 +227,22 @@ fn one_job(
     result
 }
 
+fn open_app(device: Device) {
+    let _ = device.shell(&[
+        "am",
+        "start",
+        "--user",
+        "0",
+        "-n",
+        &format!("{EASYANDROID_PACKAGE}/.MainActivity"),
+    ]);
+}
+
 /// Asks EasyAndroid for the backups and copies them to the PC. A system snapshot never holds
 /// Wi-Fi passwords here, because the phone leaves the networks out.
 pub fn run(
     device: Device,
+    pc: &Pc,
     root: &Path,
     kinds: &[String],
     system: bool,
@@ -215,12 +261,12 @@ pub fn run(
     let mut ids = Vec::new();
     let mut files = Vec::new();
     if !kinds.is_empty() {
-        let (a, b) = made(&one_job(device, "files", kinds, task, reporter)?);
+        let (a, b) = made(&one_job(device, pc, "files", kinds, task, reporter)?);
         ids.extend(a);
         files.extend(b);
     }
     if system {
-        let (a, b) = made(&one_job(device, "system", &[], task, reporter)?);
+        let (a, b) = made(&one_job(device, pc, "system", &[], task, reporter)?);
         ids.extend(a);
         files.extend(b);
     }
@@ -238,12 +284,18 @@ pub async fn start_phone_job(
     system: bool,
 ) -> AppResult<Vec<PullOutcome>> {
     let runner = state.runner()?;
+    let _hold = state.requests.hold(&serial)?;
     let task = state.tasks.start(&task_id);
     let reporter = Reporter::new(app.clone(), &task_id);
     let result = blocking(move || {
         let root = backup_root(&app)?;
+        let pc = Pc {
+            id: phone_requests::pc_id(&app),
+            name: phone_requests::pc_name(),
+        };
         let result = run(
             Device::new(&*runner, &serial),
+            &pc,
             &root,
             &kinds,
             system,
@@ -263,14 +315,47 @@ mod tests {
     use super::*;
     use crate::adb::fake::FakeAdb;
 
+    fn pc() -> Pc {
+        Pc {
+            id: "abc".into(),
+            name: "DESK".into(),
+        }
+    }
+
+    #[test]
+    fn tells_a_refusal_from_a_failure() {
+        let status =
+            |json: &str| told(parse_status(&format!(r#"{{"id":"x",{json}}}"#), "x").unwrap());
+        let code = |json: &str| match status(json) {
+            Told::Ended(Err(err)) => err.code,
+            other => panic!("{other:?}"),
+        };
+        assert_eq!(code(r#""state":"rejected""#), ErrorCode::PhoneRejected);
+        assert_eq!(code(r#""state":"expired""#), ErrorCode::PhoneExpired);
+        assert_eq!(code(r#""state":"cancelled""#), ErrorCode::Cancelled);
+        assert_eq!(code(r#""state":"failed""#), ErrorCode::AdbFailed);
+        assert!(matches!(
+            status(r#""state":"waiting""#),
+            Told::Asking(false)
+        ));
+        assert!(matches!(
+            status(r#""state":"waiting","stage":"open""#),
+            Told::Asking(true)
+        ));
+        assert!(matches!(status(r#""state":"running""#), Told::Running));
+        assert!(matches!(status(r#""state":"done""#), Told::Ended(Ok(_))));
+    }
+
     #[test]
     fn writes_a_job_the_phone_can_read() {
-        let json = job_json("pc-1-0", 1000, "files", &["messages".to_string()]);
+        let json = job_json("pc-1-0", 1000, "files", &["messages".to_string()], &pc());
         let value: serde_json::Value = serde_json::from_str(&json).unwrap();
         assert_eq!(value["format"], "easyandroid-job");
         assert_eq!(value["type"], "files");
         assert_eq!(value["kinds"][0], "messages");
         assert_eq!(value["created"], 1000);
+        assert_eq!(value["pc"], "abc");
+        assert_eq!(value["pcName"], "DESK");
     }
 
     #[test]
@@ -315,6 +400,7 @@ mod tests {
         ] {
             let err = run(
                 Device::new(&fake, "X"),
+                &pc(),
                 root.path(),
                 &kinds,
                 system,
@@ -333,6 +419,7 @@ mod tests {
         let root = tempfile::tempdir().unwrap();
         let err = run(
             Device::new(&fake, "X"),
+            &pc(),
             root.path(),
             &["messages".to_string()],
             false,

@@ -2,12 +2,11 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 
 import { commands } from "../../bindings";
-import { useFeedback } from "../../shared/hooks/useFeedback";
-import { useTask } from "../../shared/hooks/useTask";
+import { useDevices } from "../../shared/hooks/useDevices";
+import { reportOutcomes, runJob } from "../../shared/jobs/store";
 import { formatBytes } from "../../shared/lib/format";
 import { Button } from "../../shared/ui/Button";
 import { Dialog } from "../../shared/ui/Dialog";
-import { TaskBar } from "../../shared/ui/Feedback";
 
 const SHOWN = 5;
 
@@ -33,42 +32,33 @@ export function PhoneCopiesDialog({
 }) {
   const { t } = useTranslation();
   const client = useQueryClient();
-  const feedback = useFeedback();
-  const task = useTask();
+  const { devices } = useDevices();
 
   const remove = async () => {
-    try {
-      const outcomes = await task.run((id) =>
-        commands.deletePhoneBackups(
-          id,
-          serial,
-          copies.map((c) => c.id),
-        ),
-      );
-      const failed = outcomes.filter((o) => o.error);
-      feedback.success(
-        t("phone.deleted", { ok: outcomes.length - failed.length, failed: failed.length }),
-        true,
-      );
-      failed.forEach((o) => feedback.failure(o.error));
-    } catch (error) {
-      feedback.failure(error, true);
-    }
-    void client.invalidateQueries({ queryKey: ["phoneBackups", serial] });
     onClose();
+    const ids = copies.map((c) => c.id);
+    await runJob({
+      kind: "deleteCopies",
+      serial,
+      device: devices.find((d) => d.serial === serial)?.model ?? serial,
+      items: copies.map((c) => ({ key: c.id, name: c.name })),
+      run: ({ taskId }) => commands.deletePhoneBackups(taskId, serial, ids),
+      report: (list) => reportOutcomes(list, (id) => copies.find((c) => c.id === id)?.name ?? id),
+    });
+    void client.invalidateQueries({ queryKey: ["phoneBackups", serial] });
   };
 
   return (
     <Dialog
       open
-      onOpenChange={(open) => !open && !task.running && onClose()}
+      onOpenChange={(open) => !open && onClose()}
       title={t("phone.deleteTitle")}
       footer={
         <>
-          <Button variant="ghost" onClick={onClose} disabled={task.running}>
+          <Button variant="ghost" onClick={onClose}>
             {t("phone.keep")}
           </Button>
-          <Button variant="danger" onClick={() => void remove()} disabled={task.running}>
+          <Button variant="danger" onClick={() => void remove()}>
             {t("phone.delete")}
           </Button>
         </>
@@ -83,11 +73,6 @@ export function PhoneCopiesDialog({
         ))}
         {copies.length > SHOWN && <li>{t("phone.more", { count: copies.length - SHOWN })}</li>}
       </ul>
-      {task.running && (
-        <div className="-mx-6">
-          <TaskBar progress={task.progress} onCancel={task.cancel} />
-        </div>
-      )}
     </Dialog>
   );
 }

@@ -3,15 +3,14 @@ import { useTranslation } from "react-i18next";
 
 import { type BackupSummary, commands } from "../../bindings";
 import { useConfirm } from "../../shared/hooks/useConfirm";
-import { useFeedback } from "../../shared/hooks/useFeedback";
+import { useDevices } from "../../shared/hooks/useDevices";
 import { useRoot } from "../../shared/hooks/useRoot";
 import { useSettings } from "../../shared/hooks/useSettings";
-import { useTask } from "../../shared/hooks/useTask";
+import { runJob } from "../../shared/jobs/store";
 import { appName } from "../../shared/lib/format";
 import { Button } from "../../shared/ui/Button";
 import { Checkbox } from "../../shared/ui/Controls";
 import { Dialog } from "../../shared/ui/Dialog";
-import { TaskBar } from "../../shared/ui/Feedback";
 import { restoreWarnings } from "./report";
 import { RootStatus } from "./RootStatus";
 
@@ -26,9 +25,8 @@ export function RestoreDialog({
 }) {
   const { t } = useTranslation();
   const settings = useSettings();
-  const feedback = useFeedback();
+  const { devices } = useDevices();
   const confirm = useConfirm();
-  const task = useTask();
   const [obb, setObb] = useState(backup.hasObb);
   const root = useRoot(serial);
   const [data, setData] = useState(backup.hasData);
@@ -39,36 +37,43 @@ export function RestoreDialog({
 
   const start = async () => {
     if (dataOn && !(await confirm(t("backup.restore.dataConfirm", { name })))) return;
-    try {
-      const report = await task.run((id) =>
-        commands.startRestore(id, serial, backup.id, {
+    onClose();
+    await runJob({
+      kind: "restore",
+      serial,
+      device: devices.find((d) => d.serial === serial)?.model ?? serial,
+      items: [{ key: backup.package, name }],
+      run: ({ taskId }) =>
+        commands.startRestore(taskId, serial, backup.id, {
           restoreObb: obb,
           restoreData: dataOn,
           restorePermissions: permissions,
           verifyHash: verify,
         }),
-      );
-      feedback.success(t("backup.restore.done", { name }), true);
-      restoreWarnings(t, name, report).forEach(feedback.warning);
-      onClose();
-    } catch (error) {
-      feedback.failure(error, true);
-    }
+      report: (report) => {
+        const warnings = restoreWarnings(t, name, report);
+        return [
+          {
+            key: backup.package,
+            state: warnings.length ? "warning" : "done",
+            note: warnings.join("\n") || undefined,
+          },
+        ];
+      },
+    });
   };
 
   return (
     <Dialog
       open
-      onOpenChange={(open) => !open && !task.running && onClose()}
+      onOpenChange={(open) => !open && onClose()}
       title={t("backup.restore.title", { name })}
       footer={
         <>
-          <Button variant="ghost" onClick={onClose} disabled={task.running}>
+          <Button variant="ghost" onClick={onClose}>
             {t("common.cancel")}
           </Button>
-          <Button onClick={() => void start()} disabled={task.running}>
-            {t("backup.restore.start")}
-          </Button>
+          <Button onClick={() => void start()}>{t("backup.restore.start")}</Button>
         </>
       }
     >
@@ -94,11 +99,6 @@ export function RestoreDialog({
         <Checkbox checked={verify} onChange={setVerify} label={t("backup.restore.verify")} />
       </div>
       {backup.hasData && <RootStatus root={root} />}
-      {task.running && (
-        <div className="-mx-6">
-          <TaskBar progress={task.progress} onCancel={task.cancel} />
-        </div>
-      )}
     </Dialog>
   );
 }

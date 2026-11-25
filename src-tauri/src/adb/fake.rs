@@ -69,4 +69,8 @@ impl AdbRunner for FakeAdb {
             "fake runner cannot spawn",
         ))
     }
+
+    fn spawn_with_input(&self, tool: Tool, args: &[&str]) -> AppResult<Child> {
+        self.spawn(tool, args)
+    }
 }

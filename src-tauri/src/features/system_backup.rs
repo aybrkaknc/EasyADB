@@ -411,6 +411,7 @@ pub async fn restore_system_backup(
     options: SystemOptions,
 ) -> AppResult<SystemReport> {
     let runner = state.runner()?;
+    let _hold = state.requests.hold(&serial)?;
     let task = state.tasks.start(&task_id);
     let reporter = Reporter::new(app.clone(), &task_id);
     let result = blocking(move || {

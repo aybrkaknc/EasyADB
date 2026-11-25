@@ -5,15 +5,14 @@ import { useTranslation } from "react-i18next";
 import { Virtuoso } from "react-virtuoso";
 
 import { type AppInfo, commands, type DeviceEntry } from "../../bindings";
-import { useFeedback } from "../../shared/hooks/useFeedback";
 import { useRoot } from "../../shared/hooks/useRoot";
 import { useSelection } from "../../shared/hooks/useSelection";
-import { useTask } from "../../shared/hooks/useTask";
+import { reportOutcomes, runJob } from "../../shared/jobs/store";
 import { cn } from "../../shared/lib/cn";
 import { appName, formatBytes } from "../../shared/lib/format";
 import { Button } from "../../shared/ui/Button";
 import { Checkbox, FilterChips, Input } from "../../shared/ui/Controls";
-import { EmptyState, Spinner, TaskBar } from "../../shared/ui/Feedback";
+import { EmptyState, Spinner } from "../../shared/ui/Feedback";
 import { Panel } from "../../shared/ui/Panel";
 import { RootStatus } from "./RootStatus";
 
@@ -58,8 +57,6 @@ function BackupOptionsPanel({
 export function AppsTab({ device, onDone }: { device: DeviceEntry; onDone: () => void }) {
   const { t } = useTranslation();
   const client = useQueryClient();
-  const feedback = useFeedback();
-  const task = useTask();
   const selection = useSelection();
   const [filter, setFilter] = useState<Filter>("user");
   const [search, setSearch] = useState("");
@@ -92,35 +89,33 @@ export function AppsTab({ device, onDone }: { device: DeviceEntry; onDone: () =>
   );
   const allVisible = visible.length > 0 && visible.every((a) => selection.has(a.package));
 
-  const start = async () => {
-    try {
-      const outcomes = await task.run((id) =>
-        commands.startBackup(id, device.serial, selectedIds, {
+  const start = async (packages: string[]) => {
+    const name = (pkg: string) =>
+      appName(installed.find((a) => a.package === pkg) ?? { package: pkg });
+    const outcomes = await runJob({
+      kind: "app",
+      serial: device.serial,
+      device: device.model ?? device.serial,
+      items: packages.map((pkg) => ({ key: pkg, name: name(pkg) })),
+      run: ({ taskId }) =>
+        commands.startBackup(taskId, device.serial, packages, {
           includeObb: options.obb,
           includeData: options.data && root.isRoot,
           includeExternal: options.external && root.isRoot,
         }),
-      );
-      const failed = outcomes.filter((o) => o.error);
-      feedback.success(
-        t("backup.result", { ok: outcomes.length - failed.length, failed: failed.length }),
-        true,
-      );
-      failed.forEach((o) => feedback.failure(o.error));
-      outcomes
-        .filter((o) => o.dataSkipped)
-        .forEach((o) => {
-          const app = installed.find((a) => a.package === o.package);
-          feedback.warning(
-            t("backup.dataSkipped", { name: appName(app ?? { package: o.package }) }),
-          );
-        });
-      selection.clear();
-      void client.invalidateQueries({ queryKey: ["backups"] });
-      if (failed.length === 0) onDone();
-    } catch (error) {
-      feedback.failure(error, true);
-    }
+      report: (list) =>
+        list.map((o) => {
+          const [line] = reportOutcomes([{ id: o.package, error: o.error }], name);
+          return !o.error && o.dataSkipped
+            ? { key: o.package, state: "warning", note: t("job.note.dataSkipped") }
+            : { key: o.package, state: line?.state ?? "done", note: line?.note };
+        }),
+      retry: (keys) => void start(keys),
+    });
+    if (!outcomes) return;
+    selection.clear();
+    void client.invalidateQueries({ queryKey: ["backups"] });
+    if (outcomes.every((o) => !o.error)) onDone();
   };
 
   const count = (f: Filter) =>
@@ -205,15 +200,10 @@ export function AppsTab({ device, onDone }: { device: DeviceEntry; onDone: () =>
           )}
           {filter !== "user" && <span className="text-warn/80">{t("backup.systemHint")}</span>}
         </div>
-        <Button onClick={() => void start()} disabled={selection.count === 0 || task.running}>
+        <Button onClick={() => void start(selectedIds)} disabled={selection.count === 0}>
           {t("backup.start", { count: selection.count })}
         </Button>
       </aside>
-      {task.running && (
-        <div className="absolute inset-x-0 bottom-0">
-          <TaskBar progress={task.progress} onCancel={task.cancel} />
-        </div>
-      )}
     </div>
   );
 }

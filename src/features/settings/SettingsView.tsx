@@ -44,6 +44,16 @@ export function SettingsView() {
     queryKey: ["trustedPhones"],
     queryFn: () => commands.listTrustedPhones(),
   });
+  const never = useQuery({
+    queryKey: ["neverAskPhones"],
+    queryFn: () => commands.listNeverAskPhones(),
+  });
+  const askAgain = (phone: string) => {
+    void commands
+      .neverAskPhone(phone, false)
+      .then(() => client.invalidateQueries({ queryKey: ["neverAskPhones"] }))
+      .catch(feedback.failure);
+  };
   const forget = (phone: string) => {
     void commands
       .forgetTrustedPhone(phone)
@@ -140,6 +150,21 @@ export function SettingsView() {
             <p className="text-xs text-white/50">{t("settings.trusted.empty")}</p>
           )}
           <p className="mt-3 text-[11px] text-white/40">{t("settings.trusted.hint")}</p>
+          {never.data && never.data.length > 0 && (
+            <>
+              <p className="label mt-4 mb-1">{t("settings.trusted.neverTitle")}</p>
+              <ul className="flex flex-col divide-y divide-white/5 text-xs">
+                {never.data.map((phone) => (
+                  <li key={phone} className="flex items-center justify-between gap-3 py-1.5">
+                    <span className="truncate font-mono text-white/80">{phone}</span>
+                    <Button variant="ghost" size="sm" onClick={() => askAgain(phone)}>
+                      {t("settings.trusted.askAgain")}
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
         </Panel>
 
         <Panel title={t("settings.shortcuts.title")}>

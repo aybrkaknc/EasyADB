@@ -40,6 +40,8 @@ pub trait AdbRunner: Send + Sync {
     fn exec(&self, tool: Tool, args: &[&str]) -> AppResult<Output>;
     /// Starts a process with piped stdout/stderr for streaming use.
     fn spawn(&self, tool: Tool, args: &[&str]) -> AppResult<Child>;
+    /// Starts a process whose stdin the caller writes to. Its output is dropped.
+    fn spawn_with_input(&self, tool: Tool, args: &[&str]) -> AppResult<Child>;
 }
 
 pub struct Adb {
@@ -112,6 +114,15 @@ impl AdbRunner for Adb {
             .stderr(Stdio::piped())
             .spawn()?)
     }
+
+    fn spawn_with_input(&self, tool: Tool, args: &[&str]) -> AppResult<Child> {
+        Ok(self
+            .command(tool, args)
+            .stdin(Stdio::piped())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .spawn()?)
+    }
 }
 
 /// Commands scoped to one device serial.
@@ -165,5 +176,10 @@ impl<'a> Device<'a> {
 
     pub fn spawn(&self, args: &[&str]) -> AppResult<Child> {
         self.runner.spawn(Tool::Adb, &self.with_serial(args))
+    }
+
+    pub fn spawn_with_input(&self, args: &[&str]) -> AppResult<Child> {
+        self.runner
+            .spawn_with_input(Tool::Adb, &self.with_serial(args))
     }
 }

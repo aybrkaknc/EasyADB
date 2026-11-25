@@ -3,11 +3,9 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { commands, type DeviceEntry } from "../../bindings";
-import { useFeedback } from "../../shared/hooks/useFeedback";
-import { useTask } from "../../shared/hooks/useTask";
+import { reportOutcomes, runJob, useIdle } from "../../shared/jobs/store";
 import { Button } from "../../shared/ui/Button";
 import { Checkbox } from "../../shared/ui/Controls";
-import { TaskBar } from "../../shared/ui/Feedback";
 import { Panel } from "../../shared/ui/Panel";
 import { PhoneCopiesDialog, type PhoneCopy } from "./PhoneCopiesDialog";
 
@@ -21,8 +19,7 @@ type Choice = (typeof KINDS)[number] | "system";
 export function PhoneDataTab({ device }: { device: DeviceEntry }) {
   const { t } = useTranslation();
   const client = useQueryClient();
-  const feedback = useFeedback();
-  const task = useTask();
+  const idle = useIdle();
   const [chosen, setChosen] = useState<Choice[]>([]);
   const [copies, setCopies] = useState<PhoneCopy[]>([]);
   const details = useQuery({
@@ -37,38 +34,37 @@ export function PhoneDataTab({ device }: { device: DeviceEntry }) {
       list.includes(choice) ? list.filter((c) => c !== choice) : [...list, choice],
     );
 
-  const start = async () => {
-    try {
-      const outcomes = await task.run((id) =>
+  const label = (choice: string) =>
+    t(choice === "system" ? "backup.phoneData.system" : `phone.kind.${choice}`);
+
+  // The phone names the backups it makes, so the choice an outcome belongs to is in its id.
+  const start = async (choices: Choice[]) => {
+    const outcomes = await runJob({
+      kind: "phoneData",
+      serial: device.serial,
+      device: device.model ?? device.serial,
+      items: choices.map((c) => ({ key: c, name: label(c) })),
+      run: ({ taskId }) =>
         commands.startPhoneJob(
-          id,
+          taskId,
           device.serial,
-          chosen.filter((c): c is (typeof KINDS)[number] => c !== "system"),
-          chosen.includes("system"),
+          choices.filter((c): c is (typeof KINDS)[number] => c !== "system"),
+          choices.includes("system"),
         ),
-      );
-      const failed = outcomes.filter((o) => o.error);
-      feedback.success(
-        t("phone.done", { ok: outcomes.length - failed.length, failed: failed.length }),
-        true,
-      );
-      failed.forEach((o) => feedback.failure(o.error));
-      setChosen([]);
-      for (const key of ["fileSets", "systemBackups", "phoneBackups"]) {
-        void client.invalidateQueries({ queryKey: [key] });
-      }
-      // The system snapshot is a single file, so only folders can be removed from the phone.
-      const arrived = outcomes.filter((o) => !o.error && !o.id.endsWith(".json"));
-      setCopies(
-        arrived.map((o) => ({
-          id: o.id,
-          name: t(`phone.kind.${o.id.split("_")[0]}`),
-          bytes: null,
-        })),
-      );
-    } catch (error) {
-      feedback.failure(error, true);
+      report: (list) =>
+        reportOutcomes(list).map((r) => ({ ...r, key: r.key.split("_")[0] ?? r.key })),
+      retry: (keys) => void start(choices.filter((c) => keys.includes(c))),
+    });
+    if (!outcomes) return;
+    setChosen([]);
+    for (const key of ["fileSets", "systemBackups", "phoneBackups"]) {
+      void client.invalidateQueries({ queryKey: [key] });
     }
+    // The system snapshot is a single file, so only folders can be removed from the phone.
+    const arrived = outcomes.filter((o) => !o.error && !o.id.endsWith(".json"));
+    setCopies(
+      arrived.map((o) => ({ id: o.id, name: label(o.id.split("_")[0] ?? o.id), bytes: null })),
+    );
   };
 
   return (
@@ -81,8 +77,8 @@ export function PhoneDataTab({ device }: { device: DeviceEntry }) {
               key={choice}
               checked={chosen.includes(choice)}
               onChange={() => toggle(choice)}
-              disabled={!ready || task.running}
-              label={t(choice === "system" ? "backup.phoneData.system" : `phone.kind.${choice}`)}
+              disabled={!ready}
+              label={label(choice)}
             />
           ))}
         </div>
@@ -91,18 +87,13 @@ export function PhoneDataTab({ device }: { device: DeviceEntry }) {
         )}
         <Button
           className="mt-4"
-          onClick={() => void start()}
-          disabled={!ready || chosen.length === 0 || task.running}
+          onClick={() => void start(chosen)}
+          disabled={!ready || chosen.length === 0}
         >
           {t("backup.phoneData.start", { count: chosen.length })}
         </Button>
       </Panel>
-      {task.running && (
-        <div className="absolute inset-x-0 bottom-0">
-          <TaskBar progress={task.progress} onCancel={task.cancel} />
-        </div>
-      )}
-      {copies.length > 0 && (
+      {copies.length > 0 && idle && (
         <PhoneCopiesDialog serial={device.serial} copies={copies} onClose={() => setCopies([])} />
       )}
     </div>

@@ -90,6 +90,11 @@ fn version_name(dump: &str) -> Option<String> {
         .map(|v| v.trim().to_string())
 }
 
+/// A phone that went away is a failed backup and not a missing archive.
+fn ensure_connected(device: Device) -> AppResult<()> {
+    device.script("true").map(|_| ())
+}
+
 fn obb_files(device: Device, package: &str) -> Vec<String> {
     let dir = format!("/sdcard/Android/obb/{package}");
     device
@@ -310,6 +315,7 @@ fn fill(
                 .su(&format!("[ -d {} ]", shell::quote(&source)))
                 .is_err()
             {
+                ensure_connected(job.device)?;
                 if layer == Layer::Private {
                     data_skipped = true;
                 }
@@ -330,6 +336,7 @@ fn fill(
                 Err(err) if err.code == ErrorCode::Cancelled => return Err(err),
                 // Unreadable or cut off: keep the app, drop this archive and say so.
                 other => {
+                    ensure_connected(job.device)?;
                     let _ = fs::remove_file(dir.join(stored));
                     data_skipped = true;
                     data_failed.push(match other {

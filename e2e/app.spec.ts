@@ -42,7 +42,8 @@ test("backs up a selected app and lists it in the archive", async ({ page }) => 
   await page.getByText("Spotify", { exact: true }).click();
   await expect(page.getByText("Estimated size: 23.8 MB")).toBeVisible();
   await page.getByRole("button", { name: "Back up 1 apps" }).click();
-  await expect(page.getByText("1 backed up, 0 failed")).toBeVisible();
+  await expect(page.getByRole("dialog").getByText("Completed", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "OK" }).click();
   await expect(page.getByRole("tab", { name: "Restore" })).toHaveAttribute("data-state", "active");
   await expect(page.getByText("com.spotify.music | ")).toBeVisible();
 });
@@ -152,7 +153,8 @@ test("restores a system settings snapshot", async ({ page }) => {
   await page.getByRole("dialog").getByRole("button", { name: "Restore" }).click();
   await page.getByRole("button", { name: "Confirm" }).click();
   await expect.poll(() => calls(page)).toContain("restore_system_backup");
-  await expect(page.getByText(/1 could not be applied/)).toBeVisible();
+  await expect(page.getByText("Completed with warnings")).toBeVisible();
+  await expect(page.getByText("global/private_dns_mode")).toBeVisible();
 });
 
 test("stays quiet when the phone has no backups", async ({ page }) => {
@@ -166,6 +168,7 @@ test("asks whether to restore saved permissions", async ({ page }) => {
   await openModule(page, "Backup");
   await page.getByText("Spotify", { exact: true }).click();
   await page.getByRole("button", { name: "Back up 1 apps" }).click();
+  await page.getByRole("button", { name: "OK" }).click();
   await expect(page.getByText("com.spotify.music | ")).toBeVisible();
 
   await page.getByRole("button", { name: "Restore", exact: true }).click();
@@ -181,4 +184,27 @@ test("asks whether to restore saved permissions", async ({ page }) => {
       ).__calls.find((c) => c.cmd === "start_restore")?.args.options,
   );
   expect(restore).toMatchObject({ restorePermissions: false });
+});
+
+test("asks about a phone's backup, follows it and shows how it ended", async ({ page }) => {
+  await page.goto("/?scenario=phonerequest");
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.getByText("The phone Pixel 7 asks for a backup")).toBeVisible();
+  await expect(dialog.getByText(/Closes by itself in 1:5\d|2:00/)).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(dialog.getByText("The phone Pixel 7 asks for a backup")).toBeVisible();
+  await dialog.getByRole("button", { name: "This time only" }).click();
+  await expect(dialog.getByText("App backup")).toBeVisible();
+  await expect(dialog.getByText("1 / 2")).toBeVisible();
+  await expect(dialog.getByText("Completed with warnings")).toBeVisible();
+  await expect(dialog.getByText("App data was not backed up.")).toBeVisible();
+  await dialog.getByRole("button", { name: "OK" }).click();
+  await expect(dialog).toHaveCount(0);
+});
+
+test("measures the speed from the wireless module", async ({ page }) => {
+  await page.goto("/");
+  await openModule(page, "Wireless");
+  await page.getByRole("button", { name: "Start test" }).click();
+  await expect(page.getByText("21.0 MB/s (168 Mbit/s)")).toBeVisible();
 });

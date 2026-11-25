@@ -76,6 +76,49 @@ const state = {
 
 (window as unknown as { __calls: typeof state.calls }).__calls = state.calls;
 
+const ask = {
+  phone: "ABC123",
+  model: "Pixel 7",
+  batch: "b1",
+  kind: "app",
+  names: ["com.spotify.music"],
+  count: 2,
+  data: true,
+  obb: false,
+  externalData: false,
+  seconds: 120,
+};
+
+/** What the backend tells about a phone's group of two apps, the second with a warning. */
+async function phoneBackup() {
+  const pause = () => new Promise((done) => setTimeout(done, 400));
+  const job = {
+    phone: ask.phone,
+    model: ask.model,
+    batch: ask.batch,
+    size: 2,
+    kind: "app",
+    error: null,
+    reason: null,
+  };
+  for (const [index, name] of ["com.spotify.music", "org.mozilla.firefox"].entries()) {
+    const item = { ...job, index, id: `r${index}`, names: [name] };
+    await emit("phone-job-event", { ...item, state: "running", notes: [] });
+    await emit("task-progress", {
+      taskId: `phone-r${index}`,
+      state: "running",
+      stage: "apk",
+      item: name,
+      current: 5,
+      total: 10,
+    });
+    await pause();
+    const notes = index === 1 ? ["data_skipped"] : [];
+    await emit("phone-job-event", { ...item, state: "done", notes });
+  }
+  await emit("phone-batch-end", { ...job, reason: "finished", detail: "" });
+}
+
 const handlers: Record<string, (args: Args) => unknown> = {
   list_devices: () => (scenario === "nodevice" ? [] : [device]),
   check_device_root: () => scenario !== "noroot",
@@ -191,6 +234,12 @@ const handlers: Record<string, (args: Args) => unknown> = {
   apply_debloat: (a) =>
     (a.entries as { package: string }[]).map((e) => ({ package: e.package, error: null })),
   wireless_saved: () => [],
+  phone_activity: () => ({ asks: scenario === "phonerequest" ? [ask] : [], jobs: [] }),
+  answer_phone_request: () => {
+    void phoneBackup();
+    return true;
+  },
+  start_speed_test: () => ({ toPc: 10.5, toPhone: 21 }),
   "plugin:app|version": () => "0.2.0",
   "plugin:notification|is_permission_granted": () => false,
   "plugin:notification|request_permission": () => "denied",

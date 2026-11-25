@@ -39,7 +39,6 @@
     "more": "and {{count}} more",
     "later": "Not now",
     "pull": "Copy to PC",
-    "done": "{{ok}} backups copied, {{failed}} failed.",
     "kind": {
       "messages": "Messages",
       "calls": "Call logs",
@@ -50,8 +49,7 @@
     "deleteTitle": "Remove the copies on the phone?",
     "deleteBody": "{{count}} backups are now on this PC and were checked. Delete the copies on the phone? This cannot be undone.",
     "keep": "Keep on phone",
-    "delete": "Delete from phone",
-    "deleted": "{{ok}} deleted from the phone, {{failed}} failed."
+    "delete": "Delete from phone"
   },
   "tray": {
     "show": "Show EasyADB",
@@ -159,7 +157,10 @@
     "not_found": "Not found.",
     "no_space": "There is not enough free space on this PC.",
     "protected": "This package is protected and cannot be disabled or removed.",
-    "internal": "Unexpected error."
+    "internal": "Unexpected error.",
+    "busy": "Another job runs on this phone.",
+    "phone_rejected": "Rejected on the phone.",
+    "phone_expired": "Nobody answered on the phone within 2 minutes."
   },
   "task": {
     "cancel": "Cancel",
@@ -178,7 +179,12 @@
       "push": "Uploading",
       "permissions": "Granting permissions",
       "system": "Applying settings",
-      "files": "Copying files"
+      "files": "Copying files",
+      "prepare": "Preparing",
+      "speed": "Measuring",
+      "phone_wait": "Handed to the phone",
+      "phone_open": "Opening EasyAndroid on the phone",
+      "phone_approval": "Waiting for approval on the phone"
     }
   },
   "notify": {
@@ -247,7 +253,6 @@
     "start": "Back up {{count}} apps",
     "estimate": "Estimated size: {{size}}",
     "location": "Backups are saved to {{path}}",
-    "result": "{{ok}} backed up, {{failed}} failed",
     "systemHint": "System apps usually cannot be installed on another device.",
     "empty": "No apps found",
     "archive": {
@@ -263,7 +268,6 @@
       "imported": "Backup imported",
       "restoreSelected": "Restore {{count}} selected",
       "batchConfirm": "Restore {{count}} backups to the device? Apps are installed; where a backup has data and root is available, the app data is replaced.",
-      "batchDone": "{{ok}} restored, {{failed}} failed",
       "batchPermissions": "Also grant saved permissions"
     },
     "system": {
@@ -278,8 +282,7 @@
       "note": "Only common preferences such as screen timeout, font size and dark mode are applied. Identity, security and SIM settings are never copied.",
       "confirm": "Apply these settings to the device? Their current values are replaced.",
       "start": "Restore",
-      "done": "{{count}} settings applied.",
-      "failed": "{{count}} could not be applied: {{items}}"
+      "done": "{{count}} settings applied."
     },
     "restore": {
       "title": "Restore {{name}}",
@@ -288,7 +291,6 @@
       "dataConfirm": "Restoring app data replaces the current data of {{name}}. Continue?",
       "verify": "Verify SHA-256 before restoring",
       "start": "Restore",
-      "done": "{{name}} restored",
       "permissions": "Grant the app's saved permissions ({{count}})",
       "report": {
         "noRoot": "{{name}}: no root or root was denied. The app was installed, its data was not restored.",
@@ -297,7 +299,6 @@
         "special": "{{name}}: {{count}} special access settings could not be restored."
       }
     },
-    "dataSkipped": "{{name}}: no root or root was denied. The app was backed up, its data was not.",
     "root": {
       "checking": "Checking root...",
       "available": "Root available: app data can be copied.",
@@ -307,13 +308,11 @@
     "folders": {
       "hint": "Streams folders of the phone straight to this PC without using space on the phone. The Android folder and the backup folder are never included.",
       "start": "Back up {{count}} folders",
-      "done": "Folders backed up.",
       "empty": "No folders found"
     },
     "fileSets": {
       "title": "File backups",
-      "send": "Send to phone",
-      "sent": "Sent to the phone. Restore it in EasyAndroid."
+      "send": "Send to phone"
     },
     "phoneData": {
       "title": "Made by the phone",
@@ -528,20 +527,116 @@
       "title": "Trusted phones",
       "empty": "No phone is trusted yet.",
       "forget": "Forget",
-      "hint": "A trusted phone can ask EasyADB for backups without a prompt."
+      "hint": "A trusted phone can ask EasyADB for backups without a prompt.",
+      "neverTitle": "Never asked about",
+      "askAgain": "Ask again"
     }
   },
-  "phoneRequest": {
+  "trustPhone": {
+    "title": "Trust this phone?",
+    "body": "EasyAndroid on this phone can ask this PC for backup and file jobs. Trusted phones start those jobs without asking. Speed tests always ask.",
+    "yes": "Trust",
+    "no": "Not now",
+    "never": "Never ask"
+  },
+  "job": {
+    "title": {
+      "app": "App backup",
+      "folders": "Folder backup",
+      "pull": "Copying backups from the phone",
+      "speed": "Transfer speed test",
+      "phoneData": "Backup made by the phone",
+      "restore": "Restore",
+      "systemRestore": "System settings restore",
+      "push": "Sending a backup to the phone",
+      "deleteCopies": "Deleting copies on the phone"
+    },
+    "running": "Jobs in progress",
+    "request": "Phone request",
+    "position": "{{index}} / {{size}}",
+    "amount": "{{percent}}% ({{done}} of {{total}})",
+    "rate": "{{rate}} MB/s",
+    "left": "about {{time}} left",
+    "elapsed": "Elapsed {{time}}",
+    "took": "Took {{time}}",
+    "cancelling": "Cancelling...",
+    "more": "and {{count}} more",
+    "missing": "{{count}} not tried",
+    "retry": "Retry the failed ones",
+    "ok": "OK",
+    "kept": "{{count}} finished backups were kept. Only the unfinished one was removed.",
+    "state": {
+      "waiting": "Not tried",
+      "running": "In progress",
+      "done": "Done",
+      "warning": "Done with a warning",
+      "failed": "Failed",
+      "cancelled": "Cancelled"
+    },
+    "outcome": {
+      "done": "Completed",
+      "warning": "Completed with warnings",
+      "incomplete": "Not completed",
+      "cancelled": "Cancelled",
+      "rejected": "Not started"
+    },
+    "reason": {
+      "finished": "Finished.",
+      "phone": "Cancelled on the phone.",
+      "pc": "Cancelled on this PC.",
+      "rejected": "Rejected on this PC.",
+      "expired": "Nobody answered within 2 minutes.",
+      "gone": "The phone stopped asking.",
+      "disconnected": "The connection to the phone was lost.",
+      "invalid": "The request could not be accepted."
+    },
+    "note": {
+      "dataSkipped": "App data was not backed up.",
+      "dataFailed": "App data could not be read: {{detail}}"
+    }
+  },
+  "ask": {
     "title": "The phone {{model}} asks for a backup",
-    "appBody": "Back up {{name}} to this PC.",
-    "foldersBody": "Stream {{count}} folders to this PC.",
-    "pullBody": "Copy {{count}} backups from the phone to this PC.",
-    "trustHint": "Trust this phone to stop being asked. A trusted phone can start backups on this PC on its own. You can undo this in Settings.",
+    "speedTitle": "The phone {{model}} wants to start a Wi-Fi transfer speed test",
+    "body": {
+      "app": "Back up {{count}} apps to this PC.",
+      "folders": "Stream {{count}} folders to this PC.",
+      "pull": "Copy {{count}} backups from the phone to this PC.",
+      "speed": "Measure the transfer speed with {{count}} MB each way."
+    },
+    "includes": "Includes: {{list}}",
+    "option": {
+      "apk": "app",
+      "obb": "OBB",
+      "data": "app data",
+      "external": "Android/data"
+    },
+    "trustHint": "Trust this phone to not be asked again. A trusted phone can start backups on this PC by itself. You can undo this in Settings.",
     "reject": "Reject",
     "once": "This time only",
     "trust": "Trust this phone",
-    "done": "Backup of {{what}} finished.",
-    "whatFolders": "folders",
-    "whatPull": "phone backups"
+    "startSpeed": "Start test",
+    "left": "Closes by itself in {{time}}",
+    "late": "The phone was no longer waiting."
+  },
+  "speed": {
+    "title": "Transfer speed test",
+    "intro": "Sends 32 MB each way between this PC and the selected phone, over the connection adb uses now.",
+    "start": "Start test",
+    "to_pc": "Phone to PC",
+    "to_phone": "PC to phone",
+    "waiting": "Waiting",
+    "value": "{{mb}} MB/s ({{mbit}} Mbit/s)",
+    "link": {
+      "usb": "USB",
+      "wifi": "Wi-Fi",
+      "emulator": "Emulator"
+    }
+  },
+  "quit": {
+    "title": "Jobs are running",
+    "body": "Quitting cancels them. What is not finished is removed.",
+    "stay": "Stay",
+    "leave": "Cancel them and quit"
   }
 }

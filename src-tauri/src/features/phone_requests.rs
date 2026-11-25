@@ -6,7 +6,7 @@
 
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use serde::{Deserialize, Serialize};
 use specta::Type;
@@ -15,12 +15,15 @@ use tauri_specta::Event;
 
 use crate::adb::parse::DeviceState;
 use crate::adb::{AdbRunner, Device, shell};
+use crate::awake::Awake;
 use crate::error::{AppError, AppResult, ErrorCode};
-use crate::events::{PhoneJobEvent, PhoneRequestAsk, TaskState};
+use crate::events::{PhoneBatchEnd, PhoneJobEvent, PhoneRequestAsk, TaskState};
 use crate::features::backup::create::{self, BackupOptions, Job};
 use crate::features::backup::{folders, phone};
 use crate::features::device::{self, EASYANDROID_PACKAGE};
+use crate::features::phone_batches::{Book, EndReason, Step};
 use crate::features::settings::backup_root;
+use crate::features::speed;
 use crate::features::system_backup;
 use crate::state::{AppState, blocking};
 use crate::store;
@@ -34,6 +37,12 @@ const MAX_AGE: u64 = 600;
 const POLL_IDLE: Duration = Duration::from_secs(3);
 const POLL_BUSY: Duration = Duration::from_secs(1);
 const TRUSTED_KEY: &str = "trustedPhones";
+/// Phones whose trust question the user does not want to see again.
+const NEVER_ASK_KEY: &str = "neverAskPhones";
+const PC_ID_KEY: &str = "pcId";
+const MAX_COUNT: u32 = 1000;
+/// How many names a question or a progress window lists.
+const SHOWN_NAMES: usize = 5;
 
 #[derive(Debug, Clone, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -59,6 +68,18 @@ pub struct Request {
     /// System snapshot files (`system_*.json`) for `pull`.
     #[serde(default)]
     pub system: Vec<String>,
+    /// How much to send each way for `speed`.
+    #[serde(default)]
+    pub megabytes: u32,
+    /// The requests of one tap on the phone share this. Empty means a group of its own.
+    #[serde(default)]
+    pub batch: String,
+    /// Place of this request in its group, from 0.
+    #[serde(default)]
+    pub index: u32,
+    /// How many requests the group has.
+    #[serde(default)]
+    pub size: u32,
 }
 
 /// What a checked request asks for.
@@ -73,6 +94,7 @@ pub enum Work {
         ids: Vec<String>,
         system: Vec<String>,
     },
+    Speed(u32),
 }
 
 fn is_request_id(id: &str) -> bool {
@@ -80,16 +102,36 @@ fn is_request_id(id: &str) -> bool {
 }
 
 impl Request {
+    pub fn batch(&self) -> &str {
+        if self.batch.is_empty() {
+            &self.id
+        } else {
+            &self.batch
+        }
+    }
+
+    pub fn size(&self) -> u32 {
+        self.size.max(1)
+    }
+
+    /// A request that waited on the phone too long is not carried out: nobody expects it anymore.
+    pub fn check_age(&self, now: u64) -> AppResult<()> {
+        if now.saturating_sub(self.created) > MAX_AGE || self.created > now + 60 {
+            return Err(AppError::invalid_input("stale request"));
+        }
+        Ok(())
+    }
+
     /// Checks everything the phone sent before any of it reaches a command line.
-    pub fn check(&self, now: u64) -> AppResult<Work> {
+    pub fn check(&self) -> AppResult<Work> {
         if self.format != "easyandroid-request" || self.version != PROTOCOL {
             return Err(AppError::new(ErrorCode::BackupInvalid, self.format.clone()));
         }
         if !is_request_id(&self.id) {
             return Err(AppError::invalid_input(self.id.clone()));
         }
-        if now.saturating_sub(self.created) > MAX_AGE || self.created > now + 60 {
-            return Err(AppError::invalid_input("stale request"));
+        if !is_request_id(self.batch()) || self.size() > MAX_COUNT || self.index >= self.size() {
+            return Err(AppError::invalid_input("batch"));
         }
         match self.kind.as_str() {
             "app" => {
@@ -116,6 +158,13 @@ impl Request {
                     system: self.system.clone(),
                 })
             }
+            "speed" => {
+                if (1..=speed::MAX_MEGABYTES).contains(&self.megabytes) {
+                    Ok(Work::Speed(self.megabytes))
+                } else {
+                    Err(AppError::invalid_input("megabytes"))
+                }
+            }
             other => Err(AppError::invalid_input(other)),
         }
     }
@@ -124,8 +173,19 @@ impl Request {
         match self.kind.as_str() {
             "folders" => self.names.len() as u32,
             "pull" => (self.ids.len() + self.system.len()) as u32,
-            _ => 1,
+            "speed" => self.megabytes,
+            _ => self.size(),
         }
+    }
+
+    /// What the request is about, for people: folders, backups or the package.
+    fn names(&self) -> Vec<String> {
+        let all = match self.kind.as_str() {
+            "app" => vec![self.package.clone()],
+            "folders" => self.names.clone(),
+            _ => self.ids.iter().chain(&self.system).cloned().collect(),
+        };
+        all.into_iter().take(SHOWN_NAMES).collect()
     }
 }
 
@@ -136,6 +196,9 @@ pub struct Poll {
     pub phone: String,
     pub request: Option<String>,
     pub cancel: Option<String>,
+    /// The PC that took the request that runs, and the request itself.
+    pub owner: Option<String>,
+    pub running: Option<String>,
 }
 
 /// Reads the output of [`poll_script`]. `None` means EasyAndroid is not on the phone.
@@ -153,6 +216,8 @@ pub fn parse_poll(out: &str) -> Option<Poll> {
             "phone" => poll.phone = value.to_string(),
             "request" if !value.is_empty() => poll.request = Some(value.to_string()),
             "cancel" if !value.is_empty() => poll.cancel = Some(value.to_string()),
+            "owner" if !value.is_empty() => poll.owner = Some(value.to_string()),
+            "running" if !value.is_empty() => poll.running = Some(value.to_string()),
             _ => {}
         }
     };
@@ -185,8 +250,10 @@ fn poll_script(status: Option<&str>) -> String {
          mkdir -p {BOX}; chmod 0770 {BOX}; \
          echo \"$PROTOCOL $(date +%s)\" > {BOX}/pc.tmp && mv {BOX}/pc.tmp {BOX}/pc; {publish} \
          echo @@now; date +%s; echo @@phone; getprop ro.serialno; \
-         echo @@request; cat {BOX}/request.json 2>/dev/null; \
-         echo @@cancel; cat {BOX}/cancel 2>/dev/null; echo @@end"
+         echo @@request; cat {BOX}/request.json 2>/dev/null; echo; \
+         echo @@cancel; cat {BOX}/cancel 2>/dev/null; echo; \
+         echo @@owner; cat {BOX}/request.owner 2>/dev/null; echo; \
+         echo @@running; cat {BOX}/request.running 2>/dev/null; echo; echo @@end"
     )
     .replace("$PROTOCOL", &PROTOCOL.to_string())
 }
@@ -215,23 +282,100 @@ struct Latest {
 
 struct Active {
     id: String,
+    /// The connection the job runs over. Its status is only written there.
+    serial: String,
     task: Arc<TaskHandle>,
     latest: Arc<Mutex<Latest>>,
-}
-
-/// An untrusted phone's request, waiting for the user.
-#[derive(Clone, Copy, PartialEq, Eq)]
-enum Ask {
-    Pending,
-    Rejected,
-    Once,
-    Trust,
+    /// Who cancelled it, if anyone did.
+    cancelled_by: Arc<Mutex<Option<EndReason>>>,
+    event: PhoneJobEvent,
 }
 
 #[derive(Default)]
 pub struct Requests {
     active: Mutex<HashMap<String, Active>>,
-    asked: Mutex<HashMap<String, Ask>>,
+    book: Mutex<Book>,
+    asks: Mutex<HashMap<String, PhoneRequestAsk>>,
+    /// Final statuses that could not be written because the phone was away.
+    unsent: Mutex<HashMap<String, String>>,
+    /// Which phone an adb serial belongs to.
+    phones: Mutex<HashMap<String, String>>,
+    /// Jobs started on this PC, by adb serial.
+    held: Arc<Mutex<HashMap<String, u32>>>,
+}
+
+/// A job that this PC started on a phone. Requests of that phone wait until it is dropped.
+pub struct Hold {
+    held: Arc<Mutex<HashMap<String, u32>>>,
+    serial: String,
+    _awake: Awake,
+}
+
+impl Drop for Hold {
+    fn drop(&mut self) {
+        let mut held = self.held.lock().unwrap();
+        if let Some(n) = held.get_mut(&self.serial) {
+            *n -= 1;
+            if *n == 0 {
+                held.remove(&self.serial);
+            }
+        }
+    }
+}
+
+impl Requests {
+    /// Marks the phone as busy with a job of this PC. Refused while the phone's own job runs.
+    pub fn hold(&self, serial: &str) -> AppResult<Hold> {
+        let phone = self.phones.lock().unwrap().get(serial).cloned();
+        if let Some(phone) = phone {
+            if self.active.lock().unwrap().contains_key(&phone) {
+                return Err(AppError::new(ErrorCode::Busy, ""));
+            }
+        }
+        *self
+            .held
+            .lock()
+            .unwrap()
+            .entry(serial.to_string())
+            .or_default() += 1;
+        Ok(Hold {
+            held: self.held.clone(),
+            serial: serial.to_string(),
+            _awake: Awake::start(),
+        })
+    }
+
+    /// A job of this PC runs on the phone, over whichever connection.
+    fn is_held(&self, phone: &str) -> bool {
+        let phones = self.phones.lock().unwrap();
+        self.held
+            .lock()
+            .unwrap()
+            .keys()
+            .any(|serial| phones.get(serial).is_some_and(|p| p == phone))
+    }
+}
+
+/// The name this PC goes by on a phone, made once.
+pub fn pc_id(app: &AppHandle) -> String {
+    let saved: String = store::load(app, PC_ID_KEY);
+    if is_request_id(&saved) {
+        return saved;
+    }
+    use std::hash::{BuildHasher, Hasher};
+    let part = || {
+        // `RandomState` is seeded from the system's random source.
+        std::collections::hash_map::RandomState::new()
+            .build_hasher()
+            .finish()
+    };
+    let id = format!("{:016x}{:016x}", part(), part());
+    let _ = store::save(app, PC_ID_KEY, &id);
+    id
+}
+
+pub fn pc_name() -> String {
+    std::env::var("COMPUTERNAME").unwrap_or_else(|_| "PC".into())
 }
 
 #[derive(Debug, Clone, Copy, Deserialize, Type)]
@@ -289,65 +433,132 @@ pub fn forget_trusted_phone(app: AppHandle, phone: String) -> AppResult<()> {
     store::save(&app, TRUSTED_KEY, &list)
 }
 
-/// The user's answer to a [`PhoneRequestAsk`].
+/// The user's answer to a [`PhoneRequestAsk`]. False when the question had ended before.
 #[tauri::command]
 #[specta::specta]
 pub fn answer_phone_request(
     app: AppHandle,
     state: State<'_, AppState>,
     phone: String,
-    id: String,
+    batch: String,
     decision: Decision,
-) -> AppResult<()> {
-    let ask = match decision {
-        Decision::Reject => Ask::Rejected,
-        Decision::Once => Ask::Once,
-        Decision::Trust => {
-            let mut list = trusted(&app);
-            if !list.contains(&phone) {
-                list.push(phone.clone());
-                store::save(&app, TRUSTED_KEY, &list)?;
-            }
-            Ask::Trust
-        }
-    };
-    state
+) -> AppResult<bool> {
+    let accept = !matches!(decision, Decision::Reject);
+    let open = state
         .requests
-        .asked
+        .book
         .lock()
         .unwrap()
-        .insert(format!("{phone}/{id}"), ask);
-    Ok(())
+        .answer(&phone, &batch, accept, Instant::now());
+    if open && matches!(decision, Decision::Trust) {
+        trust_phone(app, phone.clone())?;
+    }
+    state
+        .requests
+        .asks
+        .lock()
+        .unwrap()
+        .remove(&format!("{phone}/{batch}"));
+    Ok(open)
+}
+
+/// What is going on between the phones and this PC, for a window that was just opened.
+#[derive(Debug, Clone, Serialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct PhoneActivity {
+    pub asks: Vec<PhoneRequestAsk>,
+    pub jobs: Vec<PhoneJobEvent>,
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn phone_activity(state: State<'_, AppState>) -> PhoneActivity {
+    let asks = state.requests.asks.lock().unwrap();
+    let open = state
+        .requests
+        .book
+        .lock()
+        .unwrap()
+        .asking(Instant::now())
+        .into_iter()
+        .filter_map(|(b, left)| {
+            let mut ask = asks.get(&format!("{}/{}", b.phone, b.id))?.clone();
+            ask.seconds = left;
+            Some(ask)
+        })
+        .collect();
+    let jobs = state
+        .requests
+        .active
+        .lock()
+        .unwrap()
+        .values()
+        .map(|a| a.event.clone())
+        .collect();
+    PhoneActivity { asks: open, jobs }
 }
 
 /// Starts the loop that watches every connected phone.
 pub fn start(app: AppHandle) {
     std::thread::spawn(move || {
+        let pc = pc_id(&app);
         loop {
-            let busy = visit_all(&app);
+            let busy = visit_all(&app, &pc);
             std::thread::sleep(if busy { POLL_BUSY } else { POLL_IDLE });
         }
     });
 }
 
-/// Returns true while a job runs, so that the loop looks more often.
-fn visit_all(app: &AppHandle) -> bool {
+/// Returns true while something goes on, so that the loop looks more often.
+fn visit_all(app: &AppHandle, pc: &str) -> bool {
     let state = app.state::<AppState>();
-    let Ok(runner) = state.runner() else {
-        return false;
-    };
-    let Ok(devices) = device::list(&*runner) else {
-        return false;
-    };
-    let mut seen: Vec<String> = Vec::new();
-    for entry in devices.iter().filter(|d| d.state == DeviceState::Device) {
-        // The same phone can show up over USB and Wi-Fi.
-        let Some(phone) = visit(app, &runner, &entry.serial, &seen) else {
-            continue;
-        };
-        seen.push(phone);
+    if let Ok(runner) = state.runner() {
+        if let Ok(devices) = device::list(&*runner) {
+            let mut seen: Vec<String> = Vec::new();
+            for entry in devices.iter().filter(|d| d.state == DeviceState::Device) {
+                // The same phone can show up over USB and Wi-Fi.
+                if let Some(phone) = visit(app, &runner, &entry.serial, pc, &seen) {
+                    seen.push(phone);
+                }
+            }
+        }
     }
-    !state.requests.active.lock().unwrap().is_empty()
+    let requests = &state.requests;
+    let ended = {
+        let active = requests.active.lock().unwrap();
+        requests
+            .book
+            .lock()
+            .unwrap()
+            .sweep(&|phone| active.contains_key(phone), Instant::now())
+    };
+    for (phone, batch, reason) in ended {
+        end_batch(app, &phone, &batch, reason, "");
+    }
+    !requests.active.lock().unwrap().is_empty() || requests.book.lock().unwrap().is_active()
+}
+
+/// Tells the frontend that a group of requests is over.
+fn end_batch(app: &AppHandle, phone: &str, batch: &str, reason: EndReason, detail: &str) {
+    let state = app.state::<AppState>();
+    state
+        .requests
+        .asks
+        .lock()
+        .unwrap()
+        .remove(&format!("{phone}/{batch}"));
+    let _ = PhoneBatchEnd {
+        phone: phone.into(),
+        batch: batch.into(),
+        reason,
+        detail: detail.into(),
+    }
+    .emit(app);
+}
+
+/// Removes the phone's cancel file, but only the one that names this request.
+fn clear_cancel(id: &str) -> String {
+    format!("[ \"$(cat {BOX}/cancel 2>/dev/null)\" = {id} ] && rm -f {BOX}/cancel; true")
 }
 
 /// One visit to one phone. Returns its `ro.serialno` when EasyAndroid is installed on it.
@@ -355,112 +566,216 @@ fn visit(
     app: &AppHandle,
     runner: &Arc<dyn AdbRunner>,
     serial: &str,
+    pc: &str,
     seen: &[String],
 ) -> Option<String> {
     let state = app.state::<AppState>();
+    let requests = &state.requests;
     let device = Device::new(&**runner, serial);
-    // The status of a running job rides along with the visit.
-    let running = {
-        let active = state.requests.active.lock().unwrap();
+    // The status of the job that runs over this connection rides along with the visit.
+    let status = {
+        let active = requests.active.lock().unwrap();
         active
-            .iter()
-            .find(|(_, a)| !a.latest.lock().unwrap().finished)
-            .map(|(phone, a)| (phone.clone(), a.id.clone(), a.latest.clone()))
+            .values()
+            .filter(|a| a.serial == serial)
+            .find_map(|a| {
+                let latest = a.latest.lock().unwrap();
+                (!latest.finished)
+                    .then(|| status_json(&a.id, "running", Some(&latest), None, vec![]))
+            })
     };
-    let status = running.as_ref().map(|(_, id, latest)| {
-        status_json(id, "running", Some(&latest.lock().unwrap()), None, vec![])
-    });
     let out = device.script(&poll_script(status.as_deref())).ok()?;
     let poll = parse_poll(&out)?;
+    requests
+        .phones
+        .lock()
+        .unwrap()
+        .insert(serial.to_string(), poll.phone.clone());
     if seen.contains(&poll.phone) {
         return Some(poll.phone);
     }
 
-    if let Some(active) = state.requests.active.lock().unwrap().get(&poll.phone) {
+    if let Some(active) = requests.active.lock().unwrap().get(&poll.phone) {
+        requests
+            .book
+            .lock()
+            .unwrap()
+            .visited(&poll.phone, None, None, Instant::now());
         if poll.cancel.as_deref() == Some(active.id.as_str()) {
+            active
+                .cancelled_by
+                .lock()
+                .unwrap()
+                .get_or_insert(EndReason::Phone);
             active.task.cancel();
         }
         return Some(poll.phone);
     }
-    if let Some(text) = &poll.request {
-        handle(app, runner, serial, &poll, text);
+    if let Some(json) = requests.unsent.lock().unwrap().remove(&poll.phone) {
+        publish(device, &json);
+        let _ = device.script(&format!("rm -f {BOX}/request.running {BOX}/request.owner"));
+    } else if let (Some(text), Some(owner)) = (&poll.running, &poll.owner) {
+        // This PC took the request and was closed before it ended.
+        if owner == pc {
+            if let Ok(request) = serde_json::from_str::<Request>(text) {
+                let json = status_json(
+                    &request.id,
+                    "failed",
+                    None,
+                    Some("interrupted".into()),
+                    vec![],
+                );
+                publish(device, &json);
+            }
+            let _ = device.script(&format!("rm -f {BOX}/request.running {BOX}/request.owner"));
+        }
+    }
+
+    let request = poll
+        .request
+        .as_ref()
+        .map(|text| serde_json::from_str::<Request>(text));
+    let id = match &request {
+        Some(Ok(r)) => Some(r.id.as_str()),
+        _ => None,
+    };
+    let ended = requests.book.lock().unwrap().visited(
+        &poll.phone,
+        id,
+        poll.cancel.as_deref(),
+        Instant::now(),
+    );
+    for (batch, reason) in ended {
+        if let Some(id) = poll.cancel.as_deref().filter(|id| is_request_id(id)) {
+            let _ = device.script(&clear_cancel(id));
+        }
+        end_batch(app, &poll.phone, &batch, reason, "");
+    }
+    // A request that the phone has cancelled already is not taken up again.
+    let cancelled = id.is_some() && id == poll.cancel.as_deref();
+    match request {
+        Some(Ok(request)) if !cancelled => handle(app, runner, serial, pc, &poll, request),
+        Some(Err(err)) => {
+            reject(device, "", "unreadable");
+            end_batch(app, &poll.phone, "", EndReason::Invalid, &err.to_string());
+        }
+        _ => {}
     }
     Some(poll.phone)
 }
 
-fn handle(app: &AppHandle, runner: &Arc<dyn AdbRunner>, serial: &str, poll: &Poll, text: &str) {
+fn reject(device: Device, id: &str, reason: &str) {
+    publish(
+        device,
+        &status_json(id, "rejected", None, Some(reason.into()), vec![]),
+    );
+    let _ = device.script(&format!("rm -f {BOX}/request.json"));
+}
+
+/// Tells the phone what its request waits for.
+fn wait(device: Device, id: &str, what: &str) {
+    let latest = Latest {
+        stage: what.into(),
+        ..Default::default()
+    };
+    publish(
+        device,
+        &status_json(id, "waiting", Some(&latest), None, vec![]),
+    );
+}
+
+fn handle(
+    app: &AppHandle,
+    runner: &Arc<dyn AdbRunner>,
+    serial: &str,
+    pc: &str,
+    poll: &Poll,
+    request: Request,
+) {
     let state = app.state::<AppState>();
+    let requests = &state.requests;
     let device = Device::new(&**runner, serial);
-    let reject = |id: &str, error: AppError| {
-        publish(
-            device,
-            &status_json(id, "rejected", None, Some(error.detail), vec![]),
-        );
-        let _ = device.script(&format!("rm -f {BOX}/request.json"));
-    };
-    let request: Request = match serde_json::from_str(text) {
-        Ok(request) => request,
-        Err(err) => {
-            reject("", AppError::new(ErrorCode::Parse, err.to_string()));
-            return;
+    let known = requests
+        .book
+        .lock()
+        .unwrap()
+        .knows(&poll.phone, request.batch(), &request.id);
+    let checked = request.check().and_then(|work| {
+        // The age only counts when the request is first seen; waiting here does not age it.
+        if !known {
+            request.check_age(poll.now)?;
         }
-    };
-    let work = match request.check(poll.now) {
+        Ok(work)
+    });
+    let work = match checked {
         Ok(work) => work,
         Err(err) => {
-            reject(&request.id, err);
+            let id = if is_request_id(&request.id) {
+                request.id.as_str()
+            } else {
+                ""
+            };
+            reject(device, id, &err.detail);
+            end_batch(app, &poll.phone, "", EndReason::Invalid, &err.detail);
             return;
         }
     };
 
-    let key = format!("{}/{}", poll.phone, request.id);
-    let known = trusted(app).contains(&poll.phone);
-    let decision = if known {
-        Some(Ask::Trust)
-    } else {
-        let mut asked = state.requests.asked.lock().unwrap();
-        match asked.get(&key).copied() {
-            None => {
-                asked.insert(key.clone(), Ask::Pending);
-                None
+    // A speed test always asks, even from a trusted phone: the user may not want one now.
+    let allowed = trusted(app).contains(&poll.phone) && !matches!(work, Work::Speed(_));
+    let step = requests.book.lock().unwrap().found(
+        &poll.phone,
+        request.batch(),
+        &request.id,
+        allowed,
+        requests.is_held(&poll.phone),
+        Instant::now(),
+    );
+    match step {
+        Step::Wait => return,
+        Step::Busy => return wait(device, &request.id, "busy"),
+        Step::Reject(reason) => {
+            let word = match reason {
+                EndReason::Expired => "expired",
+                EndReason::Rejected => "rejected",
+                _ => "ended",
+            };
+            reject(device, &request.id, word);
+            if reason == EndReason::Expired {
+                end_batch(app, &poll.phone, request.batch(), reason, "");
             }
-            Some(Ask::Pending) => return,
-            Some(answer) => Some(answer),
+            return;
         }
-    };
-    let Some(decision) = decision else {
-        publish(
-            device,
-            &status_json(&request.id, "waiting", None, None, vec![]),
-        );
-        crate::show_main_window(app);
-        let model = device
-            .shell(&["getprop", "ro.product.model"])
-            .unwrap_or_default();
-        let _ = PhoneRequestAsk {
-            phone: poll.phone.clone(),
-            model: model.trim().to_string(),
-            id: request.id.clone(),
-            kind: request.kind.clone(),
-            package: request.package.clone(),
-            count: request.count(),
+        Step::Ask => {
+            wait(device, &request.id, "approval");
+            let ask = PhoneRequestAsk {
+                phone: poll.phone.clone(),
+                model: model(device),
+                batch: request.batch().into(),
+                kind: request.kind.clone(),
+                names: request.names(),
+                count: request.count(),
+                data: request.data,
+                obb: request.obb,
+                external_data: request.external_data,
+                seconds: crate::features::phone_batches::ASK_WAIT.as_secs() as u32,
+            };
+            requests
+                .asks
+                .lock()
+                .unwrap()
+                .insert(format!("{}/{}", poll.phone, request.batch()), ask.clone());
+            crate::show_main_window(app);
+            let _ = ask.emit(app);
+            return;
         }
-        .emit(app);
-        return;
-    };
-    state.requests.asked.lock().unwrap().remove(&key);
-    if decision == Ask::Rejected {
-        reject(
-            &request.id,
-            AppError::new(ErrorCode::Cancelled, "rejected by the PC"),
-        );
-        return;
+        Step::Run => {}
     }
 
     // The move makes this PC the one that owns the request, even when the phone shows up twice.
     if device
         .script(&format!(
-            "mv {BOX}/request.json {BOX}/request.running && rm -f {BOX}/cancel"
+            "mv {BOX}/request.json {BOX}/request.running && printf %s {pc} > {BOX}/request.owner"
         ))
         .is_err()
     {
@@ -472,55 +787,80 @@ fn handle(app: &AppHandle, runner: &Arc<dyn AdbRunner>, serial: &str, poll: &Pol
         stage: "prepare".into(),
         ..Default::default()
     }));
-    state.requests.active.lock().unwrap().insert(
+    let cancelled_by = Arc::new(Mutex::new(None));
+    let event = PhoneJobEvent {
+        phone: poll.phone.clone(),
+        model: model(device),
+        batch: request.batch().into(),
+        index: request.index,
+        size: request.size(),
+        id: request.id.clone(),
+        kind: request.kind.clone(),
+        names: request.names(),
+        state: TaskState::Running,
+        error: None,
+        reason: None,
+        notes: vec![],
+    };
+    requests.active.lock().unwrap().insert(
         poll.phone.clone(),
         Active {
             id: request.id.clone(),
+            serial: serial.to_string(),
             task: task.clone(),
             latest: latest.clone(),
+            cancelled_by: cancelled_by.clone(),
+            event: event.clone(),
         },
     );
+    if request.index == 0 {
+        crate::show_main_window(app);
+    }
     let job = RunningJob {
         app: app.clone(),
         runner: runner.clone(),
         serial: serial.to_string(),
-        phone: poll.phone.clone(),
-        request,
+        event,
         work,
         task,
         task_id,
         latest,
+        cancelled_by,
+        _awake: Awake::start(),
     };
     std::thread::spawn(move || job.run());
+}
+
+fn model(device: Device) -> String {
+    device
+        .shell(&["getprop", "ro.product.model"])
+        .unwrap_or_default()
+        .trim()
+        .to_string()
 }
 
 struct RunningJob {
     app: AppHandle,
     runner: Arc<dyn AdbRunner>,
     serial: String,
-    phone: String,
-    request: Request,
+    /// The event that announced the job; its end is the same event with the outcome filled in.
+    event: PhoneJobEvent,
     work: Work,
     task: Arc<TaskHandle>,
     task_id: String,
     latest: Arc<Mutex<Latest>>,
+    cancelled_by: Arc<Mutex<Option<EndReason>>>,
+    _awake: Awake,
+}
+
+/// Why a failed job failed, as far as the connection goes.
+pub fn is_connected(device: Device) -> bool {
+    device.script("true").is_ok()
 }
 
 impl RunningJob {
-    fn event(&self, state: TaskState, error: Option<AppError>) {
-        let _ = PhoneJobEvent {
-            phone: self.phone.clone(),
-            id: self.request.id.clone(),
-            kind: self.request.kind.clone(),
-            package: self.request.package.clone(),
-            state,
-            error,
-        }
-        .emit(&self.app);
-    }
-
     fn run(self) {
-        self.event(TaskState::Running, None);
+        let _ = self.event.emit(&self.app);
         let device = Device::new(&*self.runner, &self.serial);
         let latest = self.latest.clone();
         let reporter = Reporter::new(self.app.clone(), &self.task_id).observed(Arc::new(
@@ -546,28 +886,68 @@ impl RunningJob {
                 vec![],
             ),
         };
+        let connected = is_connected(device);
+        let (phone, batch) = (&self.event.phone, &self.event.batch);
+        let requests = &app_state(&self.app).requests;
         {
             // The lock keeps a late progress update from overwriting the final status.
             let mut l = self.latest.lock().unwrap();
             l.finished = true;
-            publish(
-                device,
-                &status_json(&self.request.id, state, Some(&l), error, notes),
-            );
+            let json = status_json(&self.event.id, state, Some(&l), error, notes.clone());
+            if connected {
+                publish(device, &json);
+            } else {
+                // Without its end the phone would wait for this job as soon as it is back.
+                requests.unsent.lock().unwrap().insert(phone.clone(), json);
+            }
         }
-        let _ = device.script(&format!("rm -f {BOX}/request.running {BOX}/cancel"));
+        if connected {
+            let _ = device.script(&format!(
+                "rm -f {BOX}/request.running {BOX}/request.owner; {}",
+                clear_cancel(&self.event.id)
+            ));
+        }
 
-        let state = app_state(&self.app);
-        state.tasks.finish(&self.task_id);
-        state.requests.active.lock().unwrap().remove(&self.phone);
-        self.event(
-            match &result {
-                Ok(_) => TaskState::Done,
-                Err(e) if e.code == ErrorCode::Cancelled => TaskState::Cancelled,
-                Err(_) => TaskState::Failed,
-            },
-            result.err(),
-        );
+        app_state(&self.app).tasks.finish(&self.task_id);
+        let state = match &result {
+            Ok(_) => TaskState::Done,
+            Err(e) if e.code == ErrorCode::Cancelled => TaskState::Cancelled,
+            Err(_) => TaskState::Failed,
+        };
+        let reason = match state {
+            TaskState::Cancelled => {
+                Some((*self.cancelled_by.lock().unwrap()).unwrap_or(EndReason::Pc))
+            }
+            TaskState::Failed if !connected => Some(EndReason::Disconnected),
+            _ => None,
+        };
+        let last = self.event.index + 1 >= self.event.size;
+        let ended = match reason {
+            Some(EndReason::Disconnected) => None,
+            Some(reason) => Some(reason),
+            None => last.then_some(EndReason::Finished),
+        }
+        // The last one cannot be followed by anything, whatever happened to it.
+        .or(reason.filter(|_| last));
+        {
+            let mut book = requests.book.lock().unwrap();
+            book.touched(phone, batch, Instant::now());
+            if ended.is_some() {
+                book.end(phone, batch, Instant::now());
+            }
+        }
+        requests.active.lock().unwrap().remove(phone);
+        let _ = PhoneJobEvent {
+            state,
+            error: result.err(),
+            reason,
+            notes,
+            ..self.event.clone()
+        }
+        .emit(&self.app);
+        if let Some(reason) = ended {
+            end_batch(&self.app, phone, batch, reason, "");
+        }
     }
 
     /// Carries the request out. Returns the notes for the phone.
@@ -615,6 +995,10 @@ impl RunningJob {
                     reporter,
                 )?;
                 Ok(vec![])
+            }
+            Work::Speed(megabytes) => {
+                let speed = speed::measure(device, *megabytes, &self.task, reporter)?;
+                Ok(speed.notes())
             }
             Work::Pull { ids, system } => {
                 let outcomes = phone::pull(device, &root, ids, system, &self.task, reporter)?;
@@ -665,21 +1049,25 @@ pub fn merge_record(current: &str, entry: serde_json::Value) -> String {
     serde_json::to_string(&list[skip..]).unwrap_or_else(|_| "[]".into())
 }
 
-/// Lets the user cancel from the PC a job that the phone asked for.
+/// Lets the user cancel from the PC what the phone asked for, also between two of its requests.
 #[tauri::command]
 #[specta::specta]
-pub fn cancel_phone_job(state: State<'_, AppState>, phone: String) -> bool {
+pub fn cancel_phone_job(app: AppHandle, state: State<'_, AppState>, phone: String, batch: String) {
+    {
+        let active = state.requests.active.lock().unwrap();
+        if let Some(a) = active.get(&phone).filter(|a| a.event.batch == batch) {
+            a.cancelled_by.lock().unwrap().get_or_insert(EndReason::Pc);
+            a.task.cancel();
+            return;
+        }
+    }
     state
         .requests
-        .active
+        .book
         .lock()
         .unwrap()
-        .get(&phone)
-        .map(|a| {
-            a.task.cancel();
-            true
-        })
-        .unwrap_or(false)
+        .end(&phone, &batch, Instant::now());
+    end_batch(&app, &phone, &batch, EndReason::Pc, "");
 }
 
 #[tauri::command]
@@ -691,6 +1079,63 @@ pub async fn is_easyandroid_ready(state: State<'_, AppState>, serial: String) ->
         Ok(parse_poll(&out).is_some())
     })
     .await
+}
+
+/// For a phone with EasyAndroid that the PC does not trust yet: its id, which trust is kept by.
+#[tauri::command]
+#[specta::specta]
+pub async fn new_phone_to_trust(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    serial: String,
+) -> AppResult<Option<String>> {
+    let runner = state.runner()?;
+    let id = blocking(move || {
+        let device = Device::new(&*runner, &serial);
+        let out = device.script(&poll_script(None))?;
+        if parse_poll(&out).is_none() {
+            return Ok(None);
+        }
+        Ok(Some(
+            device
+                .shell(&["getprop", "ro.serialno"])?
+                .trim()
+                .to_string(),
+        ))
+    })
+    .await?;
+    let never: Vec<String> = store::load(&app, NEVER_ASK_KEY);
+    Ok(id.filter(|id| !trusted(&app).contains(id) && !never.contains(id)))
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn list_never_ask_phones(app: AppHandle) -> Vec<String> {
+    store::load(&app, NEVER_ASK_KEY)
+}
+
+/// Stops or resumes asking whether a phone should be trusted.
+#[tauri::command]
+#[specta::specta]
+pub fn never_ask_phone(app: AppHandle, phone: String, never: bool) -> AppResult<()> {
+    let mut list: Vec<String> = store::load(&app, NEVER_ASK_KEY);
+    list.retain(|p| *p != phone);
+    if never {
+        list.push(phone);
+    }
+    store::save(&app, NEVER_ASK_KEY, &list)
+}
+
+/// Adds a phone to the trusted list. Its requests start without asking after this.
+#[tauri::command]
+#[specta::specta]
+pub fn trust_phone(app: AppHandle, phone: String) -> AppResult<()> {
+    let mut list = trusted(&app);
+    if !list.contains(&phone) {
+        list.push(phone);
+        store::save(&app, TRUSTED_KEY, &list)?;
+    }
+    Ok(())
 }
 
 #[cfg(test)]
@@ -710,7 +1155,7 @@ mod tests {
             "app",
             r#","package":"com.a.b","data":true,"externalData":true"#,
         );
-        let Work::App { package, options } = r.check(1005).unwrap() else {
+        let Work::App { package, options } = r.check().unwrap() else {
             panic!("not an app request");
         };
         assert_eq!(package, "com.a.b");
@@ -721,35 +1166,92 @@ mod tests {
     fn refuses_what_could_reach_a_shell() {
         for bad in ["com.a; reboot", "nodots", "", "com.a b"] {
             let r = request("app", &format!(r#","package":"{bad}""#));
-            assert!(r.check(1005).is_err(), "{bad}");
+            assert!(r.check().is_err(), "{bad}");
         }
         let folders = request("folders", r#","names":["DCIM","../etc"]"#);
-        assert!(folders.check(1005).is_err());
+        assert!(folders.check().is_err());
         let pull = request("pull", r#","ids":["a_1","x;y"]"#);
-        assert!(pull.check(1005).is_err());
+        assert!(pull.check().is_err());
         let system = request("pull", r#","system":["../system_1.json"]"#);
-        assert!(system.check(1005).is_err());
+        assert!(system.check().is_err());
         let ok = request(
             "pull",
             r#","ids":["a_1"],"system":["system_20260101-100000.json"]"#,
         );
-        assert!(matches!(ok.check(1005), Ok(Work::Pull { .. })));
-        assert!(request("pull", r#","ids":[]"#).check(1005).is_err());
-        assert!(request("wipe", "").check(1005).is_err());
+        assert!(matches!(ok.check(), Ok(Work::Pull { .. })));
+        assert!(request("pull", r#","ids":[]"#).check().is_err());
+        assert!(request("wipe", "").check().is_err());
+        assert!(request("speed", "").check().is_err());
+        assert!(request("speed", r#","megabytes":257"#).check().is_err());
+        assert_eq!(
+            request("speed", r#","megabytes":32"#).check().unwrap(),
+            Work::Speed(32)
+        );
     }
 
     #[test]
     fn refuses_stale_future_and_foreign_requests() {
         let r = request("pull", r#","ids":["a_1"]"#);
-        assert!(r.check(1000 + MAX_AGE).is_ok());
-        assert!(r.check(1000 + MAX_AGE + 1).is_err());
-        assert!(r.check(900).is_err());
+        assert!(r.check_age(1000 + MAX_AGE).is_ok());
+        assert!(r.check_age(1000 + MAX_AGE + 1).is_err());
+        assert!(r.check_age(900).is_err());
         let mut other = r.clone();
         other.format = "something".into();
-        assert!(other.check(1005).is_err());
+        assert!(other.check().is_err());
         let mut bad_id = r.clone();
         bad_id.id = "a/b".into();
-        assert!(bad_id.check(1005).is_err());
+        assert!(bad_id.check().is_err());
+    }
+
+    #[test]
+    fn a_request_without_a_group_is_a_group_of_one() {
+        let r = request("pull", r#","ids":["a_1"]"#);
+        assert_eq!((r.batch(), r.index, r.size()), ("a-1", 0, 1));
+        assert!(r.check().is_ok());
+        let third = request("pull", r#","ids":["a_1"],"batch":"g-1","index":2,"size":3"#);
+        assert_eq!((third.batch(), third.size()), ("g-1", 3));
+        assert!(third.check().is_ok());
+        for bad in [
+            r#","batch":"g;1""#,
+            r#","batch":"g","index":3,"size":3"#,
+            r#","batch":"g","index":0,"size":1001"#,
+        ] {
+            let r = request("pull", &format!(r#","ids":["a_1"]{bad}"#));
+            assert!(r.check().is_err(), "{bad}");
+        }
+    }
+
+    #[test]
+    fn only_the_cancel_of_this_request_is_removed() {
+        let script = clear_cancel("a-1");
+        assert!(script.contains("= a-1 ] && rm -f"));
+    }
+
+    #[test]
+    fn a_held_phone_is_busy_until_the_job_ends() {
+        let requests = Requests::default();
+        requests
+            .phones
+            .lock()
+            .unwrap()
+            .extend([("usb".into(), "P".into()), ("wifi".into(), "P".into())]);
+        let first = requests.hold("usb").unwrap();
+        let second = requests.hold("wifi").unwrap();
+        assert!(requests.is_held("P") && !requests.is_held("Q"));
+        drop(first);
+        assert!(requests.is_held("P"));
+        drop(second);
+        assert!(!requests.is_held("P"));
+    }
+
+    #[test]
+    fn reads_who_took_the_running_request() {
+        let out =
+            "@@now\n5\n@@phone\nP\n@@request\n\n@@cancel\n\n@@owner\npc1\n@@running\n{}\n@@end\n";
+        let poll = parse_poll(out).unwrap();
+        assert_eq!(poll.owner.as_deref(), Some("pc1"));
+        assert_eq!(poll.running.as_deref(), Some("{}"));
+        assert_eq!(poll.request, None);
     }
 
     #[test]
@@ -774,6 +1276,8 @@ mod tests {
         assert!(plain.starts_with("pm path com.aybrkaknc.easyandroid"));
         assert!(!plain.contains("status.json"));
         assert!(plain.contains("pc.tmp") && plain.contains("@@request"));
+        // A request file without a final newline must not run into the next marker.
+        assert!(plain.contains("request.json 2>/dev/null; echo;"));
         let with = poll_script(Some("{\"id\":\"it's\"}"));
         assert!(with.contains("status.json"));
         assert!(with.contains("it'\\''s"));

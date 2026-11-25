@@ -4,12 +4,11 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
 import { commands, type DeviceEntry } from "../../bindings";
-import { useFeedback } from "../../shared/hooks/useFeedback";
 import { useSelection } from "../../shared/hooks/useSelection";
-import { useTask } from "../../shared/hooks/useTask";
+import { runJob } from "../../shared/jobs/store";
 import { Button } from "../../shared/ui/Button";
 import { Checkbox } from "../../shared/ui/Controls";
-import { EmptyState, Spinner, TaskBar } from "../../shared/ui/Feedback";
+import { EmptyState, Spinner } from "../../shared/ui/Feedback";
 
 const STORAGE = "/storage/emulated/0";
 // The same folders EasyAndroid never takes: apps and the backups themselves.
@@ -19,8 +18,6 @@ const SKIPPED = ["Android", "EasyAndroid"];
 export function FoldersTab({ device, onDone }: { device: DeviceEntry; onDone: () => void }) {
   const { t } = useTranslation();
   const client = useQueryClient();
-  const feedback = useFeedback();
-  const task = useTask();
   const selection = useSelection();
   const folders = useQuery({
     queryKey: ["folders", device.serial],
@@ -35,16 +32,20 @@ export function FoldersTab({ device, onDone }: { device: DeviceEntry; onDone: ()
     [folders.data],
   );
 
-  const start = async () => {
-    try {
-      await task.run((id) => commands.startFolderBackup(id, device.serial, selection.ids));
-      feedback.success(t("backup.folders.done"), true);
-      selection.clear();
-      void client.invalidateQueries({ queryKey: ["fileSets"] });
-      onDone();
-    } catch (error) {
-      feedback.failure(error, true);
-    }
+  // All folders make one backup, so a retry takes all of them again.
+  const start = async (folderNames: string[]) => {
+    const id = await runJob({
+      kind: "folders",
+      serial: device.serial,
+      device: device.model ?? device.serial,
+      items: folderNames.map((name) => ({ key: name, name })),
+      run: ({ taskId }) => commands.startFolderBackup(taskId, device.serial, folderNames),
+      retry: () => void start(folderNames),
+    });
+    if (id === null) return;
+    selection.clear();
+    void client.invalidateQueries({ queryKey: ["fileSets"] });
+    onDone();
   };
 
   return (
@@ -62,8 +63,8 @@ export function FoldersTab({ device, onDone }: { device: DeviceEntry; onDone: ()
         <Button
           className="ml-auto"
           size="sm"
-          onClick={() => void start()}
-          disabled={selection.count === 0 || task.running}
+          onClick={() => void start(selection.ids)}
+          disabled={selection.count === 0}
         >
           {t("backup.folders.start", { count: selection.count })}
         </Button>
@@ -87,7 +88,6 @@ export function FoldersTab({ device, onDone }: { device: DeviceEntry; onDone: ()
           ))}
         </ul>
       )}
-      {task.running && <TaskBar progress={task.progress} onCancel={task.cancel} />}
     </div>
   );
 }

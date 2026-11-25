@@ -25,6 +25,11 @@ pub enum ErrorCode {
     NoSpace,
     /// A package that must not be disabled or removed.
     Protected,
+    /// Another job runs on the same phone.
+    Busy,
+    /// The user of the phone said no, or did not answer.
+    PhoneRejected,
+    PhoneExpired,
     Internal,
 }
 

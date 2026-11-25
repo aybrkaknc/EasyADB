@@ -1,4 +1,5 @@
 mod adb;
+mod awake;
 mod diskspace;
 mod error;
 mod events;
@@ -15,7 +16,7 @@ use tauri_specta::{Builder, collect_commands, collect_events};
 
 use features::{
     backup, debloat, device, files, logcat, packages, performance, phone_jobs, phone_requests,
-    settings, sideload, system_backup, terminal, wireless,
+    settings, sideload, speed, system_backup, terminal, wireless,
 };
 
 pub fn specta_builder() -> Builder<Wry> {
@@ -28,6 +29,7 @@ pub fn specta_builder() -> Builder<Wry> {
             settings::reveal_path,
             settings::cancel_task,
             tray::set_tray_labels,
+            tray::quit_app,
             device::list_devices,
             device::get_device_details,
             device::check_device_root,
@@ -50,6 +52,12 @@ pub fn specta_builder() -> Builder<Wry> {
             phone_requests::forget_trusted_phone,
             phone_requests::cancel_phone_job,
             phone_requests::is_easyandroid_ready,
+            phone_requests::new_phone_to_trust,
+            phone_requests::trust_phone,
+            phone_requests::list_never_ask_phones,
+            phone_requests::never_ask_phone,
+            phone_requests::phone_activity,
+            speed::start_speed_test,
             system_backup::list_system_backups,
             system_backup::restore_system_backup,
             backup::delete_backup,
@@ -89,6 +97,8 @@ pub fn specta_builder() -> Builder<Wry> {
             events::CommandOutput,
             events::PhoneRequestAsk,
             events::PhoneJobEvent,
+            events::PhoneBatchEnd,
+            events::QuitAsk,
             logcat::LogcatBatch
         ])
 }
@@ -160,6 +170,9 @@ pub fn run() {
                 if store::settings(window.app_handle()).close_to_tray {
                     api.prevent_close();
                     let _ = window.hide();
+                } else if awake::running() > 0 {
+                    api.prevent_close();
+                    tray::ask_to_quit(window.app_handle());
                 }
             }
         })

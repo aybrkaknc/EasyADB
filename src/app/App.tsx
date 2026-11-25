@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { commands } from "../bindings";
 import { BackupView } from "../features/backup/BackupView";
 import { PhoneBackupsPrompt } from "../features/backup/PhoneBackupsPrompt";
-import { PhoneRequests } from "../features/backup/PhoneRequests";
+import { TrustNewPhone } from "../features/backup/TrustNewPhone";
 import { DebloatView } from "../features/debloat/DebloatView";
 import { DeviceView } from "../features/device/DeviceView";
 import { FilesView } from "../features/files/FilesView";
@@ -15,6 +15,7 @@ import { SettingsView } from "../features/settings/SettingsView";
 import { TerminalView } from "../features/terminal/TerminalView";
 import { WirelessView } from "../features/wireless/WirelessView";
 import { useSettings } from "../shared/hooks/useSettings";
+import { JobHost } from "../shared/jobs/JobHost";
 import { ConfirmHost } from "../shared/ui/Dialog";
 import { Toaster } from "../shared/ui/Feedback";
 import { resolveLanguage } from "./i18n";
@@ -113,7 +114,8 @@ export function App() {
       </div>
       <ConfirmHost />
       <PhoneBackupsPrompt />
-      <PhoneRequests />
+      <TrustNewPhone />
+      <JobHost />
       <Toaster />
     </div>
   );
