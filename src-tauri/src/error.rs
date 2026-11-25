@@ -1,8 +1,8 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use specta::Type;
 
 /// Stable error codes. The frontend translates them; `detail` carries the raw context.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Type)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Type)]
 #[serde(rename_all = "snake_case")]
 pub enum ErrorCode {
     AdbMissing,
@@ -21,12 +21,14 @@ pub enum ErrorCode {
     ConnectFailed,
     Cancelled,
     NotFound,
+    /// Not enough free space on the PC.
+    NoSpace,
     /// A package that must not be disabled or removed.
     Protected,
     Internal,
 }
 
-#[derive(Debug, Clone, Serialize, Type, thiserror::Error)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type, thiserror::Error)]
 #[error("{code:?}: {detail}")]
 pub struct AppError {
     pub code: ErrorCode,

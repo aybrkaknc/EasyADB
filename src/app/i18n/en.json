@@ -39,7 +39,19 @@
     "more": "and {{count}} more",
     "later": "Not now",
     "pull": "Copy to PC",
-    "done": "{{ok}} backups copied, {{failed}} failed."
+    "done": "{{ok}} backups copied, {{failed}} failed.",
+    "kind": {
+      "messages": "Messages",
+      "calls": "Call logs",
+      "folders": "Folders",
+      "media": "Media",
+      "wallpaper": "Wallpapers"
+    },
+    "deleteTitle": "Remove the copies on the phone?",
+    "deleteBody": "{{count}} backups are now on this PC and were checked. Delete the copies on the phone? This cannot be undone.",
+    "keep": "Keep on phone",
+    "delete": "Delete from phone",
+    "deleted": "{{ok}} deleted from the phone, {{failed}} failed."
   },
   "tray": {
     "show": "Show EasyADB",
@@ -145,6 +157,7 @@
     "connect_failed": "Could not connect.",
     "cancelled": "Cancelled.",
     "not_found": "Not found.",
+    "no_space": "There is not enough free space on this PC.",
     "protected": "This package is protected and cannot be disabled or removed.",
     "internal": "Unexpected error."
   },
@@ -164,7 +177,8 @@
       "pull": "Downloading",
       "push": "Uploading",
       "permissions": "Granting permissions",
-      "system": "Applying settings"
+      "system": "Applying settings",
+      "files": "Copying files"
     }
   },
   "notify": {
@@ -214,7 +228,9 @@
   "backup": {
     "tabs": {
       "apps": "Apps",
-      "archive": "Restore"
+      "archive": "Restore",
+      "folders": "Folders",
+      "phone": "Phone data"
     },
     "filter": {
       "user": "User",
@@ -225,7 +241,8 @@
     "options": {
       "title": "Options",
       "obb": "Include OBB files",
-      "data": "Include app data (root)"
+      "data": "Include app data (root)",
+      "external": "Include Android/data (root)"
     },
     "start": "Back up {{count}} apps",
     "estimate": "Estimated size: {{size}}",
@@ -286,6 +303,24 @@
       "available": "Root available: app data can be copied.",
       "missing": "No root, or root was denied. App data cannot be copied, only the app itself. When the device asks, allow root for \"Shell\".",
       "recheck": "Check root again"
+    },
+    "folders": {
+      "hint": "Streams folders of the phone straight to this PC without using space on the phone. The Android folder and the backup folder are never included.",
+      "start": "Back up {{count}} folders",
+      "done": "Folders backed up.",
+      "empty": "No folders found"
+    },
+    "fileSets": {
+      "title": "File backups",
+      "send": "Send to phone",
+      "sent": "Sent to the phone. Restore it in EasyAndroid."
+    },
+    "phoneData": {
+      "title": "Made by the phone",
+      "hint": "EasyAndroid on the phone makes these backups as root, and this PC copies them. The phone may open EasyAndroid while it works.",
+      "system": "System settings",
+      "missing": "EasyAndroid is not installed on this phone.",
+      "start": "Ask the phone for {{count}} backups"
     }
   },
   "debloat": {
@@ -488,6 +523,25 @@
       "license": "Licensed under GPL-3.0.",
       "credits": "Includes Android SDK Platform-Tools and data from Universal Android Debloater Next Generation."
     },
-    "preferences": "Preferences"
+    "preferences": "Preferences",
+    "trusted": {
+      "title": "Trusted phones",
+      "empty": "No phone is trusted yet.",
+      "forget": "Forget",
+      "hint": "A trusted phone can ask EasyADB for backups without a prompt."
+    }
+  },
+  "phoneRequest": {
+    "title": "The phone {{model}} asks for a backup",
+    "appBody": "Back up {{name}} to this PC.",
+    "foldersBody": "Stream {{count}} folders to this PC.",
+    "pullBody": "Copy {{count}} backups from the phone to this PC.",
+    "trustHint": "Trust this phone to stop being asked. A trusted phone can start backups on this PC on its own. You can undo this in Settings.",
+    "reject": "Reject",
+    "once": "This time only",
+    "trust": "Trust this phone",
+    "done": "Backup of {{what}} finished.",
+    "whatFolders": "folders",
+    "whatPull": "phone backups"
   }
 }

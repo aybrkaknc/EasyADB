@@ -7,20 +7,65 @@ use serde::Deserialize;
 use specta::Type;
 
 use super::appops;
-use super::manifest::{self, BackupFile, DeviceSnapshot, FileKind, Manifest};
+use super::manifest::{self, BackupFile, DeviceSnapshot, ExtraFile, ExtraKind, FileKind, Manifest};
 use super::permissions::parse_runtime_permissions;
 use super::transfer;
 use crate::adb::parse::parse_pm_path;
 use crate::adb::{Device, shell};
 use crate::error::{AppError, AppResult, ErrorCode};
-use crate::features::{device, packages};
+use crate::features::{debloat, device, packages};
 use crate::tasks::{Reporter, TaskHandle};
 
-#[derive(Debug, Clone, Deserialize, Type)]
+#[derive(Debug, Clone, PartialEq, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct BackupOptions {
     pub include_obb: bool,
     pub include_data: bool,
+    /// `Android/data` on shared storage. Needs root, like the private data.
+    #[serde(default)]
+    pub include_external: bool,
+}
+
+/// Packages whose process must keep running while the backup is made.
+fn keeps_running(package: &str) -> bool {
+    package == device::EASYANDROID_PACKAGE || debloat::is_protected(package)
+}
+
+/// App data archives: where they come from, how they are named and where they go in the manifest.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Layer {
+    Private,
+    DeviceProtected,
+    External,
+}
+
+impl Layer {
+    fn parent(self) -> &'static str {
+        match self {
+            Layer::Private => "/data/data",
+            Layer::DeviceProtected => "/data/user_de/0",
+            Layer::External => "/data/media/0/Android/data",
+        }
+    }
+
+    fn stored(self) -> &'static str {
+        match self {
+            Layer::Private => "data.tar",
+            Layer::DeviceProtected => "data_de.tar",
+            Layer::External => "data_ext.tar",
+        }
+    }
+}
+
+/// `tar` script for one data layer. The caches are rebuilt by the app and only add size.
+fn tar_script(layer: Layer, package: &str) -> String {
+    let excludes = ["cache", "code_cache", "lib"]
+        .map(|dir| format!("--exclude {package}/{dir}"))
+        .join(" ");
+    format!(
+        "tar -cf - -C {} {excludes} {package}",
+        shell::quote(layer.parent())
+    )
 }
 
 pub struct Job<'a> {
@@ -79,6 +124,8 @@ pub fn snapshot(device: Device) -> DeviceSnapshot {
 pub struct Created {
     pub dir: PathBuf,
     pub data_skipped: bool,
+    /// Data archives that were requested, exist on the phone and could not be read.
+    pub data_failed: Vec<String>,
 }
 
 /// Backs up one package.
@@ -106,7 +153,13 @@ pub fn create(job: &Job, package: &str, options: &BackupOptions) -> AppResult<Cr
     let now = chrono::Local::now();
     let dir = job.root.join(manifest::folder_name(package, &now));
     fs::create_dir_all(dir.join("apk"))?;
-    let result = fill(job, package, options, &apks, &dir).and_then(|(files, data_skipped)| {
+    let result = fill(job, package, options, &apks, &dir).and_then(|filled| {
+        let Filled {
+            files,
+            extras,
+            data_skipped,
+            data_failed,
+        } = filled;
         let manifest = Manifest {
             format_version: manifest::FORMAT_VERSION,
             app_version: env!("CARGO_PKG_VERSION").into(),
@@ -117,19 +170,30 @@ pub fn create(job: &Job, package: &str, options: &BackupOptions) -> AppResult<Cr
             device: job.snapshot.clone(),
             files,
             permissions: parse_runtime_permissions(&dump),
-            extras: Vec::new(),
+            extras,
             app_ops,
             battery_exempt,
         };
-        manifest::write(&dir, &manifest).map(|_| data_skipped)
+        manifest::write(&dir, &manifest).map(|_| (data_skipped, data_failed))
     });
     match result {
-        Ok(data_skipped) => Ok(Created { dir, data_skipped }),
+        Ok((data_skipped, data_failed)) => Ok(Created {
+            dir,
+            data_skipped,
+            data_failed,
+        }),
         Err(err) => {
             let _ = fs::remove_dir_all(&dir);
             Err(err)
         }
     }
+}
+
+struct Filled {
+    files: Vec<BackupFile>,
+    extras: Vec<ExtraFile>,
+    data_skipped: bool,
+    data_failed: Vec<String>,
 }
 
 fn fill(
@@ -138,7 +202,7 @@ fn fill(
     options: &BackupOptions,
     apks: &[String],
     dir: &Path,
-) -> AppResult<(Vec<BackupFile>, bool)> {
+) -> AppResult<Filled> {
     let sizes = packages::app_sizes(job.device, &[package.to_string()])?;
     let size = sizes.first();
     let mut total = size.map(|s| s.apk_bytes).unwrap_or(0.0);
@@ -152,8 +216,9 @@ fn fill(
                     stage: &str,
                     script: String,
                     stored: String,
-                    name: String|
-     -> AppResult<u64> {
+                    name: String,
+                    checked: bool|
+     -> AppResult<BackupFile> {
         let dest = dir.join(&stored);
         if let Some(parent) = dest.parent() {
             fs::create_dir_all(parent)?;
@@ -162,64 +227,140 @@ fn fill(
             done += n as f64;
             job.reporter.progress(stage, package, done, total.max(done));
         };
-        let (bytes, sha) = transfer::pull(job.device, &script, &dest, job.task, &mut on_bytes)?;
-        files.push(BackupFile {
+        let fetch = if checked {
+            transfer::pull_checked
+        } else {
+            transfer::pull
+        };
+        let (bytes, sha) = fetch(job.device, &script, &dest, job.task, &mut on_bytes)?;
+        Ok(BackupFile {
             kind,
             stored,
             name,
             size: bytes,
             sha256: sha,
-        });
-        Ok(bytes)
+        })
     };
 
     for remote in apks {
         let name = file_name(remote)?;
         let script = format!("cat {}", shell::quote(remote));
-        if pull(FileKind::Apk, "apk", script, format!("apk/{name}"), name)? == 0 {
+        let apk = pull(
+            FileKind::Apk,
+            "apk",
+            script,
+            format!("apk/{name}"),
+            name,
+            false,
+        )?;
+        if apk.size == 0 {
             return Err(AppError::new(
                 ErrorCode::AdbFailed,
                 format!("empty APK: {remote}"),
             ));
         }
+        files.push(apk);
     }
 
     if options.include_obb {
         for remote in obb_files(job.device, package) {
             let name = file_name(&remote)?;
             let script = format!("cat {}", shell::quote(&remote));
-            pull(FileKind::Obb, "obb", script, format!("obb/{name}"), name)?;
+            files.push(pull(
+                FileKind::Obb,
+                "obb",
+                script,
+                format!("obb/{name}"),
+                name,
+                false,
+            )?);
         }
     }
 
+    let mut extras = Vec::new();
     let mut data_skipped = false;
-    if options.include_data && !job.has_root {
+    let mut data_failed = Vec::new();
+    let layers: Vec<Layer> = [
+        (options.include_data, Layer::Private),
+        (options.include_data, Layer::DeviceProtected),
+        (options.include_external, Layer::External),
+    ]
+    .into_iter()
+    .filter_map(|(wanted, layer)| wanted.then_some(layer))
+    .collect();
+    if package == device::EASYANDROID_PACKAGE {
+        // The app that runs the job cannot be stopped, so its data would not be consistent.
+        data_skipped = !layers.is_empty();
+    } else if !layers.is_empty() && !job.has_root {
         // No root: do not even try, so the device is not asked for root once per app.
         data_skipped = true;
-    } else if options.include_data {
-        let tar = format!("tar -cf - -C /data/data {package} 2>/dev/null");
-        let script = shell::join(&["su", "-c", &tar]);
-        let pulled = pull(
-            FileKind::Data,
-            "data",
-            script,
-            "data.tar".into(),
-            "data.tar".into(),
-        );
-        match pulled {
-            Ok(bytes) if bytes > 0 => {}
-            Err(err) if err.code == ErrorCode::Cancelled => return Err(err),
-            // No root, root denied or an empty archive: keep the app, drop the data.
-            other => {
-                if other.is_ok() {
-                    files.pop();
+    } else if !layers.is_empty() {
+        // The data is only consistent while the app is stopped.
+        if !keeps_running(package) {
+            let _ = job
+                .device
+                .shell(&["am", "force-stop", "--user", "0", package]);
+        }
+        for layer in layers {
+            job.task.check()?;
+            let source = format!("{}/{package}", layer.parent());
+            // Not every app has a device-protected or external folder.
+            if job
+                .device
+                .su(&format!("[ -d {} ]", shell::quote(&source)))
+                .is_err()
+            {
+                if layer == Layer::Private {
+                    data_skipped = true;
                 }
-                let _ = fs::remove_file(dir.join("data.tar"));
-                data_skipped = true;
+                continue;
+            }
+            let stored = layer.stored();
+            let script = shell::join(&["su", "-c", &tar_script(layer, package)]);
+            let pulled = pull(
+                FileKind::Data,
+                "data",
+                script,
+                stored.into(),
+                stored.into(),
+                true,
+            );
+            let file = match pulled {
+                Ok(file) if file.size > 0 => file,
+                Err(err) if err.code == ErrorCode::Cancelled => return Err(err),
+                // Unreadable or cut off: keep the app, drop this archive and say so.
+                other => {
+                    let _ = fs::remove_file(dir.join(stored));
+                    data_skipped = true;
+                    data_failed.push(match other {
+                        Err(err) => format!("{stored}: {}", err.detail),
+                        Ok(_) => stored.to_string(),
+                    });
+                    continue;
+                }
+            };
+            // Only the private archive is a `data` file; the others are extras.
+            match layer {
+                Layer::Private => files.push(file),
+                Layer::DeviceProtected | Layer::External => extras.push(ExtraFile {
+                    kind: if layer == Layer::External {
+                        ExtraKind::ExternalData
+                    } else {
+                        ExtraKind::DeviceData
+                    },
+                    stored: file.stored,
+                    size: file.size,
+                    sha256: file.sha256,
+                }),
             }
         }
     }
-    Ok((files, data_skipped))
+    Ok(Filled {
+        files,
+        extras,
+        data_skipped,
+        data_failed,
+    })
 }
 
 #[cfg(test)]

@@ -91,3 +91,58 @@ Roller: `android.app.role.{BROWSER,DIALER,SMS,HOME,ASSISTANT,CALL_SCREENING,CALL
 EasyADB cihaz bağlanınca `/sdcard/EasyAndroid/Backups` altında yedek ve `system_*.json` dosyası arar (PC'de zaten olanlar atlanır). Bulursa kullanıcıya sorar. Yedek root gerektiren veri içeriyorsa (data veya extras) kullanıcı, kabuğa (shell) root izni vermesi gerektiği konusunda uyarılır; izin verilmezse bu dosyalar okunamayabilir. Onay verilirse yedekler EasyADB yedek klasörüne çekilir; her dosyanın boyutu ve SHA-256'sı `manifest.json` ile doğrulanır, manifest en son yazılır. Dosyalar önce düz kabukla okunur; okunamazsa ve kullanıcı root verdiyse `su -c cat` ile yeniden denenir. Sistem ayarı dosyaları aynı klasöre kopyalanır. Daha sonra Geri yükle sekmesinden geri yüklenir.
 
 Yalnızca varsayılan klasör taranır. EasyAndroid'de seçilmiş başka bir klasör (SAF) taranmaz.
+
+## 8. Dosya yedekleri (`files.json`)
+
+Mesajlar, arama kayıtları, klasörler, duvar kâğıtları ve medya için EasyAndroid `<tür>_<YYYYMMDD-HHMMSS>/` klasörü yazar: `files.json` (en son yazılır) ve `0.tar`, `1.tar`, ... EasyADB bu klasörleri yalnızca kopyalar ve doğrular, içeriği ayıklamaz ve geri yüklemez.
+
+`files.json`: `format: "easyandroid-files"`, `version: 1`, `kind` (`media`, `folders`, `wallpaper`, `calls`, `messages`), `appVersion`, `createdAt`, `device`, `items[]` (`parent`, `names[]`, `stored`, `size`, `sha256`). Geçerli yerler: `folders` ve `media` için `parent` yalnızca `/storage/emulated/0`, adlar `Android`, `EasyAndroid` ve nokta ile başlayan olmayan tek klasör adı; diğer türler için sabit yer ve ad listesi EasyAndroid `core/FileSets.kt` içindedir.
+
+EasyADB PC'den klasör yedeği alırken (`tar -cf - -C /storage/emulated/0 <klasör>`) aynı biçimi yazar: `kind: "folders"`, `parent: "/storage/emulated/0"`, `0.tar`, `1.tar`. Böylece EasyAndroid onları geri yükleyebilir. PC'deki dosya yedekleri **Telefona gönder** ile telefonun yedek klasörüne kopyalanır. EasyADB var olan bir klasörün üzerine yazmaz.
+
+## 9. Posta kutusu
+
+PC ile telefon arasında iş istemek için ağ gerekmez. Klasör `/data/local/tmp/easyandroid/` (`shell:shell`, `0770`). Yalnızca shell ve root okur. EasyAndroid dosyaları root ile yazar ve `chown shell:shell` yapar, EasyADB `adb shell` ile yazar. Her yazma önce `*.tmp` dosyasına, sonra `mv` ile yapılır.
+
+| Dosya | Yazan | İçerik |
+|---|---|---|
+| `pc` | EasyADB | `1 <telefon saniyesi>`. Her yoklamada yenilenir. 10 saniyeden eskiyse PC bağlı değildir. |
+| `request.json` | EasyAndroid | Telefondan PC'ye iş isteği |
+| `cancel` | EasyAndroid | İptal edilecek isteğin `id` değeri |
+| `status.json` | EasyADB | İstek durumu |
+| `job.json` | EasyADB | PC'den telefona iş isteği |
+| `job-status.json` | EasyAndroid | `job.json` durumu |
+| `job-cancel` | EasyADB | İptal edilecek işin `id` değeri |
+| `pc-backups.json` | EasyADB | PC'ye alınmış yedekler (aşağıda) |
+
+**İstek** (`format: "easyandroid-request"`, `version: 1`): `id` (`[A-Za-z0-9-]{1,64}`), `batch` (aynı gruptaki isteklerin ortak kimliği), `created` (telefon saniyesi), `phone` (`ro.serialno`), `type` ve alanlar:
+
+- `app`: `package`, `data`, `obb`, `externalData` (boolean). EasyADB `create.rs` ile PC'de `<paket>_<zaman>/` yedeği alır.
+- `folders`: `names[]`. EasyADB klasörleri doğrudan PC'ye akıtır.
+- `pull`: `ids[]` (telefondaki yedek klasör adları: uygulama veya dosya yedeği) ve `system[]` (`system_<zaman>.json` dosya adları). En az biri dolu olmalıdır. EasyADB bunları PC'ye çeker, her dosyanın boyutunu ve SHA-256'sını doğrular.
+
+`created` 10 dakikadan eskiyse istek çalışmaz. EasyADB isteği `mv request.json request.<id>` ile sahiplenir; aynı telefon iki cihaz olarak görünse bile iş tek kez çalışır.
+
+**Durum** (`status.json`): `id`, `state` (`waiting`, `running`, `done`, `failed`, `rejected`, `cancelled`), `stage` (`apk`, `obb`, `data`, `files`, `pull`), `item`, `done`, `total` (bayt), `error` (kod ve ayrıntı), `notes[]` (uyarı kodları: `data_skipped`, `data_failed`, `obb_failed`). EasyADB her saniye yazar ve her yoklamada `cancel` dosyasını okur. 20 saniye durum yazılmazsa EasyAndroid işi "bağlantı koptu" diye bitirir; EasyADB yarım klasörü siler.
+
+**Güven.** İlk istekte EasyADB sorar: Reddet, Bir kez, Bu telefona güven. Güven `ro.serialno` ile tutulur. Reddedilen istek `rejected` olur.
+
+**Telefona iş** (`job.json`, `format: "easyandroid-job"`, `version: 1`): `id`, `created` (telefon saniyesi, 10 dakikadan eskiyse çalışmaz), `type` ve alanlar:
+
+- `files`: `kinds[]` (`messages`, `calls`, `wallpaper`). Klasörleri PC kendisi akıtır, bu iş onları içermez.
+- `system`: sistem ayarı yedeği. Ayarlar ve varsayılan uygulamalar alınır, Wi-Fi ağları alınmaz.
+
+EasyADB işi yazar ve EasyAndroid'in dışa kapalı `JobService`'ini root ile başlatır (`am start-foreground-service`). Başlamazsa ana ekranı açar. EasyAndroid dosyayı okur, siler ve işi çalıştırır. Durum `job-status.json` dosyasındadır (istek durumuyla aynı biçim). Bittiğinde `notes[]` yapılan yedekleri bildirir: `id:<yedek klasörü>` ve `system:<system_*.json>`. EasyADB bunları bir `pull` gibi PC'ye çeker. `job-cancel` dosyası `id` değerini taşıyorsa EasyAndroid işi durdurur ve `cancelled` yazar. İş yalnızca bu dosyadan alınır, intent'ten değil.
+
+**PC kaydı** (`pc-backups.json`): `[{ "package": "...", "versionName": "...", "createdAt": "..." }]` (en yeni 500 kayıt). EasyADB PC'ye uygulama yedeği aldığında ekler; EasyAndroid "bekleyen" ve "güncellenen" hesabında kullanır.
+
+Güvenlik: shell'e root verilen telefonla eşleşmiş her PC telefonda root komutu çalıştırabilir. Bu zaten EasyADB'nin yedek ve geri yükleme özelliğinin koşuludur.
+
+## 10. PC'ye yedek alırken kurallar
+
+`app` isteğinde ve EasyADB'nin kendi yedeğinde aynı davranış geçerlidir:
+
+- Veri seçiliyse uygulama önce `am force-stop --user 0` ile kapatılır (korumalı paketler ve EasyAndroid hariç).
+- `data.tar`: `tar -cf - -C /data/data --exclude <paket>/cache --exclude <paket>/code_cache --exclude <paket>/lib <paket>`. `data_de.tar` (`/data/user_de/0`) ve isteğe bağlı `data_ext.tar` (`/data/media/0/Android/data`) `extras` olarak yazılır.
+- Akışın çıkış kodu telefonda bir dosyaya yazılır ve okunur. Sıfır dışı kod, EasyAndroid'deki zararsız `tar` uyarıları (`unknown file type`, `No such file or directory`, `removing leading`) hariç, bozuk arşivdir: arşiv silinir, APK ve izinler kalır, sonuç uyarıdır.
+- Boş alan yetmiyorsa iş başlamaz.

@@ -5,6 +5,8 @@ pub mod files;
 pub mod logcat;
 pub mod packages;
 pub mod performance;
+pub mod phone_jobs;
+pub mod phone_requests;
 pub mod settings;
 pub mod sideload;
 pub mod system_backup;

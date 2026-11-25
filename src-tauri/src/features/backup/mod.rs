@@ -3,6 +3,8 @@
 mod appops;
 mod archive;
 pub mod create;
+pub mod fileset;
+pub mod folders;
 pub mod manifest;
 mod permissions;
 pub mod phone;
@@ -71,15 +73,18 @@ pub async fn start_backup(
                 break;
             }
             let outcome = match create::create(&job, &package, &options) {
-                Ok(created) => BackupOutcome {
-                    id: created
-                        .dir
-                        .file_name()
-                        .map(|n| n.to_string_lossy().into_owned()),
-                    package,
-                    error: None,
-                    data_skipped: created.data_skipped,
-                },
+                Ok(created) => {
+                    crate::features::phone_requests::record_pc_backup(device, &created.dir);
+                    BackupOutcome {
+                        id: created
+                            .dir
+                            .file_name()
+                            .map(|n| n.to_string_lossy().into_owned()),
+                        package,
+                        error: None,
+                        data_skipped: created.data_skipped,
+                    }
+                }
                 Err(err) => BackupOutcome {
                     package,
                     id: None,
@@ -184,6 +189,107 @@ pub async fn pull_phone_backups(
             &root,
             &ids,
             &system,
+            &task,
+            &reporter,
+        );
+        reporter.finish(&result);
+        result
+    })
+    .await;
+    state.tasks.finish(&task_id);
+    result
+}
+
+/// Messages, call logs, folders and wallpapers on the PC, from `files.json` backups.
+#[tauri::command]
+#[specta::specta]
+pub async fn list_file_sets(app: AppHandle) -> AppResult<Vec<fileset::FileSetSummary>> {
+    blocking(move || Ok(fileset::list(&backup_root(&app)?))).await
+}
+
+/// Removes backups from the phone after checking that the PC holds the same, intact copy.
+#[tauri::command]
+#[specta::specta]
+pub async fn delete_phone_backups(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    task_id: String,
+    serial: String,
+    ids: Vec<String>,
+) -> AppResult<Vec<phone::PullOutcome>> {
+    let runner = state.runner()?;
+    let task = state.tasks.start(&task_id);
+    let reporter = Reporter::new(app.clone(), &task_id);
+    let result = blocking(move || {
+        let root = backup_root(&app)?;
+        let result = phone::delete_on_phone(
+            Device::new(&*runner, &serial),
+            &root,
+            &ids,
+            &task,
+            &reporter,
+        );
+        reporter.finish(&result);
+        result
+    })
+    .await;
+    state.tasks.finish(&task_id);
+    result
+}
+
+/// Copies a backup from the PC into the phone's backup folder, for EasyAndroid to restore.
+#[tauri::command]
+#[specta::specta]
+pub async fn push_backup_to_phone(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    task_id: String,
+    serial: String,
+    backup_id: String,
+) -> AppResult<()> {
+    let runner = state.runner()?;
+    let task = state.tasks.start(&task_id);
+    let reporter = Reporter::new(app.clone(), &task_id);
+    let result = blocking(move || {
+        let root = backup_root(&app)?;
+        let result = phone::push(
+            Device::new(&*runner, &serial),
+            &root,
+            &backup_id,
+            &task,
+            &reporter,
+        );
+        reporter.finish(&result);
+        result
+    })
+    .await;
+    state.tasks.finish(&task_id);
+    result
+}
+
+/// Streams folders of the phone's shared storage into one backup on the PC.
+#[tauri::command]
+#[specta::specta]
+pub async fn start_folder_backup(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    task_id: String,
+    serial: String,
+    names: Vec<String>,
+) -> AppResult<String> {
+    let runner = state.runner()?;
+    let task = state.tasks.start(&task_id);
+    let reporter = Reporter::new(app.clone(), &task_id);
+    let result = blocking(move || {
+        let root = backup_root(&app)?;
+        let device = Device::new(&*runner, &serial);
+        let snapshot = create::snapshot(device);
+        let result = folders::stream(
+            device,
+            &root,
+            &names,
+            &snapshot,
+            device::check_root(device),
             &task,
             &reporter,
         );

@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { commands } from "../bindings";
 import { BackupView } from "../features/backup/BackupView";
 import { PhoneBackupsPrompt } from "../features/backup/PhoneBackupsPrompt";
+import { PhoneRequests } from "../features/backup/PhoneRequests";
 import { DebloatView } from "../features/debloat/DebloatView";
 import { DeviceView } from "../features/device/DeviceView";
 import { FilesView } from "../features/files/FilesView";
@@ -112,6 +113,7 @@ export function App() {
       </div>
       <ConfirmHost />
       <PhoneBackupsPrompt />
+      <PhoneRequests />
       <Toaster />
     </div>
   );

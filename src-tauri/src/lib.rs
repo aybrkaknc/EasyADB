@@ -1,4 +1,5 @@
 mod adb;
+mod diskspace;
 mod error;
 mod events;
 mod features;
@@ -13,8 +14,8 @@ use tauri_plugin_log::{RotationStrategy, Target, TargetKind};
 use tauri_specta::{Builder, collect_commands, collect_events};
 
 use features::{
-    backup, debloat, device, files, logcat, packages, performance, settings, sideload,
-    system_backup, terminal, wireless,
+    backup, debloat, device, files, logcat, packages, performance, phone_jobs, phone_requests,
+    settings, sideload, system_backup, terminal, wireless,
 };
 
 pub fn specta_builder() -> Builder<Wry> {
@@ -39,6 +40,16 @@ pub fn specta_builder() -> Builder<Wry> {
             backup::list_phone_backups,
             backup::list_phone_system,
             backup::pull_phone_backups,
+            backup::list_file_sets,
+            backup::delete_phone_backups,
+            backup::push_backup_to_phone,
+            backup::start_folder_backup,
+            phone_jobs::start_phone_job,
+            phone_requests::answer_phone_request,
+            phone_requests::list_trusted_phones,
+            phone_requests::forget_trusted_phone,
+            phone_requests::cancel_phone_job,
+            phone_requests::is_easyandroid_ready,
             system_backup::list_system_backups,
             system_backup::restore_system_backup,
             backup::delete_backup,
@@ -76,6 +87,8 @@ pub fn specta_builder() -> Builder<Wry> {
         .events(collect_events![
             events::TaskProgress,
             events::CommandOutput,
+            events::PhoneRequestAsk,
+            events::PhoneJobEvent,
             logcat::LogcatBatch
         ])
 }
@@ -138,6 +151,7 @@ pub fn run() {
                 }
                 Err(err) => log::error!("adb sidecar not available: {err}"),
             }
+            phone_requests::start(app.handle().clone());
             show_main_window(app.handle());
             Ok(())
         })

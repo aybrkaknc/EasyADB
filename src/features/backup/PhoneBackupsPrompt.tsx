@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { commands } from "../../bindings";
+import { commands, type PhoneBackup } from "../../bindings";
 import { useDevices } from "../../shared/hooks/useDevices";
 import { useFeedback } from "../../shared/hooks/useFeedback";
 import { useTask } from "../../shared/hooks/useTask";
@@ -10,8 +10,14 @@ import { appName, formatBytes } from "../../shared/lib/format";
 import { Button } from "../../shared/ui/Button";
 import { Dialog } from "../../shared/ui/Dialog";
 import { TaskBar } from "../../shared/ui/Feedback";
+import { PhoneCopiesDialog } from "./PhoneCopiesDialog";
 
 const SHOWN = 5;
+
+/** What a found backup is called: the app, or the kind of file backup. */
+function backupName(t: (key: string) => string, b: PhoneBackup) {
+  return b.fileKind ? t(`phone.kind.${b.fileKind}`) : appName(b);
+}
 
 /** Offers to copy EasyAndroid backups found on the phone into the PC backup folder. */
 export function PhoneBackupsPrompt() {
@@ -22,6 +28,8 @@ export function PhoneBackupsPrompt() {
   const { selected } = useDevices();
   const serial = selected?.state === "device" ? selected.serial : null;
   const [dismissed, setDismissed] = useState<string[]>([]);
+  // Backups that now exist on the PC too, offered for removal from the phone.
+  const [copied, setCopied] = useState<PhoneBackup[]>([]);
   const found = useQuery({
     queryKey: ["phoneBackups", serial],
     queryFn: () => commands.listPhoneBackups(serial!),
@@ -38,6 +46,20 @@ export function PhoneBackupsPrompt() {
   });
   const fresh = (found.data ?? []).filter((b) => !b.onPc);
   const files = system.data ?? [];
+  if (copied.length > 0 && serial !== null) {
+    return (
+      <PhoneCopiesDialog
+        serial={serial}
+        copies={copied.map((b) => ({
+          id: b.id,
+          name: backupName(t, b),
+          bytes: b.totalBytes,
+        }))}
+        onClose={() => setCopied([])}
+      />
+    );
+  }
+
   if (serial === null || (fresh.length === 0 && files.length === 0) || dismissed.includes(serial)) {
     return null;
   }
@@ -59,7 +81,11 @@ export function PhoneBackupsPrompt() {
         true,
       );
       failed.forEach((o) => feedback.failure(o.error));
+      // Only what arrived whole is offered for removal; the delete step checks it once more.
+      const arrived = new Set(outcomes.filter((o) => !o.error).map((o) => o.id));
+      setCopied(fresh.filter((b) => arrived.has(b.id)));
       void client.invalidateQueries({ queryKey: ["backups"] });
+      void client.invalidateQueries({ queryKey: ["fileSets"] });
       void client.invalidateQueries({ queryKey: ["systemBackups"] });
       void client.invalidateQueries({ queryKey: ["phoneBackups", serial] });
       void client.invalidateQueries({ queryKey: ["phoneSystem", serial] });
@@ -90,7 +116,7 @@ export function PhoneBackupsPrompt() {
       <ul className="flex flex-col gap-1 text-white/70">
         {fresh.slice(0, SHOWN).map((b) => (
           <li key={b.id} className="truncate">
-            {appName(b)} - {formatBytes(b.totalBytes)}
+            {backupName(t, b)} - {formatBytes(b.totalBytes)}
           </li>
         ))}
         {fresh.length > SHOWN && <li>{t("phone.more", { count: fresh.length - SHOWN })}</li>}

@@ -45,7 +45,7 @@ impl TaskHandle {
         self.child.lock().unwrap().take()
     }
 
-    fn cancel(&self) {
+    pub fn cancel(&self) {
         self.cancelled.store(true, Ordering::SeqCst);
         if let Some(child) = self.child.lock().unwrap().as_mut() {
             let _ = child.kill();
@@ -83,10 +83,14 @@ impl TaskRegistry {
     }
 }
 
+/// Called with the stage, item and progress of every update.
+pub type Observer = Arc<dyn Fn(&str, &str, f64, f64) + Send + Sync>;
+
 /// Emits progress events for one task.
 pub struct Reporter {
     app: Option<AppHandle>,
     task_id: String,
+    observer: Option<Observer>,
 }
 
 impl Reporter {
@@ -94,7 +98,14 @@ impl Reporter {
         Self {
             app: Some(app),
             task_id: task_id.to_string(),
+            observer: None,
         }
+    }
+
+    /// Also tells `observer` about every update, for jobs that report to the phone.
+    pub fn observed(mut self, observer: Observer) -> Self {
+        self.observer = Some(observer);
+        self
     }
 
     /// A reporter that emits nothing, for tests.
@@ -103,10 +114,14 @@ impl Reporter {
         Self {
             app: None,
             task_id: String::new(),
+            observer: None,
         }
     }
 
     pub fn progress(&self, stage: &str, item: &str, current: f64, total: f64) {
+        if let Some(observer) = &self.observer {
+            observer(stage, item, current, total);
+        }
         self.emit(TaskState::Running, stage, item, current, total);
     }
 

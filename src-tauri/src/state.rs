@@ -7,6 +7,7 @@ use crate::tasks::TaskRegistry;
 pub struct AppState {
     runner: Result<Arc<dyn AdbRunner>, AppError>,
     pub tasks: TaskRegistry,
+    pub requests: crate::features::phone_requests::Requests,
 }
 
 impl AppState {
@@ -27,6 +28,7 @@ impl AppState {
         Self {
             runner,
             tasks: TaskRegistry::default(),
+            requests: Default::default(),
         }
     }
 

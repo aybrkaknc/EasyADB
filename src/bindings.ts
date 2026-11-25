@@ -22,13 +22,29 @@ export const commands = {
 	listDeviceApps: (serial: string, options?: InvokeOptions) => __TAURI_INVOKE<AppInfo_Serialize[]>("list_device_apps", { serial }, options),
 	getAppSizes: (serial: string, packages: string[], options?: InvokeOptions) => __TAURI_INVOKE<AppSize[]>("get_app_sizes", { serial, packages }, options),
 	listBackups: (options?: InvokeOptions) => __TAURI_INVOKE<BackupSummary_Serialize[]>("list_backups", undefined, options),
-	startBackup: (taskId: string, serial: string, packages: string[], options: BackupOptions, _options?: InvokeOptions) => __TAURI_INVOKE<BackupOutcome_Serialize[]>("start_backup", { taskId, serial, packages, options }, _options),
+	startBackup: (taskId: string, serial: string, packages: string[], options: BackupOptions_Deserialize, _options?: InvokeOptions) => __TAURI_INVOKE<BackupOutcome_Serialize[]>("start_backup", { taskId, serial, packages, options }, _options),
 	startRestore: (taskId: string, serial: string, backupId: string, options: RestoreOptions, _options?: InvokeOptions) => __TAURI_INVOKE<RestoreReport_Serialize>("start_restore", { taskId, serial, backupId, options }, _options),
 	/**  EasyAndroid backups that are on the phone, for the "copy to PC" prompt. */
 	listPhoneBackups: (serial: string, options?: InvokeOptions) => __TAURI_INVOKE<PhoneBackup_Serialize[]>("list_phone_backups", { serial }, options),
 	/**  System snapshot files (`system_*.json`) on the phone that are not on the PC yet. */
 	listPhoneSystem: (serial: string, options?: InvokeOptions) => __TAURI_INVOKE<string[]>("list_phone_system", { serial }, options),
 	pullPhoneBackups: (taskId: string, serial: string, ids: string[], system: string[], options?: InvokeOptions) => __TAURI_INVOKE<PullOutcome_Serialize[]>("pull_phone_backups", { taskId, serial, ids, system }, options),
+	/**  Messages, call logs, folders and wallpapers on the PC, from `files.json` backups. */
+	listFileSets: (options?: InvokeOptions) => __TAURI_INVOKE<FileSetSummary[]>("list_file_sets", undefined, options),
+	/**  Removes backups from the phone after checking that the PC holds the same, intact copy. */
+	deletePhoneBackups: (taskId: string, serial: string, ids: string[], options?: InvokeOptions) => __TAURI_INVOKE<PullOutcome_Serialize[]>("delete_phone_backups", { taskId, serial, ids }, options),
+	/**  Copies a backup from the PC into the phone's backup folder, for EasyAndroid to restore. */
+	pushBackupToPhone: (taskId: string, serial: string, backupId: string, options?: InvokeOptions) => __TAURI_INVOKE<null>("push_backup_to_phone", { taskId, serial, backupId }, options),
+	/**  Streams folders of the phone's shared storage into one backup on the PC. */
+	startFolderBackup: (taskId: string, serial: string, names: string[], options?: InvokeOptions) => __TAURI_INVOKE<string>("start_folder_backup", { taskId, serial, names }, options),
+	startPhoneJob: (taskId: string, serial: string, kinds: string[], system: boolean, options?: InvokeOptions) => __TAURI_INVOKE<PullOutcome_Serialize[]>("start_phone_job", { taskId, serial, kinds, system }, options),
+	/**  The user's answer to a [`PhoneRequestAsk`]. */
+	answerPhoneRequest: (phone: string, id: string, decision: Decision, options?: InvokeOptions) => __TAURI_INVOKE<null>("answer_phone_request", { phone, id, decision }, options),
+	listTrustedPhones: (options?: InvokeOptions) => __TAURI_INVOKE<string[]>("list_trusted_phones", undefined, options),
+	forgetTrustedPhone: (phone: string, options?: InvokeOptions) => __TAURI_INVOKE<null>("forget_trusted_phone", { phone }, options),
+	/**  Lets the user cancel from the PC a job that the phone asked for. */
+	cancelPhoneJob: (phone: string, options?: InvokeOptions) => __TAURI_INVOKE<boolean>("cancel_phone_job", { phone }, options),
+	isEasyandroidReady: (serial: string, options?: InvokeOptions) => __TAURI_INVOKE<boolean>("is_easyandroid_ready", { serial }, options),
 	listSystemBackups: (options?: InvokeOptions) => __TAURI_INVOKE<SystemSummary[]>("list_system_backups", undefined, options),
 	restoreSystemBackup: (taskId: string, serial: string, id: string, options: SystemOptions, _options?: InvokeOptions) => __TAURI_INVOKE<SystemReport>("restore_system_backup", { taskId, serial, id, options }, _options),
 	deleteBackup: (backupId: string, options?: InvokeOptions) => __TAURI_INVOKE<null>("delete_backup", { backupId }, options),
@@ -77,6 +93,8 @@ export const commands = {
 export const events = {
 	commandOutput: makeEvent<CommandOutput_Serialize, CommandOutput_Deserialize>("command-output"),
 	logcatBatch: makeEvent<LogcatBatch, LogcatBatch>("logcat-batch"),
+	phoneJobEvent: makeEvent<PhoneJobEvent_Serialize, PhoneJobEvent_Deserialize>("phone-job-event"),
+	phoneRequestAsk: makeEvent<PhoneRequestAsk, PhoneRequestAsk>("phone-request-ask"),
 	taskProgress: makeEvent<TaskProgress, TaskProgress>("task-progress"),
 };
 
@@ -124,9 +142,20 @@ export type AppSize = {
 	obbBytes: number | null,
 };
 
-export type BackupOptions = {
+export type BackupOptions = BackupOptions_Serialize | BackupOptions_Deserialize;
+
+export type BackupOptions_Deserialize = {
 	includeObb: boolean,
 	includeData: boolean,
+	/**  `Android/data` on shared storage. Needs root, like the private data. */
+	includeExternal?: boolean,
+};
+
+export type BackupOptions_Serialize = {
+	includeObb: boolean,
+	includeData: boolean,
+	/**  `Android/data` on shared storage. Needs root, like the private data. */
+	includeExternal: boolean,
 };
 
 export type BackupOutcome = BackupOutcome_Serialize | BackupOutcome_Deserialize;
@@ -268,6 +297,8 @@ export type DebloatProfile = {
 	entries: ProfileEntry[],
 };
 
+export type Decision = "reject" | "once" | "trust";
+
 export type DeviceDetails = DeviceDetails_Serialize | DeviceDetails_Deserialize;
 
 export type DeviceDetails_Deserialize = {
@@ -324,6 +355,8 @@ export type DeviceState = "device" | "unauthorized" | "offline" | "recovery" | "
 
 /**  Stable error codes. The frontend translates them; `detail` carries the raw context. */
 export type ErrorCode = "adb_missing" | "adb_failed" | "device_not_found" | "device_unauthorized" | "device_offline" | "invalid_input" | "invalid_path" | "io" | "parse" | "backup_invalid" | "integrity_failed" | "install_failed" | "pair_failed" | "connect_failed" | "cancelled" | "not_found" | 
+/**  Not enough free space on the PC. */
+"no_space" | 
 /**  A package that must not be disabled or removed. */
 "protected" | "internal";
 
@@ -335,6 +368,15 @@ export type FileEntry = {
 	size: number | null,
 	/**  Unix seconds. */
 	modified: number | null,
+};
+
+/**  Backup folders in `root` that hold a valid `files.json`, newest first. */
+export type FileSetSummary = {
+	id: string,
+	kind: Kind,
+	createdAt: string,
+	totalBytes: number | null,
+	deviceModel: string,
 };
 
 export type HardwareInfo = HardwareInfo_Serialize | HardwareInfo_Deserialize;
@@ -362,6 +404,8 @@ export type HardwareInfo_Serialize = {
 	ramTotalKb: number | null,
 	storageTotalKb: number | null,
 };
+
+export type Kind = "media" | "folders" | "wallpaper" | "calls" | "messages";
 
 export type LiveMetrics = LiveMetrics_Serialize | LiveMetrics_Deserialize;
 
@@ -419,28 +463,70 @@ export type PhoneBackup = PhoneBackup_Serialize | PhoneBackup_Deserialize;
 
 export type PhoneBackup_Deserialize = {
 	id: string,
+	/**  The package, or the kind of a file backup. */
 	package: string,
 	label?: string | null,
 	versionName?: string | null,
 	createdAt: string,
 	totalBytes: number | null,
-	/**  Holds app data. Root may be needed to read the files, and to restore them. */
+	/**  Holds app data or system files. Root may be needed to read the files, and to restore them. */
 	needsRoot: boolean,
 	/**  A backup with this id is already in the PC backup folder. */
 	onPc: boolean,
+	/**  Set for file backups (messages, call logs, folders, wallpapers). */
+	fileKind?: Kind | null,
 };
 
 export type PhoneBackup_Serialize = {
 	id: string,
+	/**  The package, or the kind of a file backup. */
 	package: string,
 	label: string | null,
 	versionName: string | null,
 	createdAt: string,
 	totalBytes: number | null,
-	/**  Holds app data. Root may be needed to read the files, and to restore them. */
+	/**  Holds app data or system files. Root may be needed to read the files, and to restore them. */
 	needsRoot: boolean,
 	/**  A backup with this id is already in the PC backup folder. */
 	onPc: boolean,
+	/**  Set for file backups (messages, call logs, folders, wallpapers). */
+	fileKind: Kind | null,
+};
+
+/**  A job that the phone asked for started, ended or failed. */
+export type PhoneJobEvent = PhoneJobEvent_Serialize | PhoneJobEvent_Deserialize;
+
+/**  A job that the phone asked for started, ended or failed. */
+export type PhoneJobEvent_Deserialize = {
+	phone: string,
+	id: string,
+	kind: string,
+	package: string,
+	state: TaskState,
+	error?: AppError | null,
+};
+
+/**  A job that the phone asked for started, ended or failed. */
+export type PhoneJobEvent_Serialize = {
+	phone: string,
+	id: string,
+	kind: string,
+	package: string,
+	state: TaskState,
+	error: AppError | null,
+};
+
+/**  A phone that has not been trusted yet asks the PC to do a job. */
+export type PhoneRequestAsk = {
+	/**  `ro.serialno` of the phone, which is what trust is kept under. */
+	phone: string,
+	model: string,
+	id: string,
+	/**  `app`, `folders` or `pull`. */
+	kind: string,
+	/**  The package for `app`, otherwise empty. */
+	package: string,
+	count: number,
 };
 
 export type ProfileEntry = {

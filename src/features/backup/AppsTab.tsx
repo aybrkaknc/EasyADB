@@ -24,7 +24,7 @@ function BackupOptionsPanel({
   onChange,
   root,
 }: {
-  value: { obb: boolean; data: boolean };
+  value: { obb: boolean; data: boolean; external: boolean };
   onChange: (v: Partial<typeof value>) => void;
   root: ReturnType<typeof useRoot>;
 }) {
@@ -43,6 +43,12 @@ function BackupOptionsPanel({
           disabled={!root.isRoot}
           label={t("backup.options.data")}
         />
+        <Checkbox
+          checked={value.external && root.isRoot}
+          onChange={(external) => onChange({ external })}
+          disabled={!root.isRoot}
+          label={t("backup.options.external")}
+        />
         <RootStatus root={root} />
       </div>
     </Panel>
@@ -57,7 +63,7 @@ export function AppsTab({ device, onDone }: { device: DeviceEntry; onDone: () =>
   const selection = useSelection();
   const [filter, setFilter] = useState<Filter>("user");
   const [search, setSearch] = useState("");
-  const [options, setOptions] = useState({ obb: true, data: false });
+  const [options, setOptions] = useState({ obb: true, data: false, external: false });
   const root = useRoot(device.serial);
 
   const apps = useQuery({
@@ -92,6 +98,7 @@ export function AppsTab({ device, onDone }: { device: DeviceEntry; onDone: () =>
         commands.startBackup(id, device.serial, selectedIds, {
           includeObb: options.obb,
           includeData: options.data && root.isRoot,
+          includeExternal: options.external && root.isRoot,
         }),
       );
       const failed = outcomes.filter((o) => o.error);

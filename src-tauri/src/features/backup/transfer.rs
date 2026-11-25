@@ -4,6 +4,7 @@
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Read, Write};
 use std::path::Path;
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use sha2::{Digest, Sha256};
 
@@ -101,6 +102,101 @@ pub fn pull(
     }
 }
 
+/// Scratch files on the phone that hold the exit code and the error text of one stream.
+struct Scratch {
+    rc: String,
+    err: String,
+}
+
+impl Scratch {
+    fn new() -> Self {
+        static COUNTER: AtomicU64 = AtomicU64::new(0);
+        let id = format!(
+            "easyadb-{}-{}",
+            std::process::id(),
+            COUNTER.fetch_add(1, Ordering::SeqCst)
+        );
+        Self {
+            rc: format!("/data/local/tmp/{id}.rc"),
+            err: format!("/data/local/tmp/{id}.err"),
+        }
+    }
+
+    /// `adb exec-out` does not pass the exit code on, so the script leaves it in a file.
+    fn wrap(&self, script: &str) -> String {
+        format!("({script}) 2>{}; echo $? >{}", self.err, self.rc)
+    }
+
+    /// Prints the exit code, a marker and the error text, then removes both files.
+    fn report(&self) -> String {
+        format!(
+            "cat {rc} 2>/dev/null; echo {REPORT_MARK}; head -c 2000 {err} 2>/dev/null; rm -f {rc} {err}",
+            rc = self.rc,
+            err = self.err
+        )
+    }
+}
+
+const REPORT_MARK: &str = "@@@@";
+
+/// Sockets cannot be archived and files may vanish while tar runs; neither spoils the archive.
+const HARMLESS: [&str; 3] = [
+    "unknown file type",
+    "No such file or directory",
+    "removing leading",
+];
+
+/// Judges the exit code and error text of a stream. Only harmless `tar:` warnings are forgiven.
+fn check_exit(report: &str) -> AppResult<()> {
+    let (code, err) = report.split_once(REPORT_MARK).unwrap_or((report, ""));
+    let Ok(code) = code.trim().parse::<i32>() else {
+        return Err(AppError::new(ErrorCode::AdbFailed, "no exit code"));
+    };
+    if code == 0 {
+        return Ok(());
+    }
+    let lines: Vec<&str> = err
+        .lines()
+        .map(str::trim)
+        .filter(|l| !l.is_empty())
+        .collect();
+    let harmless = !lines.is_empty()
+        && lines
+            .iter()
+            .all(|l| l.starts_with("tar:") && HARMLESS.iter().any(|h| l.contains(h)));
+    if harmless {
+        Ok(())
+    } else if lines.is_empty() {
+        Err(AppError::new(ErrorCode::AdbFailed, format!("exit {code}")))
+    } else {
+        Err(AppError::new(
+            ErrorCode::AdbFailed,
+            lines.join(
+                "
+",
+            ),
+        ))
+    }
+}
+
+/// Like [`pull`], but a stream that ended with a failure is an error. A cut-off `tar` would
+/// otherwise pass for a good archive.
+pub fn pull_checked(
+    device: Device,
+    script: &str,
+    dest: &Path,
+    task: &TaskHandle,
+    on_bytes: &mut dyn FnMut(u64),
+) -> AppResult<(u64, String)> {
+    let scratch = Scratch::new();
+    let streamed = pull(device, &scratch.wrap(script), dest, task, on_bytes);
+    // Runs on every path so that nothing stays behind on the phone.
+    let report = device.script(&scratch.report());
+    let stored = streamed?;
+    check_exit(&report?)?;
+    Ok(stored)
+}
+
 /// Decompresses a zstd file (EasyAndroid format 2 archives) into `dest` as a plain tar,
 /// so the device does not need a `zstd` program.
 pub fn decompress_zstd(src: &Path, dest: &Path, task: &TaskHandle) -> AppResult<()> {
@@ -121,6 +217,19 @@ pub fn decompress_zstd(src: &Path, dest: &Path, task: &TaskHandle) -> AppResult<
             let _ = std::fs::remove_file(dest);
             map_cancel(task, AppError::new(ErrorCode::BackupInvalid, e.to_string()))
         })
+}
+
+/// SHA-256 of a file on the PC.
+pub fn hash_file(path: &Path, task: &TaskHandle) -> AppResult<String> {
+    let mut tap = Tap {
+        inner: BufReader::new(File::open(path)?),
+        hasher: Sha256::new(),
+        count: 0,
+        task,
+        on_bytes: &mut |_| {},
+    };
+    std::io::copy(&mut tap, &mut std::io::sink()).map_err(|e| map_cancel(task, e.into()))?;
+    Ok(to_hex(&tap.hasher.finalize()))
 }
 
 /// Verifies a stored file in place without copying it: size always, SHA-256 when requested.
@@ -222,6 +331,74 @@ mod tests {
         std::fs::write(&src, b"not zstd").unwrap();
         let err = decompress_zstd(&src, &dest, &TaskHandle::default()).unwrap_err();
         assert_eq!(err.code, ErrorCode::BackupInvalid);
+    }
+
+    #[test]
+    fn a_stream_is_judged_by_its_exit_code() {
+        assert!(
+            check_exit(
+                "0
+@@@@
+"
+            )
+            .is_ok()
+        );
+        let err = check_exit(
+            "2
+@@@@
+su: not allowed
+",
+        )
+        .unwrap_err();
+        assert_eq!(err.code, ErrorCode::AdbFailed);
+        assert!(err.detail.contains("not allowed"));
+        assert!(
+            check_exit(
+                "1
+@@@@
+"
+            )
+            .unwrap_err()
+            .detail
+            .contains("exit 1")
+        );
+        assert!(check_exit("").is_err());
+    }
+
+    #[test]
+    fn harmless_tar_warnings_are_forgiven_but_others_are_not() {
+        let warn = "tar: unknown file type 's' for 'sock'
+tar: /x: No such file or directory
+";
+        assert!(
+            check_exit(&format!(
+                "1
+@@@@
+{warn}"
+            ))
+            .is_ok()
+        );
+        let mixed = format!(
+            "1
+@@@@
+{warn}tar: write error: No space left
+"
+        );
+        assert!(check_exit(&mixed).is_err());
+    }
+
+    #[test]
+    fn the_script_leaves_its_exit_code_in_a_file() {
+        let scratch = Scratch::new();
+        let script = scratch.wrap("tar -cf - x");
+        assert!(script.starts_with("(tar -cf - x) 2>/data/local/tmp/easyadb-"));
+        assert!(script.contains("; echo $? >/data/local/tmp/easyadb-"));
+        assert!(
+            scratch
+                .report()
+                .contains(&format!("rm -f {} {}", scratch.rc, scratch.err))
+        );
+        assert_ne!(Scratch::new().rc, scratch.rc);
     }
 
     #[test]

@@ -17,6 +17,7 @@ import { Checkbox } from "../../shared/ui/Controls";
 import { useConfirm } from "../../shared/hooks/useConfirm";
 import { Badge, EmptyState, Spinner, TaskBar } from "../../shared/ui/Feedback";
 import { restoreWarnings } from "./report";
+import { FileSetsSection } from "./FileSetsSection";
 import { RootStatus } from "./RootStatus";
 import { RestoreDialog } from "./RestoreDialog";
 import { SystemSection } from "./SystemSection";
@@ -223,6 +224,7 @@ export function ArchiveTab({ device }: { device: DeviceEntry | null }) {
           ))}
         </ul>
       )}
+      <FileSetsSection device={device} />
       <SystemSection device={device} />
       {task.running && <TaskBar progress={task.progress} onCancel={task.cancel} />}
       {restoring && device && (

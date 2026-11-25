@@ -75,6 +75,7 @@ Ekran görüntüleri bir sonraki sürümle eklenecek.
 
 * **Birden fazla cihaz:** USB ve Wi-Fi cihazları aynı anda, cihaz seçici ve yetkisiz ya da çevrimdışı cihazlar için adım adım yardım.
 * **Yedekleme ve geri yükleme:** APK ve bölünmüş APK'lar, OBB dosyaları ve root varsa uygulama verisi. Yedekler sürümlü bir manifest ve SHA-256 sağlama toplamlarıyla düz klasörlerdir, bu yüzden geri yükleme hızlıdır. Çalışma zamanı izinleri de kaydedilir ve geri yüklerken isteğe bağlı olarak tekrar verilir. Root yoksa yalnızca uygulama geri yüklenir ve verinin atlandığı size söylenir. Birden fazla yedeği seçip tek seferde geri yükleyebilirsiniz. Tek bir `.easybckp` dosyası olarak dışa veya içe aktarma.
+* **Doğrudan PC'ye:** Uygulamaları ve klasörleri telefonda yer kaplamadan bu bilgisayara akıtın, telefondaki EasyAndroid'den mesaj, arama kaydı, duvar kâğıdı ve sistem ayarı yedeklerini isteyin, telefonun yedekleri kendisinin başlatmasına izin verin. Telefona bir kez güvenilir ve Ayarlar'dan geri alınır. Telefondaki kopyalar yalnızca PC kopyası doğrulandıktan ve siz onayladıktan sonra silinir.
 * **Debloater:** UAD-NG listesinden paket açıklamaları ve güvenlik seviyeleri, toplu devre dışı bırakma, etkinleştirme, kaldırma ve geri getirme, yeni bir ROM'dan sonra tekrar uygulanabilen profiller.
 * **Kablosuz hata ayıklama:** Eşleştirme kodu, QR kod, elle IP ve eski cihazlar için `adb tcpip`. Kayıtlı cihazlar tek tıkla yeniden bağlanır.
 * **Terminal:** adb ve fastboot komutlarını canlı çıktı, geçmiş, tamamlama ve iptal ile çalıştırır.

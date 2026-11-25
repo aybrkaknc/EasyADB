@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getVersion } from "@tauri-apps/api/app";
 import { open } from "@tauri-apps/plugin-dialog";
 import { FolderOpen, Settings as SettingsIcon } from "lucide-react";
@@ -39,6 +39,17 @@ export function SettingsView() {
     queryFn: () => commands.getBackupRoot(),
   });
   const version = useQuery({ queryKey: ["version"], queryFn: getVersion, staleTime: Infinity });
+  const client = useQueryClient();
+  const trusted = useQuery({
+    queryKey: ["trustedPhones"],
+    queryFn: () => commands.listTrustedPhones(),
+  });
+  const forget = (phone: string) => {
+    void commands
+      .forgetTrustedPhone(phone)
+      .then(() => client.invalidateQueries({ queryKey: ["trustedPhones"] }))
+      .catch(feedback.failure);
+  };
 
   const update = (patch: Partial<Settings>) => {
     save.mutate({ ...settings, ...patch }, { onError: (error) => feedback.failure(error) });
@@ -111,6 +122,24 @@ export function SettingsView() {
           >
             {t("settings.openLogs")}
           </Button>
+        </Panel>
+
+        <Panel title={t("settings.trusted.title")}>
+          {trusted.data?.length ? (
+            <ul className="flex flex-col divide-y divide-white/5 text-xs">
+              {trusted.data.map((phone) => (
+                <li key={phone} className="flex items-center justify-between gap-3 py-1.5">
+                  <span className="truncate font-mono text-white/80">{phone}</span>
+                  <Button variant="ghost" size="sm" onClick={() => forget(phone)}>
+                    {t("settings.trusted.forget")}
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-xs text-white/50">{t("settings.trusted.empty")}</p>
+          )}
+          <p className="mt-3 text-[11px] text-white/40">{t("settings.trusted.hint")}</p>
         </Panel>
 
         <Panel title={t("settings.shortcuts.title")}>

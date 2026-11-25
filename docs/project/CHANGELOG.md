@@ -7,6 +7,22 @@ Versiyon numaralandırması [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Yayınlanmamış]
+
+### Eklenenler
+- Telefondan PC'ye doğrudan yedekleme: EasyAndroid'in paylaşılan klasöre bıraktığı istekler yapılır ([sözleşme](../specs/EASYANDROID_INTEROP.md)). İlk istekte sorulur, "Bu telefona güven" sonrası sormadan çalışır. Ayarlar'da güvenilen telefonlar listelenir ve unutulabilir
+- Uygulama yedeğinde `data_de`, isteğe bağlı `Android/data`, önbellek dışlama ve veri alınmadan önce uygulamayı kapatma
+- "Klasörler" sekmesi: telefonun klasörlerini telefonda yer kaplamadan doğrudan PC'ye akıtır
+- "Telefon verileri" sekmesi: mesaj, arama kaydı, duvar kâğıdı ve sistem ayarı yedeklerini EasyAndroid'e yaptırır ve PC'ye çeker
+- `files.json` yedeklerini (mesaj, arama kaydı, klasör, duvar kâğıdı) telefondan çekme ve "Telefona gönder" ile telefona geri gönderme
+- Çekilen yedeklerin telefondaki kopyasını, PC kopyası doğrulandıktan sonra ve her seferinde sorarak silme
+- Yedek öncesi PC'de boş alan denetimi
+
+### Düzeltilenler
+- Telefondan akıtılan arşivlerin çıkış kodu denetleniyor. Yarıda kesilen bir `data.tar` artık sağlam yedek sayılmıyor
+
+---
+
 ## [0.2.0] - 2026-11-23
 
 Uygulama sıfırdan yeniden yazıldı. Eski `.easybckp` yedekleri bu sürümle okunmaz.

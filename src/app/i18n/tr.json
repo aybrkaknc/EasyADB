@@ -39,7 +39,19 @@
     "more": "ve {{count}} tane daha",
     "later": "Şimdi değil",
     "pull": "PC'ye çek",
-    "done": "{{ok}} yedek çekildi, {{failed}} başarısız."
+    "done": "{{ok}} yedek çekildi, {{failed}} başarısız.",
+    "kind": {
+      "messages": "Mesajlar",
+      "calls": "Arama kayıtları",
+      "folders": "Klasörler",
+      "media": "Medya",
+      "wallpaper": "Duvar kâğıtları"
+    },
+    "deleteTitle": "Telefondaki kopyalar silinsin mi?",
+    "deleteBody": "{{count}} yedek artık bu bilgisayarda ve doğrulandı. Telefondaki kopyalar silinsin mi? Bu geri alınamaz.",
+    "keep": "Telefonda kalsın",
+    "delete": "Telefondan sil",
+    "deleted": "{{ok}} yedek telefondan silindi, {{failed}} başarısız."
   },
   "tray": {
     "show": "EasyADB'yi göster",
@@ -145,6 +157,7 @@
     "connect_failed": "Bağlanılamadı.",
     "cancelled": "İptal edildi.",
     "not_found": "Bulunamadı.",
+    "no_space": "Bu bilgisayarda yeterli boş alan yok.",
     "protected": "Bu paket korumalıdır, devre dışı bırakılamaz veya kaldırılamaz.",
     "internal": "Beklenmeyen hata."
   },
@@ -164,7 +177,8 @@
       "pull": "İndiriliyor",
       "push": "Yükleniyor",
       "permissions": "İzinler veriliyor",
-      "system": "Ayarlar uygulanıyor"
+      "system": "Ayarlar uygulanıyor",
+      "files": "Dosyalar kopyalanıyor"
     }
   },
   "notify": {
@@ -214,7 +228,9 @@
   "backup": {
     "tabs": {
       "apps": "Uygulamalar",
-      "archive": "Geri yükle"
+      "archive": "Geri yükle",
+      "folders": "Klasörler",
+      "phone": "Telefon verileri"
     },
     "filter": {
       "user": "Kullanıcı",
@@ -225,7 +241,8 @@
     "options": {
       "title": "Seçenekler",
       "obb": "OBB dosyalarını ekle",
-      "data": "Uygulama verisini ekle (root)"
+      "data": "Uygulama verisini ekle (root)",
+      "external": "Android/data dahil (root)"
     },
     "start": "{{count}} uygulamayı yedekle",
     "estimate": "Tahmini boyut: {{size}}",
@@ -286,6 +303,24 @@
       "available": "Root var: uygulama verisi kopyalanabilir.",
       "missing": "Root yok veya izin reddedildi. Uygulama verisi kopyalanamaz, yalnızca uygulamanın kendisi işlenir. Cihaz sorduğunda \"Shell\" için root iznini verin.",
       "recheck": "Root'u tekrar kontrol et"
+    },
+    "folders": {
+      "hint": "Telefonun klasörlerini telefonda yer kaplamadan doğrudan bu bilgisayara aktarır. Android klasörü ve yedek klasörü hiçbir zaman dahil edilmez.",
+      "start": "{{count}} klasörü yedekle",
+      "done": "Klasörler yedeklendi.",
+      "empty": "Klasör bulunamadı"
+    },
+    "fileSets": {
+      "title": "Dosya yedekleri",
+      "send": "Telefona gönder",
+      "sent": "Telefona gönderildi. EasyAndroid'de geri yükleyin."
+    },
+    "phoneData": {
+      "title": "Telefonun aldığı yedekler",
+      "hint": "Bu yedekleri telefondaki EasyAndroid root ile alır, bu bilgisayar onları kopyalar. Telefon çalışırken EasyAndroid'i açabilir.",
+      "system": "Sistem ayarları",
+      "missing": "Bu telefonda EasyAndroid kurulu değil.",
+      "start": "Telefondan {{count}} yedek iste"
     }
   },
   "debloat": {
@@ -488,6 +523,25 @@
       "license": "GPL-3.0 lisansı ile dağıtılır.",
       "credits": "Android SDK Platform-Tools ve Universal Android Debloater Next Generation verilerini içerir."
     },
-    "preferences": "Tercihler"
+    "preferences": "Tercihler",
+    "trusted": {
+      "title": "Güvenilen telefonlar",
+      "empty": "Henüz güvenilen telefon yok.",
+      "forget": "Unut",
+      "hint": "Güvenilen telefon, sormadan EasyADB'den yedek isteyebilir."
+    }
+  },
+  "phoneRequest": {
+    "title": "{{model}} telefonu yedek istiyor",
+    "appBody": "{{name}} bu bilgisayara yedeklensin.",
+    "foldersBody": "{{count}} klasör bu bilgisayara aktarılsın.",
+    "pullBody": "Telefondaki {{count}} yedek bu bilgisayara kopyalansın.",
+    "trustHint": "Bir daha sorulmaması için bu telefona güvenin. Güvenilen telefon bu bilgisayarda kendi başına yedek başlatabilir. Ayarlar'dan geri alabilirsiniz.",
+    "reject": "Reddet",
+    "once": "Yalnızca bu sefer",
+    "trust": "Bu telefona güven",
+    "done": "{{what}} yedeği tamamlandı.",
+    "whatFolders": "klasörlerin",
+    "whatPull": "telefon yedeklerinin"
   }
 }

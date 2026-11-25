@@ -8,6 +8,8 @@ import { DeviceGuard } from "../../shared/ui/DeviceGuard";
 import { ModuleHeader } from "../../shared/ui/ModuleHeader";
 import { AppsTab } from "./AppsTab";
 import { ArchiveTab } from "./ArchiveTab";
+import { FoldersTab } from "./FoldersTab";
+import { PhoneDataTab } from "./PhoneDataTab";
 
 export function BackupView() {
   const { t } = useTranslation();
@@ -24,6 +26,8 @@ export function BackupView() {
         <TabsList
           tabs={[
             { value: "apps", label: t("backup.tabs.apps") },
+            { value: "folders", label: t("backup.tabs.folders") },
+            { value: "phone", label: t("backup.tabs.phone") },
             { value: "archive", label: t("backup.tabs.archive") },
           ]}
         />
@@ -32,6 +36,21 @@ export function BackupView() {
             {(device) => (
               <AppsTab key={device.serial} device={device} onDone={() => setTab("archive")} />
             )}
+          </DeviceGuard>
+        </TabsContent>
+        <TabsContent value="folders" className="flex min-h-0 flex-1 data-[state=inactive]:hidden">
+          <DeviceGuard>
+            {(device) => (
+              <FoldersTab key={device.serial} device={device} onDone={() => setTab("archive")} />
+            )}
+          </DeviceGuard>
+        </TabsContent>
+        <TabsContent
+          value="phone"
+          className="relative flex min-h-0 flex-1 data-[state=inactive]:hidden"
+        >
+          <DeviceGuard>
+            {(device) => <PhoneDataTab key={device.serial} device={device} />}
           </DeviceGuard>
         </TabsContent>
         <TabsContent value="archive" className="flex min-h-0 flex-1 data-[state=inactive]:hidden">
