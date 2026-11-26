@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 import { useConfirmStore } from "../hooks/useConfirm";
+import { cn } from "../lib/cn";
 import { Button } from "./Button";
 
 export function Dialog({
@@ -12,6 +13,9 @@ export function Dialog({
   children,
   footer,
   locked = false,
+  large = false,
+  wide = false,
+  titleClass,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -20,6 +24,10 @@ export function Dialog({
   footer?: ReactNode;
   /** Only its buttons close it: not Escape and not a click outside. */
   locked?: boolean;
+  /** Bigger text, for the windows of jobs. */
+  large?: boolean;
+  wide?: boolean;
+  titleClass?: string;
 }) {
   const keep = (event: Event) => locked && event.preventDefault();
   return (
@@ -29,11 +37,20 @@ export function Dialog({
         <RDialog.Content
           onEscapeKeyDown={keep}
           onInteractOutside={keep}
-          className="clip-corners fixed top-1/2 left-1/2 z-50 w-[min(520px,92vw)] -translate-x-1/2 -translate-y-1/2 border border-neon/40 bg-panel p-6 shadow-2xl"
+          className={cn(
+            "clip-corners fixed top-1/2 left-1/2 z-50 -translate-x-1/2 -translate-y-1/2 border border-white/15 bg-black p-6 shadow-2xl",
+            wide ? "w-[min(600px,92vw)]" : "w-[min(520px,92vw)]",
+          )}
         >
-          <RDialog.Title className="heading mb-4 text-base">{title}</RDialog.Title>
+          <RDialog.Title
+            className={cn("heading mb-4", large ? "text-xl" : "text-base", titleClass)}
+          >
+            {title}
+          </RDialog.Title>
           <RDialog.Description asChild>
-            <div className="flex flex-col gap-4 text-xs text-white/80">{children}</div>
+            <div className={cn("flex flex-col gap-4 text-white/80", large ? "text-sm" : "text-xs")}>
+              {children}
+            </div>
           </RDialog.Description>
           {footer && <div className="mt-6 flex justify-end gap-2">{footer}</div>}
         </RDialog.Content>

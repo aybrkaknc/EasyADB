@@ -379,6 +379,8 @@ export type DeviceDetails = DeviceDetails_Serialize | DeviceDetails_Deserialize;
 export type DeviceDetails_Deserialize = {
 	serial: string,
 	model: string,
+	/**  The name the phone is sold under. Empty when it does not say. */
+	marketName: string,
 	manufacturer: string,
 	androidVersion: string,
 	sdk: number,
@@ -395,6 +397,8 @@ export type DeviceDetails_Deserialize = {
 export type DeviceDetails_Serialize = {
 	serial: string,
 	model: string,
+	/**  The name the phone is sold under. Empty when it does not say. */
+	marketName: string,
 	manufacturer: string,
 	androidVersion: string,
 	sdk: number,
@@ -644,6 +648,10 @@ export type PhoneJobEvent_Deserialize = {
 	id: string,
 	kind: string,
 	names: string[],
+	/**  The name the phone shows for the app; empty when it sent none. */
+	label: string,
+	/**  What an app backup includes: `apk`, `obb`, `data`, `external`. Empty for other jobs. */
+	parts: string[],
 	state: TaskState,
 	error?: AppError | null,
 	/**  Who cancelled it, or that the connection was lost. */
@@ -663,6 +671,10 @@ export type PhoneJobEvent_Serialize = {
 	id: string,
 	kind: string,
 	names: string[],
+	/**  The name the phone shows for the app; empty when it sent none. */
+	label: string,
+	/**  What an app backup includes: `apk`, `obb`, `data`, `external`. Empty for other jobs. */
+	parts: string[],
 	state: TaskState,
 	error: AppError | null,
 	/**  Who cancelled it, or that the connection was lost. */
@@ -682,6 +694,8 @@ export type PhoneRequestAsk = {
 	kind: string,
 	/**  The first few packages, folders or backups. */
 	names: string[],
+	/**  The name the phone shows for the first app; empty when it sent none. */
+	label: string,
 	/**  Apps, folders or backups in all; megabytes for `speed`. */
 	count: number,
 	data: boolean,

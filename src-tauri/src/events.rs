@@ -40,6 +40,8 @@ pub struct PhoneRequestAsk {
     pub kind: String,
     /// The first few packages, folders or backups.
     pub names: Vec<String>,
+    /// The name the phone shows for the first app; empty when it sent none.
+    pub label: String,
     /// Apps, folders or backups in all; megabytes for `speed`.
     pub count: u32,
     pub data: bool,
@@ -62,6 +64,10 @@ pub struct PhoneJobEvent {
     pub id: String,
     pub kind: String,
     pub names: Vec<String>,
+    /// The name the phone shows for the app; empty when it sent none.
+    pub label: String,
+    /// What an app backup includes: `apk`, `obb`, `data`, `external`. Empty for other jobs.
+    pub parts: Vec<String>,
     pub state: TaskState,
     pub error: Option<crate::error::AppError>,
     /// Who cancelled it, or that the connection was lost.

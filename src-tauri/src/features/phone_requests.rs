@@ -43,6 +43,8 @@ const PC_ID_KEY: &str = "pcId";
 const MAX_COUNT: u32 = 1000;
 /// How many names a question or a progress window lists.
 const SHOWN_NAMES: usize = 5;
+/// The longest app name that is taken from the phone.
+const SHOWN_LABEL: usize = 80;
 
 #[derive(Debug, Clone, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -55,6 +57,9 @@ pub struct Request {
     pub kind: String,
     #[serde(default)]
     pub package: String,
+    /// The name the phone shows for `package`. Only ever shown, never part of a command.
+    #[serde(default)]
+    pub label: String,
     #[serde(default)]
     pub data: bool,
     #[serde(default)]
@@ -179,6 +184,33 @@ impl Request {
     }
 
     /// What the request is about, for people: folders, backups or the package.
+    fn label(&self) -> Option<String> {
+        let shown: String = self
+            .label
+            .chars()
+            .filter(|c| !c.is_control())
+            .take(SHOWN_LABEL)
+            .collect();
+        let shown = shown.trim();
+        (self.kind == "app" && !shown.is_empty()).then(|| shown.to_string())
+    }
+
+    fn parts(&self) -> Vec<String> {
+        if self.kind != "app" {
+            return vec![];
+        }
+        [
+            (true, "apk"),
+            (self.obb, "obb"),
+            (self.data, "data"),
+            (self.external_data, "external"),
+        ]
+        .into_iter()
+        .filter(|(on, _)| *on)
+        .map(|(_, part)| part.to_string())
+        .collect()
+    }
+
     fn names(&self) -> Vec<String> {
         let all = match self.kind.as_str() {
             "app" => vec![self.package.clone()],
@@ -797,6 +829,7 @@ fn handle(
                 batch: request.batch().into(),
                 kind: request.kind.clone(),
                 names: request.names(),
+                label: request.label().unwrap_or_default(),
                 count: request.count(),
                 data: request.data,
                 obb: request.obb,
@@ -846,6 +879,8 @@ fn handle(
         id: request.id.clone(),
         kind: request.kind.clone(),
         names: request.names(),
+        label: request.label().unwrap_or_default(),
+        parts: request.parts(),
         state: TaskState::Running,
         error: None,
         reason: None,
@@ -880,12 +915,14 @@ fn handle(
     std::thread::spawn(move || job.run());
 }
 
+/// The name the phone is sold under, or its model code when it does not say.
 fn model(device: Device) -> String {
-    device
-        .shell(&["getprop", "ro.product.model"])
+    ["ro.product.marketname", "ro.product.model"]
+        .into_iter()
+        .filter_map(|key| device.shell(&["getprop", key]).ok())
+        .map(|value| value.trim().to_string())
+        .find(|value| !value.is_empty())
         .unwrap_or_default()
-        .trim()
-        .to_string()
 }
 
 struct RunningJob {
@@ -1260,6 +1297,21 @@ mod tests {
             writes.last().unwrap().contains(r#""state":"done""#),
             "{writes:?}"
         );
+    }
+
+    #[test]
+    fn names_the_app_and_its_parts() {
+        let r = request(
+            "app",
+            r#","package":"com.a.b","label":" Tik\u0009Tok ","externalData":true"#,
+        );
+        assert_eq!(r.label().as_deref(), Some("TikTok"));
+        assert_eq!(r.parts(), ["apk", "external"]);
+        let old = request("app", r#","package":"com.a.b","data":true,"obb":true"#);
+        assert_eq!(old.label(), None);
+        assert_eq!(old.parts(), ["apk", "obb", "data"]);
+        let other = request("pull", r#","ids":["a_1"],"label":"x""#);
+        assert!(other.label().is_none() && other.parts().is_empty());
     }
 
     #[test]

@@ -157,7 +157,7 @@
     "stage": {
       "apk": "Copying APK",
       "obb": "Copying OBB",
-      "data": "Copying app data",
+      "data": "Copying data",
       "verify": "Verifying",
       "install": "Installing",
       "debloat": "Applying",
@@ -171,7 +171,8 @@
       "speed": "Measuring",
       "phone_wait": "Handed to the phone",
       "phone_open": "Opening EasyAndroid on the phone",
-      "phone_approval": "Waiting for approval on the phone"
+      "phone_approval": "Waiting for approval on the phone",
+      "external": "Copying external data"
     }
   },
   "notify": {
@@ -240,9 +241,10 @@
     "search": "Search apps",
     "options": {
       "title": "Options",
-      "obb": "Include OBB files",
-      "data": "Include app data (root)",
-      "external": "Include Android/data (root)"
+      "obb": "OBB",
+      "data": "Data",
+      "external": "External data",
+      "needsRoot": "needs root"
     },
     "start": "Back up {{count}} apps",
     "estimate": "Estimated size: {{size}}",
@@ -280,8 +282,8 @@
     },
     "restore": {
       "title": "Restore {{name}}",
-      "obb": "Restore OBB files",
-      "data": "Restore app data (root)",
+      "obb": "Restore OBB",
+      "data": "Restore data (root)",
       "dataConfirm": "Restoring app data replaces the current data of {{name}}. Continue?",
       "verify": "Verify SHA-256 before restoring",
       "start": "Restore",
@@ -668,6 +670,27 @@
     "note": {
       "dataSkipped": "App data was not backed up.",
       "dataFailed": "App data could not be read: {{detail}}"
+    },
+    "backingUp": "Backing up...",
+    "absent": "{{text}} - none",
+    "result": {
+      "done": "Backup completed",
+      "warning": "Backup completed with warnings",
+      "incomplete": "Backup not completed",
+      "cancelled": "Backup cancelled",
+      "rejected": "Backup rejected"
+    },
+    "summary": {
+      "app": "{{done}} / {{total}} apps backed up",
+      "folders": "{{done}} / {{total}} folders backed up",
+      "phoneData": "{{done}} / {{total}} items backed up"
+    },
+    "confirm": {
+      "backup": "Cancel the backup?",
+      "restore": "Cancel the restore?",
+      "body": "It keeps running until you confirm.",
+      "keep": "Keep going",
+      "stop": "Yes, cancel"
     }
   },
   "ask": {
@@ -681,10 +704,10 @@
     },
     "includes": "Includes: {{list}}",
     "option": {
-      "apk": "app",
+      "apk": "APK",
       "obb": "OBB",
-      "data": "app data",
-      "external": "Android/data"
+      "data": "Data",
+      "external": "External data"
     },
     "trustHint": "Trust this phone to not be asked again. A trusted phone can start backups on this PC by itself. You can undo this in Settings.",
     "reject": "Reject",

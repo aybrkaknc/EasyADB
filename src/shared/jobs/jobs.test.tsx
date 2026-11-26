@@ -20,6 +20,7 @@ vi.mock("../../bindings", () => ({
     cancelTask: (id: string) => cancelTask(id),
     cancelPhoneJob: (...args: unknown[]) => cancelPhoneJob(...args),
     listDevices: () => Promise.resolve(devices),
+    getDeviceDetails: () => Promise.resolve({ marketName: "" }),
     phoneActivity: () => Promise.resolve(activity),
     quitApp: () => Promise.resolve(null),
   },
@@ -46,6 +47,7 @@ const ask = (extra: Partial<PhoneRequestAsk> = {}): PhoneRequestAsk => ({
   data: true,
   obb: false,
   externalData: false,
+  label: "",
   seconds: 120,
   ...extra,
 });
@@ -59,6 +61,8 @@ const job = (extra: Partial<PhoneJobEvent> = {}): PhoneJobEvent => ({
   id: "r1",
   kind: "app",
   names: ["com.foo.bar"],
+  label: "",
+  parts: [],
   state: "running",
   error: null,
   reason: null,
@@ -268,14 +272,18 @@ describe("JobHost", () => {
     await userEvent.click(screen.getByRole("button", { name: "This time only" }));
     expect(answer).toHaveBeenCalledWith("P", "b", "once");
     act(() => onPhoneJob(job()));
-    expect(await screen.findByText("App backup")).toBeInTheDocument();
+    expect(await screen.findByText("Backing up...")).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(cancelPhoneJob).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByRole("button", { name: "Keep going" }));
+    await userEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    await userEvent.click(screen.getByRole("button", { name: "Yes, cancel" }));
     expect(cancelPhoneJob).toHaveBeenCalledWith("P", "b");
     act(() => {
       onPhoneJob(job({ state: "done" }));
       end("finished");
     });
-    expect(await screen.findByText("Completed")).toBeInTheDocument();
+    expect(await screen.findByText("Backup completed")).toBeInTheDocument();
   });
 
   it("does not take Escape for an answer", async () => {
@@ -330,6 +338,19 @@ describe("JobHost", () => {
     });
     expect(await screen.findByText("Jobs are running")).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Stay" }));
-    expect(await screen.findByText("App backup")).toBeInTheDocument();
+    expect(await screen.findByText("Backing up...")).toBeInTheDocument();
+  });
+
+  it("lists the chosen parts and says which the app does not have", async () => {
+    renderWithProviders(<JobHost />);
+    act(() => {
+      onPhoneJob(job({ label: "TikTok", parts: ["apk", "obb", "data"] }));
+      progress("phone-r1", "apk", "com.foo.bar", 1, 10);
+      progress("phone-r1", "data", "com.foo.bar", 1, 10);
+    });
+    expect(await screen.findByText("TikTok")).toBeInTheDocument();
+    expect(screen.getByText("Copying OBB - none")).toBeInTheDocument();
+    expect(screen.getByText("Copying data")).toBeInTheDocument();
+    expect(screen.queryByText("Copying external data")).toBeNull();
   });
 });

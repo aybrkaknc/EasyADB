@@ -1,4 +1,4 @@
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, CircleAlert, CircleDashed, Loader, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -13,9 +13,12 @@ import { ProgressBar } from "../ui/Feedback";
 import {
   accept,
   type Ask,
+  ASKS_BEFORE_CANCEL,
+  BACKUPS,
   dismissResult,
   type Job,
   type JobItem,
+  type JobKind,
   type Lane,
   onAsk,
   onBatchEnd,
@@ -82,11 +85,47 @@ function Line({ state, text, note }: { state: JobItem["state"]; text: string; no
         <span className="min-w-0 flex-1 truncate">{text}</span>
       </span>
       {note && (
-        <span className="pl-5.5 text-[11px] break-words whitespace-pre-wrap text-white/60">
-          {note}
-        </span>
+        <span className="pl-5.5 text-xs break-words whitespace-pre-wrap text-white/60">{note}</span>
       )}
     </li>
+  );
+}
+
+const isBackup = (kind: JobKind | null) => kind !== null && BACKUPS.includes(kind);
+
+/** The name a phone is sold under, for a job of this PC; a job of a phone already has it. */
+function useDeviceName(serial: string, fallback: string) {
+  const details = useQuery({
+    queryKey: ["deviceDetails", serial],
+    queryFn: () => commands.getDeviceDetails(serial),
+    enabled: serial !== "",
+  });
+  return details.data?.marketName || fallback;
+}
+
+/** What a backup window is about, and the phone it comes from. */
+function Subject({
+  name,
+  position,
+  serial,
+  device,
+}: {
+  name?: string;
+  position?: string;
+  serial: string;
+  device: string;
+}) {
+  const phone = useDeviceName(serial, device);
+  return (
+    <div className="flex flex-col gap-1">
+      {name && (
+        <p className="flex justify-between gap-3 text-base text-white">
+          <span className="min-w-0 truncate">{name}</span>
+          {position && <span className="shrink-0 tabular-nums">{position}</span>}
+        </p>
+      )}
+      <p className="text-sm text-white/50">{phone}</p>
+    </div>
   );
 }
 
@@ -116,12 +155,16 @@ function AskDialog({ ask }: { ask: Ask }) {
     ask.data && "data",
     ask.externalData && "external",
   ].filter((o): o is string => typeof o === "string");
-  const names = ask.kind === "app" ? ask.names.map((n) => appName({ package: n })) : ask.names;
+  const names =
+    ask.kind === "app"
+      ? ask.names.map((n, i) => appName({ package: n, label: (i === 0 && ask.label) || null }))
+      : ask.names;
 
   return (
     <Dialog
       open
       locked
+      large
       onOpenChange={() => undefined}
       title={t(speed ? "ask.speedTitle" : "ask.title", { model })}
       footer={
@@ -168,7 +211,7 @@ function LaneInfo({ lane }: { lane: Lane }) {
   return (
     <>
       <ProgressBar value={lane.total > 0 ? percent(lane.done, lane.total) : null} />
-      <p className="flex justify-between gap-3 text-[11px] text-white/60 tabular-nums">
+      <p className="flex justify-between gap-3 text-xs text-white/60 tabular-nums">
         <span>
           {t("job.amount", {
             percent: Math.floor(percent(lane.done, lane.total)),
@@ -208,45 +251,52 @@ function SpeedLanes({ job }: { job: Job }) {
 
 function Steps({ job }: { job: Job }) {
   const { t } = useTranslation();
-  const known = STEPS[job.kind];
+  const known = STEPS[job.kind].filter((s) => !job.parts || job.parts.includes(s));
   const extra = job.stage && job.stage !== "prepare" && !known.includes(job.stage);
   const steps = extra ? [...known, job.stage] : known;
   const at = steps.indexOf(job.stage);
   return (
     <ul className="flex flex-col gap-1">
-      {steps.map((step, index) => (
-        <Line
-          key={step}
-          state={index < at ? "done" : index === at ? "running" : "waiting"}
-          text={t(`task.stage.${step}`)}
-        />
-      ))}
+      {steps.map((step, index) => {
+        // A part of an app that passed without moving anything is one the app does not have.
+        const absent = job.kind === "app" && index < at && !job.seen.includes(step);
+        const state = absent || index > at ? "waiting" : index < at ? "done" : "running";
+        const text = t(`task.stage.${step}`);
+        return <Line key={step} state={state} text={absent ? t("job.absent", { text }) : text} />;
+      })}
     </ul>
   );
 }
 
-function JobBlock({ job, now }: { job: Job; now: number }) {
+function JobBlock({ job, now, onCancel }: { job: Job; now: number; onCancel: () => void }) {
   const { t } = useTranslation();
   const position = Math.min(
     job.size,
     Math.max(1, job.items.filter((i) => i.state !== "waiting").length),
   );
   const active = job.items.find((i) => i.state === "running");
+  const backup = isBackup(job.kind);
+  const count = t("job.position", { index: position, size: job.size });
   return (
     <section className="flex flex-col gap-3">
-      <p className="text-sm text-white/80">{job.device}</p>
+      {backup ? (
+        <Subject
+          name={active?.name ?? (job.item || job.items[0]?.name)}
+          position={job.size > 1 ? count : undefined}
+          serial={job.serial}
+          device={job.device}
+        />
+      ) : (
+        <p className="text-sm text-white/80">{job.device}</p>
+      )}
       {job.kind === "speed" ? (
         <SpeedLanes job={job} />
       ) : (
         <>
-          {job.size > 0 && (
+          {!backup && job.size > 0 && (
             <p className="flex justify-between gap-3">
               <span className="min-w-0 truncate">{active?.name ?? job.item}</span>
-              {job.size > 1 && (
-                <span className="shrink-0 tabular-nums">
-                  {t("job.position", { index: position, size: job.size })}
-                </span>
-              )}
+              {job.size > 1 && <span className="shrink-0 tabular-nums">{count}</span>}
             </p>
           )}
           <Steps job={job} />
@@ -254,20 +304,10 @@ function JobBlock({ job, now }: { job: Job; now: number }) {
         </>
       )}
       <div className="flex items-center justify-between gap-3">
-        <span className="text-[11px] text-white/50 tabular-nums">
+        <span className="text-xs text-white/50 tabular-nums">
           {t("job.elapsed", { time: clock((now - job.startedAt) / 1000) })}
         </span>
-        <Button
-          variant="danger"
-          size="sm"
-          disabled={job.cancelling}
-          onClick={() => {
-            useJobs.setState((s) => ({
-              jobs: s.jobs.map((j) => (j.id === job.id ? { ...j, cancelling: true } : j)),
-            }));
-            job.cancel();
-          }}
-        >
+        <Button variant="danger" size="sm" disabled={job.cancelling} onClick={onCancel}>
           {t(job.cancelling ? "job.cancelling" : "task.cancel")}
         </Button>
       </div>
@@ -275,19 +315,73 @@ function JobBlock({ job, now }: { job: Job; now: number }) {
   );
 }
 
+function cancel(job: Job) {
+  useJobs.setState((s) => ({
+    jobs: s.jobs.map((j) => (j.id === job.id ? { ...j, cancelling: true } : j)),
+  }));
+  job.cancel();
+}
+
 function ProgressDialog({ jobs }: { jobs: Job[] }) {
   const { t } = useTranslation();
   const now = useNow(true);
   const first = jobs[0];
+  const backups = jobs.every((j) => isBackup(j.kind));
+  const [confirming, setConfirming] = useState<string | null>(null);
+  // A job that ends while it is asked about takes the question with it.
+  const asked = jobs.find((j) => j.id === confirming);
+
+  if (asked) {
+    const what = isBackup(asked.kind) ? "backup" : "restore";
+    return (
+      <Dialog
+        key="confirm"
+        open
+        locked
+        large
+        onOpenChange={() => undefined}
+        title={t(`job.confirm.${what}`)}
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setConfirming(null)} autoFocus>
+              {t("job.confirm.keep")}
+            </Button>
+            <Button
+              variant="danger"
+              onClick={() => {
+                setConfirming(null);
+                cancel(asked);
+              }}
+            >
+              {t("job.confirm.stop")}
+            </Button>
+          </>
+        }
+      >
+        <p>{t("job.confirm.body")}</p>
+      </Dialog>
+    );
+  }
+  const alone = jobs.length === 1 && first ? t(`job.title.${first.kind}`) : t("job.running");
   return (
     <Dialog
+      key="progress"
       open
       locked
+      large
+      wide={backups}
       onOpenChange={() => undefined}
-      title={jobs.length === 1 && first ? t(`job.title.${first.kind}`) : t("job.running")}
+      title={backups ? t("job.backingUp") : alone}
     >
       {jobs.map((job) => (
-        <JobBlock key={job.id} job={job} now={now} />
+        <JobBlock
+          key={job.id}
+          job={job}
+          now={now}
+          onCancel={() =>
+            ASKS_BEFORE_CANCEL.includes(job.kind) ? setConfirming(job.id) : cancel(job)
+          }
+        />
       ))}
     </Dialog>
   );
@@ -316,12 +410,27 @@ function ResultDialog({ result }: { result: Result }) {
   const order = ["failed", "warning", "cancelled", "running", "waiting", "done"];
   const items = [...result.items].sort((a, b) => order.indexOf(a.state) - order.indexOf(b.state));
 
+  const backup = isBackup(result.kind);
+  const kindTitle = result.kind ? t(`job.title.${result.kind}`) : t("job.request");
+  const summary =
+    result.total === 1
+      ? result.items[0]?.name
+      : result.total > 1 && backup
+        ? t(`job.summary.${result.kind as "app" | "folders" | "phoneData"}`, {
+            done: kept,
+            total: result.total,
+          })
+        : undefined;
+
   return (
     <Dialog
       open
       locked
+      large
+      wide={backup}
+      titleClass={backup ? OUTCOME_TONE[result.outcome] : undefined}
       onOpenChange={() => undefined}
-      title={result.kind ? t(`job.title.${result.kind}`) : t("job.request")}
+      title={backup ? t(`job.result.${result.outcome}`) : kindTitle}
       footer={
         <>
           {result.folder && (
@@ -354,10 +463,16 @@ function ResultDialog({ result }: { result: Result }) {
         </>
       }
     >
-      <p className={cn("text-sm", OUTCOME_TONE[result.outcome])} role="status">
-        {t(`job.outcome.${result.outcome}`)}
-      </p>
-      <p className="text-white/60">{result.device}</p>
+      {backup ? (
+        <Subject name={summary} serial={result.serial} device={result.device} />
+      ) : (
+        <>
+          <p className={cn("text-sm", OUTCOME_TONE[result.outcome])} role="status">
+            {t(`job.outcome.${result.outcome}`)}
+          </p>
+          <p className="text-white/60">{result.device}</p>
+        </>
+      )}
       {result.reason && <p className="break-words whitespace-pre-wrap">{result.reason}</p>}
       {result.speed &&
         (["toPc", "toPhone"] as const).map((key) => {
@@ -384,7 +499,7 @@ function ResultDialog({ result }: { result: Result }) {
         <p className="text-white/60">{t("job.kept", { count: kept })}</p>
       )}
       {result.seconds > 0 && !result.speed && (
-        <p className="text-[11px] text-white/50 tabular-nums">
+        <p className="text-xs text-white/50 tabular-nums">
           {t("job.took", { time: clock(result.seconds) })}
           {result.bytes > 0 && ` - ${formatBytes(result.bytes)}`}
         </p>
@@ -401,6 +516,7 @@ function QuitDialog() {
     <Dialog
       open
       locked
+      large
       onOpenChange={() => undefined}
       title={t("quit.title")}
       footer={

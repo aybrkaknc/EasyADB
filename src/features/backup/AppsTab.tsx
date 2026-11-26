@@ -28,6 +28,12 @@ function BackupOptionsPanel({
   root: ReturnType<typeof useRoot>;
 }) {
   const { t } = useTranslation();
+  const rootOnly = (name: string) => (
+    <span className="flex flex-col">
+      {name}
+      <span className="text-[10px] text-white/40">{t("backup.options.needsRoot")}</span>
+    </span>
+  );
   return (
     <Panel title={t("backup.options.title")}>
       <div className="flex flex-col gap-2.5">
@@ -40,13 +46,13 @@ function BackupOptionsPanel({
           checked={value.data && root.isRoot}
           onChange={(data) => onChange({ data })}
           disabled={!root.isRoot}
-          label={t("backup.options.data")}
+          label={rootOnly(t("backup.options.data"))}
         />
         <Checkbox
           checked={value.external && root.isRoot}
           onChange={(external) => onChange({ external })}
           disabled={!root.isRoot}
-          label={t("backup.options.external")}
+          label={rootOnly(t("backup.options.external"))}
         />
         <RootStatus root={root} />
       </div>
@@ -97,6 +103,12 @@ export function AppsTab({ device, onDone }: { device: DeviceEntry; onDone: () =>
       serial: device.serial,
       device: device.model ?? device.serial,
       items: packages.map((pkg) => ({ key: pkg, name: name(pkg) })),
+      parts: [
+        "apk",
+        ...(options.obb ? ["obb"] : []),
+        ...(options.data && root.isRoot ? ["data"] : []),
+        ...(options.external && root.isRoot ? ["external"] : []),
+      ],
       run: ({ taskId }) =>
         commands.startBackup(taskId, device.serial, packages, {
           includeObb: options.obb,
@@ -177,7 +189,7 @@ export function AppsTab({ device, onDone }: { device: DeviceEntry; onDone: () =>
                 />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-xs text-white">{appName(app)}</p>
-                  <p className="truncate text-[10px] text-white/40">{app.package}</p>
+                  <p className="truncate text-[11px] text-white/40">{app.package}</p>
                 </div>
                 {app.system && <span className="label">{t("backup.filter.system")}</span>}
               </div>

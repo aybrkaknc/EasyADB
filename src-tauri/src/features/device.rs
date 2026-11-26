@@ -58,6 +58,8 @@ pub fn list_identified(runner: &dyn AdbRunner, ids: &PhoneIds) -> AppResult<Vec<
 pub struct DeviceDetails {
     pub serial: String,
     pub model: String,
+    /// The name the phone is sold under. Empty when it does not say.
+    pub market_name: String,
     pub manufacturer: String,
     pub android_version: String,
     pub sdk: u32,
@@ -99,6 +101,7 @@ pub fn details(device: Device) -> AppResult<DeviceDetails> {
     Ok(DeviceDetails {
         serial: device.serial().to_string(),
         model: prop("ro.product.model"),
+        market_name: prop("ro.product.marketname"),
         manufacturer: prop("ro.product.manufacturer"),
         android_version: prop("ro.build.version.release"),
         sdk: prop("ro.build.version.sdk").parse().unwrap_or(0),

@@ -48,6 +48,14 @@ impl Layer {
         }
     }
 
+    /// The step that the progress of this layer is shown under.
+    fn stage(self) -> &'static str {
+        match self {
+            Layer::Private | Layer::DeviceProtected => "data",
+            Layer::External => "external",
+        }
+    }
+
     fn stored(self) -> &'static str {
         match self {
             Layer::Private => "data.tar",
@@ -342,7 +350,7 @@ fn fill(
             let script = shell::join(&["su", "-c", &tar_script(layer, package, &sockets)]);
             let pulled = pull(
                 FileKind::Data,
-                "data",
+                layer.stage(),
                 script,
                 stored.into(),
                 stored.into(),

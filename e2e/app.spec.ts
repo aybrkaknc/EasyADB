@@ -33,7 +33,7 @@ test("backs up a selected app and lists it in the archive", async ({ page }) => 
   await page.getByText("Spotify", { exact: true }).click();
   await expect(page.getByText("Estimated size: 23.8 MB")).toBeVisible();
   await page.getByRole("button", { name: "Back up 1 apps" }).click();
-  await expect(page.getByRole("dialog").getByText("Completed", { exact: true })).toBeVisible();
+  await expect(page.getByRole("dialog").getByText("Backup completed")).toBeVisible();
   await page.getByRole("button", { name: "OK" }).click();
   await expect(page.getByRole("tab", { name: "Restore" })).toHaveAttribute("data-state", "active");
   await expect(page.getByText("com.spotify.music | ")).toBeVisible();
@@ -85,14 +85,14 @@ test("does not offer app data without root", async ({ page }) => {
   await page.goto("/?scenario=noroot");
   await openModule(page, "Backup");
   await expect(page.getByText(/No root, or root was denied/)).toBeVisible();
-  await expect(page.getByRole("checkbox", { name: /Include app data/ })).toBeDisabled();
+  await expect(page.getByRole("checkbox", { name: /^Data/ })).toBeDisabled();
 });
 
 test("offers app data when root is available", async ({ page }) => {
   await page.goto("/");
   await openModule(page, "Backup");
   await expect(page.getByText("Root available: app data can be copied.")).toBeVisible();
-  await expect(page.getByRole("checkbox", { name: /Include app data/ })).toBeEnabled();
+  await expect(page.getByRole("checkbox", { name: /^Data/ })).toBeEnabled();
 });
 
 test("dims removed apps and enables only fitting actions", async ({ page }) => {
@@ -185,9 +185,10 @@ test("asks about a phone's backup, follows it and shows how it ended", async ({ 
   await page.keyboard.press("Escape");
   await expect(dialog.getByText("The phone Pixel 7 asks for a backup")).toBeVisible();
   await dialog.getByRole("button", { name: "This time only" }).click();
-  await expect(dialog.getByText("App backup")).toBeVisible();
+  await expect(dialog.getByText("Backing up...")).toBeVisible();
   await expect(dialog.getByText("1 / 2")).toBeVisible();
-  await expect(dialog.getByText("Completed with warnings")).toBeVisible();
+  await expect(dialog.getByText("Backup completed with warnings")).toBeVisible();
+  await expect(dialog.getByText("2 / 2 apps backed up")).toBeVisible();
   await expect(dialog.getByText("App data was not backed up.")).toBeVisible();
   await dialog.getByRole("button", { name: "OK" }).click();
   await expect(dialog).toHaveCount(0);

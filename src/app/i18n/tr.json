@@ -157,7 +157,7 @@
     "stage": {
       "apk": "APK kopyalanıyor",
       "obb": "OBB kopyalanıyor",
-      "data": "Uygulama verisi kopyalanıyor",
+      "data": "Veri kopyalanıyor",
       "verify": "Doğrulanıyor",
       "install": "Kuruluyor",
       "debloat": "Uygulanıyor",
@@ -171,7 +171,8 @@
       "speed": "Ölçülüyor",
       "phone_wait": "Telefona iletildi",
       "phone_open": "Telefonda EasyAndroid açılıyor",
-      "phone_approval": "Telefonda onay bekleniyor"
+      "phone_approval": "Telefonda onay bekleniyor",
+      "external": "Harici veri kopyalanıyor"
     }
   },
   "notify": {
@@ -240,9 +241,10 @@
     "search": "Uygulama ara",
     "options": {
       "title": "Seçenekler",
-      "obb": "OBB dosyalarını ekle",
-      "data": "Uygulama verisini ekle (root)",
-      "external": "Android/data dahil (root)"
+      "obb": "OBB",
+      "data": "Veri",
+      "external": "Harici veri",
+      "needsRoot": "root gerekir"
     },
     "start": "{{count}} uygulamayı yedekle",
     "estimate": "Tahmini boyut: {{size}}",
@@ -280,8 +282,8 @@
     },
     "restore": {
       "title": "{{name}} geri yükle",
-      "obb": "OBB dosyalarını geri yükle",
-      "data": "Uygulama verisini geri yükle (root)",
+      "obb": "OBB geri yükle",
+      "data": "Veriyi geri yükle (root)",
       "dataConfirm": "Uygulama verisini geri yüklemek {{name}} için mevcut verinin yerine geçer. Devam edilsin mi?",
       "verify": "Geri yüklemeden önce SHA-256 doğrula",
       "start": "Geri yükle",
@@ -668,6 +670,27 @@
     "note": {
       "dataSkipped": "Uygulama verisi yedeklenmedi.",
       "dataFailed": "Uygulama verisi okunamadı: {{detail}}"
+    },
+    "backingUp": "Yedekleniyor...",
+    "absent": "{{text}} - yok",
+    "result": {
+      "done": "Yedek tamamlandı",
+      "warning": "Yedek uyarılarla tamamlandı",
+      "incomplete": "Yedek tamamlanmadı",
+      "cancelled": "Yedek iptal edildi",
+      "rejected": "Yedek reddedildi"
+    },
+    "summary": {
+      "app": "{{done}} / {{total}} uygulama yedeklendi",
+      "folders": "{{done}} / {{total}} klasör yedeklendi",
+      "phoneData": "{{done}} / {{total}} öğe yedeklendi"
+    },
+    "confirm": {
+      "backup": "Yedek iptal edilsin mi?",
+      "restore": "Geri yükleme iptal edilsin mi?",
+      "body": "Onaylayana kadar sürer.",
+      "keep": "Devam et",
+      "stop": "İptal et"
     }
   },
   "ask": {
@@ -681,10 +704,10 @@
     },
     "includes": "İçerik: {{list}}",
     "option": {
-      "apk": "uygulama",
+      "apk": "APK",
       "obb": "OBB",
-      "data": "uygulama verisi",
-      "external": "Android/data"
+      "data": "Veri",
+      "external": "Harici veri"
     },
     "trustHint": "Bir daha sorulmaması için bu telefona güvenin. Güvenilen telefon bu bilgisayarda kendi başına yedek başlatabilir. Ayarlar'dan geri alabilirsiniz.",
     "reject": "Reddet",

@@ -52,9 +52,9 @@ const apps = [
     disabled: false,
     installed: true,
   },
-  { package: "org.mozilla.firefox", label: null, system: false, disabled: false, installed: true },
-  { package: "com.facebook.services", label: null, system: true, disabled: false, installed: true },
-  { package: "com.android.systemui", label: null, system: true, disabled: false, installed: true },
+  { package: "org.mozilla.firefox", label: "", system: false, disabled: false, installed: true },
+  { package: "com.facebook.services", label: "", system: true, disabled: false, installed: true },
+  { package: "com.android.systemui", label: "", system: true, disabled: false, installed: true },
   {
     package: "com.old.removed",
     label: "Old Removed",
@@ -116,6 +116,7 @@ const ask = {
   data: true,
   obb: false,
   externalData: false,
+  label: "",
   seconds: 120,
 };
 
@@ -132,7 +133,7 @@ async function phoneBackup() {
     reason: null,
   };
   for (const [index, name] of ["com.spotify.music", "org.mozilla.firefox"].entries()) {
-    const item = { ...job, index, id: `r${index}`, names: [name] };
+    const item = { ...job, index, id: `r${index}`, names: [name], label: "", parts: ["apk"] };
     await emit("phone-job-event", { ...item, state: "running", notes: [] });
     await emit("task-progress", {
       taskId: `phone-r${index}`,
@@ -232,6 +233,7 @@ const handlers: Record<string, (args: Args) => unknown> = {
   get_device_details: () => ({
     serial: device.serial,
     model: "Pixel 7",
+    marketName: "",
     manufacturer: "Google",
     androidVersion: "14",
     sdk: 34,

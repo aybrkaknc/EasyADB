@@ -60,6 +60,10 @@ export interface Job {
   size: number;
   stage: string;
   item: string;
+  /** What an app backup includes. Other steps of it are not listed. */
+  parts?: string[];
+  /** The steps of the current item that moved something. */
+  seen: string[];
   lane: Lane | null;
   /** Both directions of a speed test. */
   speed: Record<string, Lane>;
@@ -77,6 +81,10 @@ export interface Result {
   id: string;
   kind: JobKind | null;
   device: string;
+  /** The connection of a job of this PC; empty for a job of a phone. */
+  serial: string;
+  /** Items the job set out to do. */
+  total: number;
   outcome: Outcome;
   reason?: string;
   items: JobItem[];
@@ -162,11 +170,11 @@ export function secondsLeft(lane: Lane): number | null {
 }
 
 /** Steps whose numbers are bytes that travel. */
-const MOVES = ["apk", "obb", "data", "files", "pull", "push"];
+const MOVES = ["apk", "obb", "data", "external", "files", "pull", "push"];
 
 /** The steps of each kind of job, in the order they come. */
 export const STEPS: Record<JobKind, string[]> = {
-  app: ["apk", "obb", "data"],
+  app: ["apk", "obb", "data", "external"],
   folders: ["files"],
   pull: ["pull"],
   speed: [],
@@ -179,6 +187,12 @@ export const STEPS: Record<JobKind, string[]> = {
 
 const patchJob = (id: string, change: (job: Job) => Job) =>
   useJobs.setState((s) => ({ jobs: s.jobs.map((j) => (j.id === id ? change(j) : j)) }));
+
+/** The jobs that back something up. Their windows name what is being backed up. */
+export const BACKUPS: JobKind[] = ["app", "folders", "phoneData"];
+
+/** The jobs that do harm when they are cut off, so cancelling them is asked about first. */
+export const ASKS_BEFORE_CANCEL: JobKind[] = [...BACKUPS, "restore", "systemRestore"];
 
 /** Marks the item that the progress names as the one being worked on. */
 function activate(items: JobItem[], key: string): JobItem[] {
@@ -209,10 +223,12 @@ export function onProgress(p: TaskProgress, now = Date.now()) {
     }
     const samePart = j.item === p.item && MOVES.includes(j.stage) && MOVES.includes(p.stage);
     const ended = !samePart && j.lane && MOVES.includes(j.stage) ? j.lane.done : 0;
+    const seen = j.item === p.item ? j.seen : [];
     return {
       ...j,
       stage: p.stage,
       item: p.item,
+      seen: done > 0 && !seen.includes(p.stage) ? [...seen, p.stage] : seen,
       items: activate(j.items, p.item),
       lane: total > 0 ? nextLane(samePart ? j.lane : null, done, total, now) : null,
       moved: j.moved + ended,
@@ -249,6 +265,8 @@ function finish(
     id: job.id,
     kind: job.kind,
     device: job.device,
+    serial: job.serial,
+    total: Math.max(job.size, job.items.length),
     outcome: end.outcome ?? outcomeOf(items),
     reason: end.reason,
     items,
@@ -272,6 +290,8 @@ function notice(id: string, device: string, outcome: Outcome, reason: string, ki
     id,
     kind: kind ?? null,
     device,
+    serial: "",
+    total: 0,
     outcome,
     reason,
     items: [],
@@ -316,7 +336,7 @@ export function removeAsk(phone: string, batch: string): Ask | undefined {
 }
 
 function nameOf(e: PhoneJobEvent): string {
-  if (e.kind === "app") return appName({ package: e.names[0] ?? "" });
+  if (e.kind === "app") return appName({ package: e.names[0] ?? "", label: e.label || null });
   if (e.kind === "speed") return t("job.title.speed");
   return e.names.join(", ");
 }
@@ -361,6 +381,7 @@ export function onPhoneJob(e: PhoneJobEvent, now = Date.now()) {
       size: e.size,
       stage: "prepare",
       item: "",
+      seen: [],
       lane: null,
       speed: {},
       moved: 0,
@@ -387,6 +408,8 @@ export function onPhoneJob(e: PhoneJobEvent, now = Date.now()) {
   patchJob(id, (j) => ({
     ...j,
     taskId: `phone-${e.id}`,
+    parts: e.parts.length > 0 ? e.parts : j.parts,
+    seen: e.state === "running" ? [] : j.seen,
     stage: e.state === "running" ? "prepare" : j.stage,
     moved: e.state === "running" ? j.moved : movedBytes(j),
     lane: e.state === "running" ? j.lane : null,
@@ -451,6 +474,8 @@ export interface JobSpec<T> {
   serial: string;
   device: string;
   items: { key: string; name: string }[];
+  /** What an app backup includes. */
+  parts?: string[];
   run: (ctx: JobContext) => Promise<T>;
   /** How each item ended, from what the command returned. */
   report?: (value: T) => { key: string; state: ItemState; note?: string; name?: string }[];
@@ -489,6 +514,8 @@ export async function runJob<T>(spec: JobSpec<T>): Promise<T | null> {
     size: spec.items.length,
     stage: "",
     item: "",
+    parts: spec.parts,
+    seen: [],
     lane: null,
     speed: {},
     moved: 0,
