@@ -33,7 +33,7 @@ export function Dialog({
   return (
     <RDialog.Root open={open} onOpenChange={onOpenChange}>
       <RDialog.Portal>
-        <RDialog.Overlay className="fixed inset-0 z-40 bg-black/70" />
+        <RDialog.Overlay className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm" />
         <RDialog.Content
           onEscapeKeyDown={keep}
           onInteractOutside={keep}
