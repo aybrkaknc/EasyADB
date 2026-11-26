@@ -57,32 +57,19 @@
   },
   "modules": {
     "device": {
-      "title": "Device",
-      "subtitle": "Overview, install and reboot"
-    },
-    "debugging": {
-      "title": "Debug connection",
-      "subtitle": "Connect and set up a phone over USB or wireless debugging"
+      "title": "Device"
     },
     "backup": {
-      "title": "Backup",
-      "subtitle": "Back up and restore apps on this PC"
+      "title": "Backup"
     },
     "debloat": {
-      "title": "Debloat",
-      "subtitle": "Disable or remove unwanted packages"
-    },
-    "terminal": {
-      "title": "Terminal",
-      "subtitle": "Run adb and fastboot commands"
+      "title": "Debloat"
     },
     "files": {
-      "title": "Files",
-      "subtitle": "Browse and transfer device files"
+      "title": "Files"
     },
     "settings": {
-      "title": "Settings and tools",
-      "subtitle": "Preferences, performance and logcat"
+      "title": "Settings"
     }
   },
   "devices": {
@@ -133,7 +120,7 @@
       "step1": "The bundled adb.exe is missing next to EasyADB.exe. Reinstall the application."
     },
     "wrongMode": "This device is in {{state}} mode. Reboot it into Android to use this module.",
-    "wireless": "To connect and set up a phone, see Debug connection."
+    "wireless": "To connect and set up a phone, see Settings > Debugging."
   },
   "errors": {
     "adb_missing": "ADB was not found next to the application.",
@@ -378,8 +365,8 @@
     "tabs": {
       "usb": "USB",
       "wireless": "Wireless",
-      "settings": "Phone settings",
-      "pc": "PC"
+      "settings": "Phone",
+      "pc": "ADB"
     },
     "usb": {
       "cable": "Cable connection",
@@ -485,6 +472,9 @@
       "restarted": "adb server restarted",
       "restartConfirm": "Restart the adb server? Every phone is disconnected for a few seconds.",
       "restartNote": "A restart drops every connection for a few seconds. It is refused while a job runs."
+    },
+    "sections": {
+      "label": "Debugging sections"
     }
   },
   "terminal": {
@@ -574,6 +564,8 @@
   "settings": {
     "tabs": {
       "general": "General",
+      "debugging": "Debugging",
+      "terminal": "Terminal",
       "performance": "Performance",
       "logcat": "Logcat"
     },

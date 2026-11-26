@@ -77,11 +77,6 @@
   background-size: 16px 16px;
 }
 
-@utility scanlines {
-  background: repeating-linear-gradient(0deg, #ffffff0a 0 1px, transparent 1px 3px);
-  pointer-events: none;
-}
-
 @utility heading {
   font-family: var(--font-display);
   font-weight: 900;

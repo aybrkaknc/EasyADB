@@ -13,7 +13,7 @@ export function IconRail() {
   return (
     <Tooltip.Provider delayDuration={300}>
       <nav
-        className="flex w-14 shrink-0 flex-col items-center gap-1 border-r border-line bg-black py-3"
+        className="flex w-14 shrink-0 flex-col items-center justify-center gap-1 border-r border-line bg-black py-3"
         aria-label="Modules"
       >
         {MODULES.map((id) => {

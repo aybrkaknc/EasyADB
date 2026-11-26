@@ -82,12 +82,12 @@ export const TabsContent = RTabs.Content;
 
 export function TabsList({ tabs }: { tabs: { value: string; label: string }[] }) {
   return (
-    <RTabs.List className="flex gap-1 border-b border-line px-6">
+    <RTabs.List className="flex gap-1 px-6">
       {tabs.map((tab) => (
         <RTabs.Trigger
           key={tab.value}
           value={tab.value}
-          className="-mb-px border-b-2 border-transparent px-3 py-2 text-[11px] tracking-widest text-white/60 uppercase hover:text-white data-[state=active]:border-neon data-[state=active]:text-neon"
+          className="border-b-2 border-transparent px-3 py-2 text-[11px] tracking-widest text-white/60 uppercase hover:text-white data-[state=active]:border-neon data-[state=active]:text-neon"
         >
           {tab.label}
         </RTabs.Trigger>

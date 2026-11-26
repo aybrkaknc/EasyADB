@@ -77,8 +77,8 @@ Ekran görüntüleri bir sonraki sürümle eklenecek.
 * **Yedekleme ve geri yükleme:** APK ve bölünmüş APK'lar, OBB dosyaları ve root varsa uygulama verisi. Yedekler sürümlü bir manifest ve SHA-256 sağlama toplamlarıyla düz klasörlerdir, bu yüzden geri yükleme hızlıdır. Çalışma zamanı izinleri de kaydedilir ve geri yüklerken isteğe bağlı olarak tekrar verilir. Root yoksa yalnızca uygulama geri yüklenir ve verinin atlandığı size söylenir. Birden fazla yedeği seçip tek seferde geri yükleyebilirsiniz. Tek bir `.easybckp` dosyası olarak dışa veya içe aktarma.
 * **Doğrudan PC'ye:** Uygulamaları ve klasörleri telefonda yer kaplamadan bu bilgisayara akıtın, telefondaki EasyAndroid'den mesaj, arama kaydı, duvar kâğıdı ve sistem ayarı yedeklerini isteyin, telefonun yedekleri kendisinin başlatmasına izin verin. Her iş gerektiğinde sorulur, ilerlemesini ve nasıl bittiğini gösterir. Telefona bir kez güvenilir ve Ayarlar'dan geri alınır. Telefondaki kopyalar yalnızca PC kopyası doğrulandıktan ve siz onayladıktan sonra silinir.
 * **Debloater:** UAD-NG listesinden paket açıklamaları ve güvenlik seviyeleri, toplu devre dışı bırakma, etkinleştirme, kaldırma ve geri getirme, yeni bir ROM'dan sonra tekrar uygulanabilen profiller.
-* **Hata ayıklama bağlantısı:** USB ve kablosuz hata ayıklama tek ekranda. QR kod veya eşleştirme koduyla eşleştirin, IP veya `adb tcpip` ile bağlanın, eşleşmiş telefonları kendiliğinden bağlayın, telefonun hata ayıklama ayarlarını değiştirin ve adb sunucusunu yönetin.
-* **Terminal:** adb ve fastboot komutlarını canlı çıktı, geçmiş, tamamlama ve iptal ile çalıştırır.
+* **Hata ayıklama:** **Ayarlar** ekranının sekmesi. USB ve kablosuz hata ayıklama tek yerde. QR kod veya eşleştirme koduyla eşleştirin, IP veya `adb tcpip` ile bağlanın, eşleşmiş telefonları kendiliğinden bağlayın, telefonun hata ayıklama ayarlarını değiştirin ve adb sunucusunu yönetin.
+* **Terminal:** **Ayarlar** ekranının sekmesi. adb ve fastboot komutlarını canlı çıktı, geçmiş, tamamlama ve iptal ile çalıştırır.
 * **Dosyalar:** Cihaza göz atma, oluşturma, yeniden adlandırma, taşıma ve silme, bilgisayar ile cihaz arasında dosya kopyalama.
 * **Logcat:** Seviye ve etiket filtreli canlı günlük, vurgulamalı regex arama, dosyaya kaydetme ve dışa aktarma.
 * **Performans:** Canlı CPU, RAM, pil ve depolama, donanım bilgileri ve ağ ayrıntıları.
@@ -155,7 +155,7 @@ Windows 10 veya 11 (x64) üzerinde kaynaktan derlemek için:
 
 1. Telefonda Geliştirici seçeneklerini ve USB hata ayıklamayı açın, telefonu bağlayın ve yetki isteğini onaylayın.
 2. Üstteki seçiciden cihazı seçin. Tüm modüller seçili cihaz üzerinde çalışır.
-3. Modül değiştirmek için simge çubuğunu kullanın. Performans ve logcat **Ayarlar ve araçlar** ekranının sekmeleridir. `F5` yeniler, `Ctrl+F` arama kutusuna odaklanır.
+3. Modül değiştirmek için simge çubuğunu kullanın. Hata ayıklama, terminal, performans ve logcat **Ayarlar** ekranının sekmeleridir. `F5` yeniler, `Ctrl+F` arama kutusuna odaklanır.
 
 Yedekler varsayılan olarak `Belgeler\EasyADB\Backups` klasörüne kaydedilir. Klasörü Ayarlar'dan değiştirebilirsiniz.
 

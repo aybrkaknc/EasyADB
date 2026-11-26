@@ -308,11 +308,7 @@ export function DebloatView() {
   const { t } = useTranslation();
   return (
     <>
-      <ModuleHeader
-        icon={Eraser}
-        title={t("modules.debloat.title")}
-        subtitle={t("modules.debloat.subtitle")}
-      />
+      <ModuleHeader icon={Eraser} title={t("modules.debloat.title")} />
       <DeviceGuard>{(device) => <Debloater key={device.serial} device={device} />}</DeviceGuard>
     </>
   );

@@ -274,11 +274,7 @@ export function FilesView() {
   const { t } = useTranslation();
   return (
     <>
-      <ModuleHeader
-        icon={FolderOpen}
-        title={t("modules.files.title")}
-        subtitle={t("modules.files.subtitle")}
-      />
+      <ModuleHeader icon={FolderOpen} title={t("modules.files.title")} />
       <DeviceGuard>{(device) => <Explorer key={device.serial} device={device} />}</DeviceGuard>
     </>
   );

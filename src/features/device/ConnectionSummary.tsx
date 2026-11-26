@@ -13,7 +13,7 @@ import { ConnectionBadges } from "../debugging/ConnectionBadges";
 export function ConnectionSummary({ device }: { device: DeviceEntry }) {
   const { t } = useTranslation();
   const { devices } = useDevices();
-  const setModule = useAppStore((s) => s.setModule);
+  const openSettings = useAppStore((s) => s.openSettings);
   const phone = groupPhones(devices).find((p) => p.key === phoneKey(device));
   const wireless = phone?.devices.find((d) => d.kind === "wifi");
   const found = useQuery({
@@ -30,7 +30,7 @@ export function ConnectionSummary({ device }: { device: DeviceEntry }) {
     <Panel
       title={t("device.connection.title")}
       actions={
-        <Button size="sm" variant="ghost" onClick={() => setModule("debugging")}>
+        <Button size="sm" variant="ghost" onClick={() => openSettings("debugging")}>
           {t("debugging.open")}
         </Button>
       }

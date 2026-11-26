@@ -7,11 +7,9 @@ import { BackupView } from "../features/backup/BackupView";
 import { PhoneBackupsPrompt } from "../features/backup/PhoneBackupsPrompt";
 import { TrustNewPhone } from "../features/backup/TrustNewPhone";
 import { DebloatView } from "../features/debloat/DebloatView";
-import { DebuggingView } from "../features/debugging/DebuggingView";
 import { DeviceView } from "../features/device/DeviceView";
 import { FilesView } from "../features/files/FilesView";
 import { SettingsView } from "../features/settings/SettingsView";
-import { TerminalView } from "../features/terminal/TerminalView";
 import { useConnections } from "../shared/hooks/useConnections";
 import { useSettings } from "../shared/hooks/useSettings";
 import { JobHost } from "../shared/jobs/JobHost";
@@ -24,10 +22,8 @@ import { MODULES, type ModuleId, useAppStore } from "./store";
 
 const VIEWS: Record<ModuleId, ComponentType> = {
   device: DeviceView,
-  debugging: DebuggingView,
   backup: BackupView,
   debloat: DebloatView,
-  terminal: TerminalView,
   files: FilesView,
   settings: SettingsView,
 };
@@ -54,9 +50,10 @@ function useShortcuts() {
         // Root checks make the phone show a prompt, so a refresh keeps their cached result.
         void client.invalidateQueries({ predicate: (q) => q.queryKey[0] !== "root" });
       } else if (event.ctrlKey && event.key.toLowerCase() === "f") {
-        const input = document.querySelector<HTMLInputElement>(
-          "[data-module-active] [data-search]",
-        );
+        // Hidden tabs keep their search boxes; only a visible one takes the focus.
+        const input = Array.from(
+          document.querySelectorAll<HTMLInputElement>("[data-module-active] [data-search]"),
+        ).find((box) => box.offsetParent !== null);
         if (input) {
           event.preventDefault();
           input.focus();
@@ -100,7 +97,6 @@ export function App() {
               </div>
             );
           })}
-          <div className="scanlines absolute inset-0" />
         </main>
       </div>
       <ConfirmHost />

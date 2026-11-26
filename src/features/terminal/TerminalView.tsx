@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { save } from "@tauri-apps/plugin-dialog";
-import { Play, Square, SquareTerminal } from "lucide-react";
+import { Play, Square } from "lucide-react";
 import { type KeyboardEvent, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Virtuoso } from "react-virtuoso";
@@ -11,7 +11,6 @@ import { useFeedback } from "../../shared/hooks/useFeedback";
 import { cn } from "../../shared/lib/cn";
 import { useHold } from "../../shared/jobs/store";
 import { Button } from "../../shared/ui/Button";
-import { ModuleHeader } from "../../shared/ui/ModuleHeader";
 import { complete } from "./completion";
 
 interface Line {
@@ -22,7 +21,7 @@ interface Line {
 
 const MAX_LINES = 5000;
 
-export function TerminalView() {
+export function TerminalTab() {
   const { t } = useTranslation();
   const feedback = useFeedback();
   const { selected } = useDevices();
@@ -102,26 +101,19 @@ export function TerminalView() {
 
   return (
     <>
-      <ModuleHeader
-        icon={SquareTerminal}
-        title={t("modules.terminal.title")}
-        subtitle={t("modules.terminal.subtitle")}
-        actions={
-          <>
-            <Button variant="ghost" size="sm" onClick={() => setLines([])}>
-              {t("common.clear")}
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => void exportLog()}
-              disabled={lines.length === 0}
-            >
-              {t("terminal.export")}
-            </Button>
-          </>
-        }
-      />
+      <div className="flex justify-end gap-2 px-6 py-3">
+        <Button variant="ghost" size="sm" onClick={() => setLines([])}>
+          {t("common.clear")}
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => void exportLog()}
+          disabled={lines.length === 0}
+        >
+          {t("terminal.export")}
+        </Button>
+      </div>
       <div className="flex min-h-0 flex-1 flex-col bg-black/80 font-mono text-xs">
         <Virtuoso
           className="flex-1"

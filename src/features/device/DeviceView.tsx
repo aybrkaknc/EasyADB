@@ -159,11 +159,7 @@ export function DeviceView() {
   const { t } = useTranslation();
   return (
     <>
-      <ModuleHeader
-        icon={Smartphone}
-        title={t("modules.device.title")}
-        subtitle={t("modules.device.subtitle")}
-      />
+      <ModuleHeader icon={Smartphone} title={t("modules.device.title")} />
       <DeviceGuard allow={["device", "recovery", "sideload", "bootloader"]}>
         {(device) => <DeviceActions key={device.serial} device={device} />}
       </DeviceGuard>

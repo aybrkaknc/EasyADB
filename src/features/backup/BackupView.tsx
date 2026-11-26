@@ -17,11 +17,7 @@ export function BackupView() {
   const [tab, setTab] = useState("apps");
   return (
     <>
-      <ModuleHeader
-        icon={Archive}
-        title={t("modules.backup.title")}
-        subtitle={t("modules.backup.subtitle")}
-      />
+      <ModuleHeader icon={Archive} title={t("modules.backup.title")} />
       <Tabs value={tab} onValueChange={setTab} className="relative flex min-h-0 flex-1 flex-col">
         <TabsList
           tabs={[

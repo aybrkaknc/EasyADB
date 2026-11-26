@@ -12,8 +12,8 @@ import { Panel } from "./Panel";
 
 function Guide({ icon: Icon, guide, steps }: { icon: LucideIcon; guide: string; steps: number }) {
   const { t } = useTranslation();
-  const setModule = useAppStore((s) => s.setModule);
-  const here = useAppStore((s) => s.module === "debugging");
+  const openSettings = useAppStore((s) => s.openSettings);
+  const here = useAppStore((s) => s.module === "settings" && s.settingsTab === "debugging");
   return (
     <div className="flex h-full items-center justify-center p-6">
       <Panel className="w-full max-w-xl">
@@ -29,7 +29,7 @@ function Guide({ icon: Icon, guide, steps }: { icon: LucideIcon; guide: string; 
         {guide !== "adbMissing" && !here && (
           <div className="mt-5 flex flex-wrap items-center gap-3">
             <p className="label text-neon/70">{t("guide.wireless")}</p>
-            <Button size="sm" onClick={() => setModule("debugging")}>
+            <Button size="sm" onClick={() => openSettings("debugging")}>
               {t("debugging.open")}
             </Button>
           </div>

@@ -75,7 +75,7 @@ test("filters debloat packages by search", async ({ page }) => {
 
 test("switches the interface to Turkish", async ({ page }) => {
   await page.goto("/");
-  await openModule(page, "Settings and tools");
+  await openModule(page, "Settings");
   await page.getByRole("radio", { name: "Türkçe" }).click();
   await expect(page.getByRole("heading", { name: "Ayarlar", level: 1 })).toBeVisible();
   await expect(page.getByRole("button", { name: "Uygulama" })).toBeVisible();
@@ -205,15 +205,27 @@ const argsOf = (page: Page, command: string) =>
 
 test("measures the speed of a connection", async ({ page }) => {
   await page.goto("/");
-  await openModule(page, "Settings and tools");
+  await openModule(page, "Settings");
   await page.getByRole("button", { name: "Connection", exact: true }).click();
   await page.getByRole("button", { name: "Start test" }).click();
   await expect(page.getByText("21.0 MB/s (168 Mbit/s)")).toBeVisible();
 });
 
+/** Opens the debugging tab of the settings. */
+const openDebugging = async (page: Page) => {
+  await openModule(page, "Settings");
+  await page.getByRole("tab", { name: "Debugging" }).click();
+};
+
+const debugSection = (page: Page, name: string) =>
+  page
+    .getByRole("navigation", { name: "Debugging sections" })
+    .getByRole("button", { name, exact: true })
+    .click();
+
 test("does not wait for a code while a phone is connected", async ({ page }) => {
   await page.goto("/?scenario=wireless");
-  await openModule(page, "Debug connection");
+  await openDebugging(page);
   await expect(page.getByText("Pixel 7 is already connected.", { exact: false })).toBeVisible();
   expect(await calls(page)).not.toContain("wireless_new_qr");
   await page.getByRole("button", { name: "Show QR code" }).click();
@@ -222,15 +234,15 @@ test("does not wait for a code while a phone is connected", async ({ page }) => 
 
 test("says which new phone a code connected", async ({ page }) => {
   await page.goto("/?scenario=scan");
-  await openModule(page, "Debug connection");
-  await page.getByRole("tab", { name: "Wireless" }).click();
+  await openDebugging(page);
+  await debugSection(page, "Wireless");
   await expect(page.getByText("Pixel 9 connected.")).toBeVisible();
 });
 
 test("changes a setting of the phone and asks before revoking", async ({ page }) => {
   await page.goto("/");
-  await openModule(page, "Debug connection");
-  await page.getByRole("tab", { name: "Phone settings" }).click();
+  await openDebugging(page);
+  await debugSection(page, "Phone");
   await page.getByRole("switch", { name: "Keep the screen on while charging" }).click();
   await expect(page.getByText("Setting changed on the phone")).toBeVisible();
   expect(await argsOf(page, "set_debug_setting")).toEqual([
@@ -243,11 +255,11 @@ test("changes a setting of the phone and asks before revoking", async ({ page })
 
 test("starts every visit at the first settings section", async ({ page }) => {
   await page.goto("/");
-  await openModule(page, "Settings and tools");
+  await openModule(page, "Settings");
   await page.getByRole("button", { name: "Backups", exact: true }).click();
   await expect(page.getByText("Verify SHA-256", { exact: false })).toBeVisible();
   await openModule(page, "Device");
-  await openModule(page, "Settings and tools");
+  await openModule(page, "Settings");
   await expect(page.getByRole("button", { name: "Application" })).toHaveAttribute(
     "aria-current",
     "true",
@@ -256,7 +268,7 @@ test("starts every visit at the first settings section", async ({ page }) => {
 
 test("turns automatic connection off", async ({ page }) => {
   await page.goto("/");
-  await openModule(page, "Settings and tools");
+  await openModule(page, "Settings");
   await page.getByRole("button", { name: "Connection", exact: true }).click();
   await page.getByRole("switch", { name: /Connect paired phones/ }).click();
   await expect
@@ -264,12 +276,32 @@ test("turns automatic connection off", async ({ page }) => {
     .toMatchObject([{ settings: { autoConnect: false } }]);
 });
 
+test("opens the debugging tab from the connection guide", async ({ page }) => {
+  await page.goto("/?scenario=nodevice");
+  await page.getByRole("button", { name: "Open debug connection" }).click();
+  await expect(page.getByRole("tab", { name: "Debugging" })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+});
+
+test("keeps the terminal while another tab is open", async ({ page }) => {
+  await page.goto("/");
+  await openModule(page, "Settings");
+  await page.getByRole("tab", { name: "Terminal" }).click();
+  const input = page.getByRole("textbox", { name: /adb/ });
+  await input.fill("adb devices");
+  await page.getByRole("tab", { name: "General" }).click();
+  await page.getByRole("tab", { name: "Terminal" }).click();
+  await expect(input).toHaveValue("adb devices");
+});
+
 test("opens the tools inside the settings", async ({ page }) => {
   await page.goto("/");
-  await openModule(page, "Settings and tools");
+  await openModule(page, "Settings");
   await page.getByRole("tab", { name: "Logcat" }).click();
   await expect(page.getByRole("button", { name: "Start", exact: true })).toBeVisible();
   await openModule(page, "Device");
-  await openModule(page, "Settings and tools");
+  await openModule(page, "Settings");
   await expect(page.getByRole("tab", { name: "General" })).toHaveAttribute("aria-selected", "true");
 });

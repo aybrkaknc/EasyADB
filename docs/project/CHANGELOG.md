@@ -20,8 +20,8 @@ Versiyon numaralandırması [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Onay, süreç ve sonuç pencereleri: telefonun istediği ve PC'den başlatılan bütün yedek, geri yükleme ve gönderme işlerinde. Süreçte adımlar, öğe sırası, hız ve kalan süre; sonuçta öğe öğe durum, neden ve başarısızları yeniden deneme. Sorunsuz sonuç 10 saniyede kapanır
 - Telefonun çok uygulamalı isteği tek onay, tek süreç ve tek sonuçtur. Onay 2 dakika yanıtlanmazsa düşer
 - Telefon bağlandığında "Bu telefona güvenilsin mi?" sorusu (Güven, Şimdi değil, Bir daha sorma)
-- Aktarım hız testi: Ayarlar ve araçlar > Bağlantı bölümünden veya telefondan
-- "Hata ayıklama bağlantısı" ekranı: USB (USB modu, TCP, kablodan kablosuza), Kablosuz (telefon listesi, QR, eşleştirme kodu, IP), Telefon ayarları (kablosuz hata ayıklama, yetki süresi, uyanık kalma, kurulum doğrulama, yetkili PC'ler, yetki iptali, USB hata ayıklamayı kapatma) ve PC (adb sunucusu) sekmeleri
+- Aktarım hız testi: Ayarlar > Genel > Bağlantı bölümünden veya telefondan
+- Ayarlar > Hata ayıklama sekmesi, sol menülü bölümlerle: USB (USB modu, TCP, kablodan kablosuza), Kablosuz (telefon listesi, QR, eşleştirme kodu, IP), Telefon (kablosuz hata ayıklama, yetki süresi, uyanık kalma, kurulum doğrulama, yetkili PC'ler, yetki iptali, USB hata ayıklamayı kapatma) ve ADB (adb sunucusu)
 - Eşleşmiş telefon ağda görününce kendiliğinden bağlanır; eşleştirme bitince bağlantı kurulur
 - Kablo takılınca iş sürmüyorsa USB'ye geçilir; bağlantı gelip gidince kısa bildirim çıkar
 - Cihaz ekranında bağlantı özeti
@@ -29,7 +29,7 @@ Versiyon numaralandırması [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Aynı telefonda ikinci iş sıraya girer. İş sürerken Windows uykuya geçmez ve çıkış sorulur
 
 ### Değişenler
-- "Kablosuz" modülünün yerini "Hata ayıklama bağlantısı" aldı. Performans ve Logcat "Ayarlar ve araçlar" ekranının sekmeleri oldu
+- "Kablosuz" modülünün yerini "Hata ayıklama" aldı. Hata ayıklama, Terminal, Performans ve Logcat "Ayarlar" ekranının sekmeleri oldu; sol şeritte beş modül kaldı
 - Ctrl+1...9 modül kısayolları kaldırıldı
 - Genel ayarlar sol menülü bölümlere ayrıldı: Uygulama, Yedekleme, Telefonlar, Bağlantı, Tanılama, Hakkında. Güvenilen telefonlar model adıyla görünür; otomatik bağlanma ve hız testi Bağlantı bölümünde. Kısayol paneli kaldırıldı
 
