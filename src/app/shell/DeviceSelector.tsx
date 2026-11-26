@@ -1,4 +1,4 @@
-import { ChevronDown, Smartphone, Usb, Wifi } from "lucide-react";
+import { Bug, ChevronDown, Smartphone, Usb } from "lucide-react";
 import { DropdownMenu } from "radix-ui";
 import { useTranslation } from "react-i18next";
 
@@ -15,7 +15,7 @@ function stateColor(device: DeviceEntry) {
 }
 
 function KindIcon({ device }: { device: DeviceEntry }) {
-  const Icon = device.kind === "wifi" ? Wifi : device.kind === "usb" ? Usb : Smartphone;
+  const Icon = device.kind === "wifi" ? Bug : device.kind === "usb" ? Usb : Smartphone;
   return <Icon className="size-3.5 shrink-0 text-white/60" aria-hidden />;
 }
 

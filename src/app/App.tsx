@@ -7,13 +7,12 @@ import { BackupView } from "../features/backup/BackupView";
 import { PhoneBackupsPrompt } from "../features/backup/PhoneBackupsPrompt";
 import { TrustNewPhone } from "../features/backup/TrustNewPhone";
 import { DebloatView } from "../features/debloat/DebloatView";
+import { DebuggingView } from "../features/debugging/DebuggingView";
 import { DeviceView } from "../features/device/DeviceView";
 import { FilesView } from "../features/files/FilesView";
-import { LogcatView } from "../features/logcat/LogcatView";
-import { PerformanceView } from "../features/performance/PerformanceView";
 import { SettingsView } from "../features/settings/SettingsView";
 import { TerminalView } from "../features/terminal/TerminalView";
-import { WirelessView } from "../features/wireless/WirelessView";
+import { useConnections } from "../shared/hooks/useConnections";
 import { useSettings } from "../shared/hooks/useSettings";
 import { JobHost } from "../shared/jobs/JobHost";
 import { ConfirmHost } from "../shared/ui/Dialog";
@@ -25,13 +24,11 @@ import { MODULES, type ModuleId, useAppStore } from "./store";
 
 const VIEWS: Record<ModuleId, ComponentType> = {
   device: DeviceView,
+  debugging: DebuggingView,
   backup: BackupView,
   debloat: DebloatView,
   terminal: TerminalView,
   files: FilesView,
-  logcat: LogcatView,
-  performance: PerformanceView,
-  wireless: WirelessView,
   settings: SettingsView,
 };
 
@@ -50,16 +47,9 @@ function useLanguageSync() {
 
 function useShortcuts() {
   const client = useQueryClient();
-  const setModule = useAppStore((s) => s.setModule);
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.ctrlKey && /^[1-9]$/.test(event.key)) {
-        const id = MODULES[Number(event.key) - 1];
-        if (id) {
-          event.preventDefault();
-          setModule(id);
-        }
-      } else if (event.key === "F5") {
+      if (event.key === "F5") {
         event.preventDefault();
         // Root checks make the phone show a prompt, so a refresh keeps their cached result.
         void client.invalidateQueries({ predicate: (q) => q.queryKey[0] !== "root" });
@@ -76,7 +66,7 @@ function useShortcuts() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [client, setModule]);
+  }, [client]);
 }
 
 export function App() {
@@ -86,6 +76,7 @@ export function App() {
   if (!visited.has(module)) setVisited(new Set(visited).add(module));
   useLanguageSync();
   useShortcuts();
+  useConnections();
 
   return (
     <div className="flex h-full flex-col bg-black">

@@ -77,7 +77,7 @@ Screenshots will be added with the next release.
 * **Backup and restore:** APKs and split APKs, OBB files and, with root, app data. Backups are plain folders with a versioned manifest and SHA-256 checksums, so restoring is fast. Runtime permissions are saved too and can be granted again on restore. Without root, only the app is restored and you are told that its data was skipped. Select several backups to restore them in one go. Export or import a single `.easybckp` file.
 * **Straight to the PC:** Stream apps and folders to this PC without using space on the phone, ask EasyAndroid on the phone for messages, call logs, wallpapers and system settings, and let the phone start backups here itself. Every job shows a question when one is needed, its progress and how it ended. A phone is trusted once and removed again in Settings. Copies on the phone are only deleted after the PC copy is checked and you say so.
 * **Debloater:** Package descriptions and safety levels from the UAD-NG list, batch disable, enable, remove and restore, and profiles you can save and re-apply after a new ROM.
-* **Wireless debugging:** Pairing code, QR code, manual IP and `adb tcpip` for older devices. Saved devices reconnect with one click.
+* **Debug connection:** One screen for USB and wireless debugging. Pair with a QR code or a pairing code, connect by IP or `adb tcpip`, connect paired phones automatically, change the phone's debugging settings and manage the adb server.
 * **Terminal:** Runs adb and fastboot commands with live output, history, completion and cancel.
 * **Files:** Browse the device, create, rename, move and delete, and copy files between PC and device.
 * **Logcat:** Live log with level and tag filters, regex search with highlighting, recording to a file and export.
@@ -155,7 +155,7 @@ To build from source on Windows 10 or 11 (x64):
 
 1. Enable Developer options and USB debugging on the phone, connect it and accept the authorization prompt.
 2. Pick the device in the selector at the top. Every module works on the selected device.
-3. Use the icon rail or `Ctrl+1` to `Ctrl+9` to switch modules. `F5` refreshes, `Ctrl+F` focuses the search box.
+3. Use the icon rail to switch modules. Performance and logcat are tabs of **Settings and tools**. `F5` refreshes, `Ctrl+F` focuses the search box.
 
 Backups are saved to `Documents\EasyADB\Backups` by default. You can change the folder in Settings.
 

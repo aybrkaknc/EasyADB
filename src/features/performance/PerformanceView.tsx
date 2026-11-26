@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import { Activity } from "lucide-react";
 import { useRef } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -7,7 +6,6 @@ import { commands, type DeviceEntry } from "../../bindings";
 import { formatBytes, percent } from "../../shared/lib/format";
 import { DeviceGuard } from "../../shared/ui/DeviceGuard";
 import { ProgressBar, Spinner } from "../../shared/ui/Feedback";
-import { ModuleHeader } from "../../shared/ui/ModuleHeader";
 import { KeyValue, Panel } from "../../shared/ui/Panel";
 
 const HISTORY = 60;
@@ -200,16 +198,6 @@ function Metrics({ device }: { device: DeviceEntry }) {
   );
 }
 
-export function PerformanceView() {
-  const { t } = useTranslation();
-  return (
-    <>
-      <ModuleHeader
-        icon={Activity}
-        title={t("modules.performance.title")}
-        subtitle={t("modules.performance.subtitle")}
-      />
-      <DeviceGuard>{(device) => <Metrics key={device.serial} device={device} />}</DeviceGuard>
-    </>
-  );
+export function PerformanceTab() {
+  return <DeviceGuard>{(device) => <Metrics key={device.serial} device={device} />}</DeviceGuard>;
 }

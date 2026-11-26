@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import type { TFunction } from "i18next";
 import { create } from "zustand";
 
@@ -98,6 +99,8 @@ interface JobStore {
   quitting: boolean;
   /** Another window asks something now. */
   trustOpen: boolean;
+  /** Streams, commands and transfers that use a connection outside a job window. */
+  holds: number;
 }
 
 export const useJobs = create<JobStore>(() => ({
@@ -106,6 +109,7 @@ export const useJobs = create<JobStore>(() => ({
   results: [],
   quitting: false,
   trustOpen: false,
+  holds: 0,
 }));
 
 // Looked up per call, so that a change of language applies at once.
@@ -116,6 +120,21 @@ export function useIdle() {
   return useJobs(
     (s) => s.asks.length === 0 && s.jobs.length === 0 && s.results.length === 0 && !s.quitting,
   );
+}
+
+/** Marks the connection as in use while `active`. */
+export function useHold(active: boolean) {
+  useEffect(() => {
+    if (!active) return;
+    useJobs.setState((s) => ({ holds: s.holds + 1 }));
+    return () => useJobs.setState((s) => ({ holds: s.holds - 1 }));
+  }, [active]);
+}
+
+/** True while nothing uses a phone, so the selected connection may change. */
+export function useDeviceFree() {
+  const idle = useIdle();
+  return useJobs((s) => s.holds === 0) && idle;
 }
 
 const SAMPLE_MS = 500;

@@ -13,6 +13,7 @@ export const DEFAULT_SETTINGS: Settings = {
   fileLogging: true,
   verifyHashOnRestore: false,
   closeToTray: true,
+  autoConnect: true,
 };
 
 export function useSettings() {

@@ -22,6 +22,7 @@ import { useSelection } from "../../shared/hooks/useSelection";
 import { useTask } from "../../shared/hooks/useTask";
 import { cn } from "../../shared/lib/cn";
 import { formatBytes, formatDate } from "../../shared/lib/format";
+import { useHold } from "../../shared/jobs/store";
 import { Button } from "../../shared/ui/Button";
 import { Checkbox, Field, Input } from "../../shared/ui/Controls";
 import { DeviceGuard } from "../../shared/ui/DeviceGuard";
@@ -79,6 +80,7 @@ function Explorer({ device }: { device: DeviceEntry }) {
   const feedback = useFeedback();
   const confirm = useConfirm();
   const task = useTask();
+  useHold(task.running);
   const selection = useSelection();
   const [path, setPath] = useState("/sdcard");
   const [draft, setDraft] = useState("/sdcard");

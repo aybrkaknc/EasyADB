@@ -1,16 +1,18 @@
 import { save } from "@tauri-apps/plugin-dialog";
-import { Play, ScrollText, Square } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { Play, Square } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Virtuoso } from "react-virtuoso";
 
 import { commands, type DeviceEntry, events, type LogLine } from "../../bindings";
+import { useDevices } from "../../shared/hooks/useDevices";
 import { useFeedback } from "../../shared/hooks/useFeedback";
+import { useHold } from "../../shared/jobs/store";
 import { cn } from "../../shared/lib/cn";
+import { phoneKey } from "../../shared/lib/phones";
 import { Button } from "../../shared/ui/Button";
 import { Checkbox, Input } from "../../shared/ui/Controls";
 import { DeviceGuard } from "../../shared/ui/DeviceGuard";
-import { ModuleHeader } from "../../shared/ui/ModuleHeader";
 import { compileSearch, filterLines, formatLine, highlight, LEVELS } from "./filter";
 
 const MAX_LINES = 20000;
@@ -23,7 +25,7 @@ const LEVEL_COLOR: Record<string, string> = {
   F: "text-danger font-bold",
 };
 
-function Logcat({ device }: { device: DeviceEntry }) {
+function Logcat({ device, connected }: { device: DeviceEntry; connected: boolean }) {
   const { t } = useTranslation();
   const feedback = useFeedback();
   const [lines, setLines] = useState<LogLine[]>([]);
@@ -34,6 +36,9 @@ function Logcat({ device }: { device: DeviceEntry }) {
   const [search, setSearch] = useState("");
   const [follow, setFollow] = useState(true);
   const stopRef = useRef<() => void>(() => {});
+  useHold(taskId !== null);
+  // A stream must not outlive the view that shows it.
+  useEffect(() => () => stopRef.current(), []);
 
   const compiled = compileSearch(search);
   const regex = compiled instanceof RegExp ? compiled : null;
@@ -100,11 +105,16 @@ function Logcat({ device }: { device: DeviceEntry }) {
           </Button>
         ) : (
           <>
-            <Button size="sm" onClick={() => void start(false)}>
+            <Button size="sm" onClick={() => void start(false)} disabled={!connected}>
               <Play className="size-3" />
               {t("logcat.start")}
             </Button>
-            <Button size="sm" variant="ghost" onClick={() => void start(true)}>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => void start(true)}
+              disabled={!connected}
+            >
               {t("logcat.record")}
             </Button>
           </>
@@ -205,16 +215,14 @@ function Logcat({ device }: { device: DeviceEntry }) {
   );
 }
 
-export function LogcatView() {
-  const { t } = useTranslation();
-  return (
-    <>
-      <ModuleHeader
-        icon={ScrollText}
-        title={t("modules.logcat.title")}
-        subtitle={t("modules.logcat.subtitle")}
-      />
-      <DeviceGuard>{(device) => <Logcat key={device.serial} device={device} />}</DeviceGuard>
-    </>
-  );
+/** The lines stay while the phone is away or comes back over another connection. */
+export function LogcatTab() {
+  const { selected } = useDevices();
+  const ready = selected?.state === "device" ? selected : null;
+  const [last, setLast] = useState<DeviceEntry | null>(ready);
+  if (ready && ready.serial !== last?.serial) setLast(ready);
+  const away = !selected || (last !== null && phoneKey(selected) === phoneKey(last));
+  const device = ready ?? (away ? last : null);
+  if (!device) return <DeviceGuard>{() => null}</DeviceGuard>;
+  return <Logcat key={phoneKey(device)} device={device} connected={ready !== null} />;
 }

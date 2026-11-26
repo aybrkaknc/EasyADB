@@ -23,6 +23,8 @@ pub struct Settings {
     pub verify_hash_on_restore: bool,
     /// Closing the window hides it to the tray instead of quitting.
     pub close_to_tray: bool,
+    /// Paired phones are connected as soon as they show up on the network.
+    pub auto_connect: bool,
 }
 
 impl Default for Settings {
@@ -36,6 +38,7 @@ impl Default for Settings {
             file_logging: true,
             verify_hash_on_restore: false,
             close_to_tray: true,
+            auto_connect: true,
         }
     }
 }

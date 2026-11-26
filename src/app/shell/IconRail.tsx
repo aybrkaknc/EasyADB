@@ -16,7 +16,7 @@ export function IconRail() {
         className="flex w-14 shrink-0 flex-col items-center gap-1 border-r border-line bg-black py-3"
         aria-label="Modules"
       >
-        {MODULES.map((id, index) => {
+        {MODULES.map((id) => {
           const Icon = MODULE_ICONS[id];
           const active = id === module;
           return (
@@ -43,7 +43,6 @@ export function IconRail() {
                   className="z-50 border border-neon/40 bg-panel px-2 py-1 text-[11px]"
                 >
                   {t(`modules.${id}.title`)}
-                  <span className="ml-2 text-white/40">Ctrl+{index + 1}</span>
                 </Tooltip.Content>
               </Tooltip.Portal>
             </Tooltip.Root>

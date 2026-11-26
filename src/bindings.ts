@@ -66,15 +66,28 @@ export const commands = {
 	applyDebloat: (taskId: string, serial: string, entries: ProfileEntry[], options?: InvokeOptions) => __TAURI_INVOKE<ActionOutcome_Serialize[]>("apply_debloat", { taskId, serial, entries }, options),
 	saveDebloatProfile: (path: string, name: string, entries: ProfileEntry[], options?: InvokeOptions) => __TAURI_INVOKE<null>("save_debloat_profile", { path, name, entries }, options),
 	loadDebloatProfile: (path: string, options?: InvokeOptions) => __TAURI_INVOKE<DebloatProfile>("load_debloat_profile", { path }, options),
-	wirelessPair: (address: string, code: string, options?: InvokeOptions) => __TAURI_INVOKE<null>("wireless_pair", { address, code }, options),
+	/**  Pairs and connects. True when the phone is connected afterwards. */
+	wirelessPair: (address: string, code: string, options?: InvokeOptions) => __TAURI_INVOKE<boolean>("wireless_pair", { address, code }, options),
 	wirelessConnect: (address: string, options?: InvokeOptions) => __TAURI_INVOKE<null>("wireless_connect", { address }, options),
-	wirelessDisconnect: (address: string, options?: InvokeOptions) => __TAURI_INVOKE<null>("wireless_disconnect", { address }, options),
-	wirelessEnableTcpip: (serial: string, options?: InvokeOptions) => __TAURI_INVOKE<string>("wireless_enable_tcpip", { serial }, options),
+	/**  Drops one connection without a cable. The phone is not connected again on its own. */
+	wirelessDisconnect: (serial: string, options?: InvokeOptions) => __TAURI_INVOKE<null>("wireless_disconnect", { serial }, options),
+	wirelessEnableTcpip: (serial: string, port: number, options?: InvokeOptions) => __TAURI_INVOKE<string>("wireless_enable_tcpip", { serial, port }, options),
 	wirelessNewQr: (options?: InvokeOptions) => __TAURI_INVOKE<QrPairing>("wireless_new_qr", undefined, options),
 	/**  Looks for the pairing service the phone advertises after scanning the QR code. */
 	wirelessFindPairing: (name: string, options?: InvokeOptions) => __TAURI_INVOKE<string | null>("wireless_find_pairing", { name }, options),
-	wirelessSaved: (options?: InvokeOptions) => __TAURI_INVOKE<SavedDevice_Serialize[]>("wireless_saved", undefined, options),
-	wirelessForget: (address: string, options?: InvokeOptions) => __TAURI_INVOKE<null>("wireless_forget", { address }, options),
+	wirelessDiscover: (options?: InvokeOptions) => __TAURI_INVOKE<Discovery_Serialize>("wireless_discover", undefined, options),
+	/**  Disconnects a phone and removes it from the list. The phone keeps its authorization. */
+	wirelessForget: (key: string, options?: InvokeOptions) => __TAURI_INVOKE<null>("wireless_forget", { key }, options),
+	/**  True when the phone is connected without a cable afterwards. */
+	wirelessConnectUsb: (serial: string, options?: InvokeOptions) => __TAURI_INVOKE<boolean>("wireless_connect_usb", { serial }, options),
+	getDebugSettings: (serial: string, options?: InvokeOptions) => __TAURI_INVOKE<DebugSettings_Serialize>("get_debug_settings", { serial }, options),
+	setDebugSetting: (serial: string, setting: DebugSetting, options?: InvokeOptions) => __TAURI_INVOKE<null>("set_debug_setting", { serial, setting }, options),
+	revokeAuthorizations: (serial: string, options?: InvokeOptions) => __TAURI_INVOKE<null>("revoke_authorizations", { serial }, options),
+	/**  Opens the developer options on the phone. */
+	openPhoneSettings: (serial: string, options?: InvokeOptions) => __TAURI_INVOKE<null>("open_phone_settings", { serial }, options),
+	getAdbInfo: (options?: InvokeOptions) => __TAURI_INVOKE<AdbInfo>("get_adb_info", undefined, options),
+	restartAdbServer: (options?: InvokeOptions) => __TAURI_INVOKE<null>("restart_adb_server", undefined, options),
+	reconnectOffline: (options?: InvokeOptions) => __TAURI_INVOKE<null>("reconnect_offline", undefined, options),
 	runTerminal: (taskId: string, serial: string | null, line: string, options?: InvokeOptions) => __TAURI_INVOKE<number | null>("run_terminal", { taskId, serial, line }, options),
 	sideloadZip: (taskId: string, serial: string, path: string, options?: InvokeOptions) => __TAURI_INVOKE<null>("sideload_zip", { taskId, serial, path }, options),
 	installApk: (serial: string, path: string, options?: InvokeOptions) => __TAURI_INVOKE<null>("install_apk", { serial, path }, options),
@@ -123,6 +136,13 @@ export type ActionOutcome_Deserialize = {
 export type ActionOutcome_Serialize = {
 	package: string,
 	error: AppError | null,
+};
+
+export type AdbInfo = {
+	version: string,
+	path: string,
+	/**  Phones on the network can be found. */
+	mdns: boolean,
 };
 
 export type AppError = {
@@ -311,6 +331,47 @@ export type DebloatProfile = {
 	entries: ProfileEntry[],
 };
 
+export type DebugSetting = { kind: "wireless"; value: boolean } | { kind: "auth_expires"; value: boolean } | { kind: "stay_awake"; value: boolean } | { kind: "verify_installs"; value: boolean } | { kind: "usb_mode"; value: UsbMode } | { kind: "tcp_off" } | 
+/**  Turns adb off altogether; only the phone can turn it on again. */
+{ kind: "usb_debugging_off" };
+
+/**  A `None` field is not offered by this phone. */
+export type DebugSettings = DebugSettings_Serialize | DebugSettings_Deserialize;
+
+/**  A `None` field is not offered by this phone. */
+export type DebugSettings_Deserialize = {
+	sdk: number,
+	wireless?: boolean | null,
+	/**  Authorizations of PCs lapse after seven days without use. */
+	authExpires?: boolean | null,
+	stayAwake: boolean,
+	verifyInstalls: boolean,
+	usbMode?: UsbMode | null,
+	/**  Port of TCP mode (`adb tcpip`), when it is on. */
+	tcpPort?: number | null,
+	/**  Names of the PCs the phone allows. */
+	computers: string[],
+	/**  Authorizations can be revoked from here. */
+	canRevoke: boolean,
+};
+
+/**  A `None` field is not offered by this phone. */
+export type DebugSettings_Serialize = {
+	sdk: number,
+	wireless: boolean | null,
+	/**  Authorizations of PCs lapse after seven days without use. */
+	authExpires: boolean | null,
+	stayAwake: boolean,
+	verifyInstalls: boolean,
+	usbMode: UsbMode | null,
+	/**  Port of TCP mode (`adb tcpip`), when it is on. */
+	tcpPort: number | null,
+	/**  Names of the PCs the phone allows. */
+	computers: string[],
+	/**  Authorizations can be revoked from here. */
+	canRevoke: boolean,
+};
+
 export type Decision = "reject" | "once" | "trust";
 
 export type DeviceDetails = DeviceDetails_Serialize | DeviceDetails_Deserialize;
@@ -355,6 +416,8 @@ export type DeviceEntry_Deserialize = {
 	kind: ConnectionKind,
 	model?: string | null,
 	product?: string | null,
+	/**  Serial number of the phone itself, the same over every connection to it. */
+	phone?: string | null,
 };
 
 export type DeviceEntry_Serialize = {
@@ -363,9 +426,25 @@ export type DeviceEntry_Serialize = {
 	kind: ConnectionKind,
 	model: string | null,
 	product: string | null,
+	/**  Serial number of the phone itself, the same over every connection to it. */
+	phone: string | null,
 };
 
 export type DeviceState = "device" | "unauthorized" | "offline" | "recovery" | "sideload" | "bootloader" | "unknown";
+
+export type Discovery = Discovery_Serialize | Discovery_Deserialize;
+
+export type Discovery_Deserialize = {
+	phones: WirelessPhone_Deserialize[],
+	/**  Where a phone waits for a pairing code right now. */
+	codePairing?: string | null,
+};
+
+export type Discovery_Serialize = {
+	phones: WirelessPhone_Serialize[],
+	/**  Where a phone waits for a pairing code right now. */
+	codePairing: string | null,
+};
 
 /**  Why a request or a group of them ended. */
 export type EndReason = 
@@ -391,7 +470,9 @@ export type ErrorCode = "adb_missing" | "adb_failed" | "device_not_found" | "dev
 /**  Another job runs on the same phone. */
 "busy" | 
 /**  The user of the phone said no, or did not answer. */
-"phone_rejected" | "phone_expired" | "internal";
+"phone_rejected" | "phone_expired" | 
+/**  The phone does not offer this, or refused the change. */
+"not_supported" | "internal";
 
 export type FileEntry = {
 	name: string,
@@ -670,20 +751,6 @@ export type RestoreReport_Serialize = {
 	specialFailed: number,
 };
 
-export type SavedDevice = SavedDevice_Serialize | SavedDevice_Deserialize;
-
-export type SavedDevice_Deserialize = {
-	address: string,
-	name?: string | null,
-	lastConnected: string,
-};
-
-export type SavedDevice_Serialize = {
-	address: string,
-	name: string | null,
-	lastConnected: string,
-};
-
 export type Settings = Settings_Serialize | Settings_Deserialize;
 
 export type Settings_Deserialize = {
@@ -698,6 +765,8 @@ export type Settings_Deserialize = {
 	verifyHashOnRestore?: boolean,
 	/**  Closing the window hides it to the tray instead of quitting. */
 	closeToTray?: boolean,
+	/**  Paired phones are connected as soon as they show up on the network. */
+	autoConnect?: boolean,
 };
 
 export type Settings_Serialize = {
@@ -712,6 +781,8 @@ export type Settings_Serialize = {
 	verifyHashOnRestore: boolean,
 	/**  Closing the window hides it to the tray instead of quitting. */
 	closeToTray: boolean,
+	/**  Paired phones are connected as soon as they show up on the network. */
+	autoConnect: boolean,
 };
 
 /**  Measured speeds in megabytes per second (1 MB = 1,000,000 bytes). */
@@ -764,6 +835,41 @@ export type TaskProgress = {
 };
 
 export type TaskState = "running" | "done" | "failed" | "cancelled";
+
+export type UsbMode = "charging" | "mtp" | "ptp" | "rndis" | "midi";
+
+/**  One phone that is on the network, connected without a cable, or remembered. */
+export type WirelessPhone = WirelessPhone_Serialize | WirelessPhone_Deserialize;
+
+/**  One phone that is on the network, connected without a cable, or remembered. */
+export type WirelessPhone_Deserialize = {
+	/**  Serial number of the phone, or its address when that is all that is known. */
+	key: string,
+	name?: string | null,
+	model?: string | null,
+	/**  Addresses to try, the ones on the network first. */
+	addresses: string[],
+	/**  adb serials of the connections without a cable. */
+	connected: string[],
+	/**  Announces itself on the network now. */
+	online: boolean,
+	saved: boolean,
+};
+
+/**  One phone that is on the network, connected without a cable, or remembered. */
+export type WirelessPhone_Serialize = {
+	/**  Serial number of the phone, or its address when that is all that is known. */
+	key: string,
+	name: string | null,
+	model: string | null,
+	/**  Addresses to try, the ones on the network first. */
+	addresses: string[],
+	/**  adb serials of the connections without a cable. */
+	connected: string[],
+	/**  Announces itself on the network now. */
+	online: boolean,
+	saved: boolean,
+};
 
 /* Tauri Specta runtime */
 type EventEmit<T> = [T] extends [null] ? () => Promise<void> : (payload: T) => Promise<void>;

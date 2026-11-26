@@ -13,12 +13,15 @@ export const useConfirmStore = create<{
   set: (r: ConfirmRequest | null) => void;
 }>((set) => ({ request: null, set: (request) => set({ request }) }));
 
-/** Promise-based confirmation that respects the "ask before irreversible actions" setting. */
+/**
+ * Promise-based confirmation that respects the "ask before irreversible actions" setting, unless
+ * `always` says the question must be asked.
+ */
 export function useConfirm() {
   const settings = useSettings();
   const set = useConfirmStore((s) => s.set);
-  return (message: string, danger = true): Promise<boolean> => {
-    if (!settings.confirmDestructive) return Promise.resolve(true);
+  return (message: string, danger = true, always = false): Promise<boolean> => {
+    if (!always && !settings.confirmDestructive) return Promise.resolve(true);
     return new Promise((resolve) => set({ message, danger, resolve }));
   };
 }

@@ -59,6 +59,35 @@ pub struct DeviceEntry {
     pub kind: ConnectionKind,
     pub model: Option<String>,
     pub product: Option<String>,
+    /// Serial number of the phone itself, the same over every connection to it.
+    pub phone: Option<String>,
+}
+
+/// An mDNS instance name without the service and without the ` (2)` of a second record.
+pub fn mdns_base_name(name: &str) -> &str {
+    let name = name.split("._adb").next().unwrap_or(name);
+    match name.rsplit_once(" (") {
+        Some((base, n)) if n.ends_with(')') => base,
+        _ => name,
+    }
+}
+
+/// The phone serial inside an mDNS instance name such as `adb-<serial>-<suffix>`.
+pub fn mdns_phone(name: &str) -> Option<String> {
+    let rest = mdns_base_name(name).strip_prefix("adb-")?;
+    let serial = rest.rsplit_once('-').map_or(rest, |(serial, _)| serial);
+    (!serial.is_empty()).then(|| serial.to_string())
+}
+
+/// What the serial alone tells about the phone. A network address tells nothing.
+fn phone_of(serial: &str, kind: ConnectionKind) -> Option<String> {
+    match kind {
+        ConnectionKind::Wifi => serial
+            .contains("._adb-tls-connect.")
+            .then(|| mdns_phone(serial))
+            .flatten(),
+        ConnectionKind::Usb | ConnectionKind::Emulator => Some(serial.to_string()),
+    }
 }
 
 fn connection_kind(serial: &str) -> ConnectionKind {
@@ -83,8 +112,10 @@ pub fn parse_devices(output: &str) -> Vec<DeviceEntry> {
             let state_at = (1..tokens.len()).find(|&i| DeviceState::is_state_word(tokens[i]))?;
             let serial = tokens[..state_at].join(" ");
             let state = DeviceState::from_word(tokens[state_at]);
+            let kind = connection_kind(&serial);
             let mut entry = DeviceEntry {
-                kind: connection_kind(&serial),
+                phone: phone_of(&serial, kind),
+                kind,
                 serial,
                 state,
                 model: None,
@@ -108,8 +139,10 @@ pub fn parse_fastboot_devices(output: &str) -> Vec<DeviceEntry> {
         .lines()
         .filter_map(|line| {
             let serial = line.split_whitespace().next()?.to_string();
+            let kind = connection_kind(&serial);
             Some(DeviceEntry {
-                kind: connection_kind(&serial),
+                phone: phone_of(&serial, kind),
+                kind,
                 serial,
                 state: DeviceState::Bootloader,
                 model: None,
@@ -184,6 +217,23 @@ ZY223                  unauthorized usb:1-2 transport_id:5\n\
         assert_eq!(devices[0].state, DeviceState::Device);
         assert_eq!(devices[0].kind, ConnectionKind::Wifi);
         assert_eq!(devices[0].model.as_deref(), Some("22021211RG"));
+    }
+
+    #[test]
+    fn knows_the_phone_behind_a_serial() {
+        let phones: Vec<_> = parse_devices(DEVICES)
+            .into_iter()
+            .map(|d| d.phone)
+            .collect();
+        assert_eq!(phones[0].as_deref(), Some("R58M12345A"));
+        assert_eq!(phones[1], None);
+        assert_eq!(phones[2].as_deref(), Some("R58M"));
+        assert_eq!(
+            mdns_phone("adb-a279-u1x (2)._adb-tls-connect._tcp").as_deref(),
+            Some("a279")
+        );
+        assert_eq!(mdns_base_name("adb-a279-u1x (2)"), "adb-a279-u1x");
+        assert_eq!(mdns_phone("easyadb-abc"), None);
     }
 
     #[test]

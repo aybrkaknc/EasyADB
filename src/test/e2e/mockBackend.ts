@@ -13,6 +13,35 @@ const device = {
   kind: "usb",
   model: "Pixel 7",
   product: "panther",
+  phone: "R58M123",
+};
+
+const wireless = {
+  ...device,
+  serial: "192.168.1.20:40001",
+  kind: "wifi",
+};
+
+/** A phone that appears once its QR code is "scanned". */
+const scanned = {
+  ...wireless,
+  serial: "192.168.1.30:40002",
+  model: "Pixel 9",
+  phone: "NEW456",
+};
+
+let paired = false;
+
+const debugSettings = {
+  sdk: 34,
+  wireless: true,
+  authExpires: true,
+  stayAwake: false,
+  verifyInstalls: true,
+  usbMode: "mtp",
+  tcpPort: null,
+  computers: ["user@pc"],
+  canRevoke: true,
 };
 
 const apps = [
@@ -69,6 +98,7 @@ const state = {
     fileLogging: true,
     verifyHashOnRestore: false,
     closeToTray: true,
+    autoConnect: true,
   },
   backups: [] as Args[],
   calls: [] as { cmd: string; args: Args }[],
@@ -120,7 +150,42 @@ async function phoneBackup() {
 }
 
 const handlers: Record<string, (args: Args) => unknown> = {
-  list_devices: () => (scenario === "nodevice" ? [] : [device]),
+  list_devices: () => {
+    if (scenario === "nodevice") return [];
+    if (scenario === "wireless") return [wireless];
+    return paired ? [device, scanned] : [device];
+  },
+  wireless_discover: () => ({
+    phones:
+      scenario === "wireless"
+        ? [
+            {
+              key: "R58M123",
+              name: "adb-R58M123-abc",
+              model: "Pixel 7",
+              addresses: [wireless.serial],
+              connected: [wireless.serial],
+              online: true,
+              saved: true,
+            },
+          ]
+        : [],
+    codePairing: null,
+  }),
+  wireless_new_qr: () => ({ name: "easyadb-test", password: "secret", qrText: "WIFI:T:ADB;;" }),
+  wireless_find_pairing: () => (scenario === "scan" ? "192.168.1.30:37000" : null),
+  wireless_pair: () => {
+    paired = true;
+    return true;
+  },
+  get_debug_settings: () => debugSettings,
+  set_debug_setting: (a) => {
+    const setting = a.setting as { kind: string; value: boolean };
+    if (setting.kind === "stay_awake") debugSettings.stayAwake = setting.value;
+    return null;
+  },
+  revoke_authorizations: () => null,
+  get_adb_info: () => ({ version: "37.0.3", path: "C:\\adb.exe", mdns: true }),
   check_device_root: () => scenario !== "noroot",
   list_phone_backups: () =>
     scenario === "phonebackups"
@@ -233,7 +298,6 @@ const handlers: Record<string, (args: Args) => unknown> = {
     })),
   apply_debloat: (a) =>
     (a.entries as { package: string }[]).map((e) => ({ package: e.package, error: null })),
-  wireless_saved: () => [],
   phone_activity: () => ({ asks: scenario === "phonerequest" ? [ask] : [], jobs: [] }),
   answer_phone_request: () => {
     void phoneBackup();

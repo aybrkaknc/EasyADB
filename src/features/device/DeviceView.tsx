@@ -11,6 +11,7 @@ import { DeviceGuard } from "../../shared/ui/DeviceGuard";
 import { useConfirm } from "../../shared/hooks/useConfirm";
 import { Badge, Spinner, TaskBar } from "../../shared/ui/Feedback";
 import { ModuleHeader } from "../../shared/ui/ModuleHeader";
+import { ConnectionSummary } from "./ConnectionSummary";
 import { KeyValue, Panel } from "../../shared/ui/Panel";
 
 const REBOOT_MODES: RebootMode[] = ["system", "recovery", "bootloader", "sideload", "fastbootd"];
@@ -102,11 +103,12 @@ function DeviceActions({ device }: { device: DeviceEntry }) {
         {ready && (
           <Panel
             title={t("device.info.title")}
-            actions={<Badge tone="neon">{t(`devices.kind.${device.kind}`)}</Badge>}
+            actions={<Badge tone="neon">{t(`devices.kindLong.${device.kind}`)}</Badge>}
           >
             <DeviceInfo device={device} />
           </Panel>
         )}
+        <ConnectionSummary device={device} />
         <Panel title={t("device.reboot.title")}>
           <div className="flex flex-wrap gap-2">
             {modes.map((mode) => (

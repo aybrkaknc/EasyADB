@@ -1,10 +1,13 @@
 //! Device discovery, details and reboot.
 
+use std::collections::HashMap;
+use std::sync::Mutex;
+
 use serde::{Deserialize, Serialize};
 use specta::Type;
 use tauri::State;
 
-use crate::adb::parse::{self, DeviceEntry};
+use crate::adb::parse::{self, DeviceEntry, DeviceState};
 use crate::adb::{AdbRunner, Device, Tool};
 use crate::error::{AppError, AppResult};
 use crate::state::{AppState, blocking};
@@ -15,6 +18,38 @@ pub fn list(runner: &dyn AdbRunner) -> AppResult<Vec<DeviceEntry>> {
     if let Ok(out) = runner.exec(Tool::Fastboot, &["devices"]) {
         devices.extend(parse::parse_fastboot_devices(&out.stdout));
     }
+    Ok(devices)
+}
+
+/// Serial numbers of phones connected by address, asked once per connection.
+#[derive(Default)]
+pub struct PhoneIds(Mutex<HashMap<String, String>>);
+
+impl PhoneIds {
+    /// Fills in the phone of every ready device whose serial does not tell it.
+    pub fn identify(&self, runner: &dyn AdbRunner, devices: &mut [DeviceEntry]) {
+        let mut known = self.0.lock().unwrap().clone();
+        known.retain(|serial, _| devices.iter().any(|d| &d.serial == serial));
+        for device in devices.iter_mut() {
+            if device.phone.is_some() || device.state != DeviceState::Device {
+                continue;
+            }
+            if !known.contains_key(&device.serial) {
+                let id = Device::new(runner, &device.serial).shell(&["getprop", "ro.serialno"]);
+                if let Some(id) = id.ok().filter(|id| !id.trim().is_empty()) {
+                    known.insert(device.serial.clone(), id.trim().to_string());
+                }
+            }
+            device.phone = known.get(&device.serial).cloned();
+        }
+        *self.0.lock().unwrap() = known;
+    }
+}
+
+/// [`list`] with the phone behind each connection filled in.
+pub fn list_identified(runner: &dyn AdbRunner, ids: &PhoneIds) -> AppResult<Vec<DeviceEntry>> {
+    let mut devices = list(runner)?;
+    ids.identify(runner, &mut devices);
     Ok(devices)
 }
 
@@ -131,7 +166,8 @@ pub fn reboot(
 #[specta::specta]
 pub async fn list_devices(state: State<'_, AppState>) -> AppResult<Vec<DeviceEntry>> {
     let runner = state.runner()?;
-    blocking(move || list(&*runner)).await
+    let ids = state.phone_ids.clone();
+    blocking(move || list_identified(&*runner, &ids)).await
 }
 
 #[tauri::command]
@@ -167,6 +203,18 @@ pub async fn reboot_device(
 mod tests {
     use super::*;
     use crate::adb::fake::FakeAdb;
+
+    #[test]
+    fn asks_an_address_for_its_phone_once() {
+        let fake = FakeAdb::new().on("ro.serialno", "a279\n");
+        let ids = PhoneIds::default();
+        for _ in 0..2 {
+            let mut devices = parse::parse_devices("10.0.0.2:5555 device\n");
+            ids.identify(&fake, &mut devices);
+            assert_eq!(devices[0].phone.as_deref(), Some("a279"));
+        }
+        assert_eq!(fake.calls().len(), 1);
+    }
 
     #[test]
     fn lists_adb_and_fastboot_devices() {

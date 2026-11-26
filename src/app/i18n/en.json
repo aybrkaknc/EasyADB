@@ -60,6 +60,10 @@
       "title": "Device",
       "subtitle": "Overview, install and reboot"
     },
+    "debugging": {
+      "title": "Debug connection",
+      "subtitle": "Connect and set up a phone over USB or wireless debugging"
+    },
     "backup": {
       "title": "Backup",
       "subtitle": "Back up and restore apps on this PC"
@@ -76,21 +80,9 @@
       "title": "Files",
       "subtitle": "Browse and transfer device files"
     },
-    "logcat": {
-      "title": "Logcat",
-      "subtitle": "Live system log"
-    },
-    "performance": {
-      "title": "Performance",
-      "subtitle": "Live metrics and hardware"
-    },
-    "wireless": {
-      "title": "Wireless",
-      "subtitle": "Connect over Wi-Fi"
-    },
     "settings": {
-      "title": "Settings",
-      "subtitle": "Preferences and about"
+      "title": "Settings and tools",
+      "subtitle": "Preferences, performance and logcat"
     }
   },
   "devices": {
@@ -106,10 +98,15 @@
     },
     "kind": {
       "usb": "USB",
-      "wifi": "Wi-Fi",
+      "wifi": "Wireless",
       "emulator": "Emulator"
     },
-    "select": "Select device"
+    "select": "Select device",
+    "kindLong": {
+      "usb": "USB",
+      "wifi": "Wireless debugging",
+      "emulator": "Emulator"
+    }
   },
   "guide": {
     "noDevice": {
@@ -136,7 +133,7 @@
       "step1": "The bundled adb.exe is missing next to EasyADB.exe. Reinstall the application."
     },
     "wrongMode": "This device is in {{state}} mode. Reboot it into Android to use this module.",
-    "wireless": "Prefer Wi-Fi? Use the Wireless module."
+    "wireless": "To connect and set up a phone, see Debug connection."
   },
   "errors": {
     "adb_missing": "ADB was not found next to the application.",
@@ -160,7 +157,8 @@
     "internal": "Unexpected error.",
     "busy": "Another job runs on this phone.",
     "phone_rejected": "Rejected on the phone.",
-    "phone_expired": "Nobody answered on the phone within 2 minutes."
+    "phone_expired": "Nobody answered on the phone within 2 minutes.",
+    "not_supported": "This phone does not offer that, or refused the change."
   },
   "task": {
     "cancel": "Cancel",
@@ -229,6 +227,12 @@
       "sideloadHint": "The device must be in sideload mode (Recovery > Apply update from ADB).",
       "apkDone": "APK installed",
       "sideloadDone": "Sideload completed"
+    },
+    "connection": {
+      "title": "Connection",
+      "used": "In use",
+      "address": "Address",
+      "also": "Also connected"
     }
   },
   "backup": {
@@ -369,47 +373,118 @@
     "skipped": "{{count}} apps were skipped because the action does not apply to them.",
     "webSearch": "Search the web"
   },
-  "wireless": {
+  "debugging": {
+    "open": "Open debug connection",
     "tabs": {
-      "code": "Pairing code",
-      "qr": "QR code",
-      "ip": "IP address",
-      "usb": "Via USB"
+      "usb": "USB",
+      "wireless": "Wireless",
+      "settings": "Phone settings",
+      "pc": "PC"
     },
-    "code": {
-      "intro": "On the phone: Developer options > Wireless debugging > Pair device with pairing code.",
-      "address": "Pairing address (IP:port)",
-      "code": "Pairing code",
-      "pair": "Pair",
-      "paired": "Paired. Now connect with the address shown under Wireless debugging."
+    "usb": {
+      "cable": "Cable connection",
+      "plugged": "{{name}} is connected by cable.",
+      "none": "No phone connected by cable.",
+      "mode": "USB mode",
+      "modes": {
+        "charging": "Charging only",
+        "mtp": "File transfer",
+        "ptp": "Photos",
+        "rndis": "USB tethering",
+        "midi": "MIDI"
+      },
+      "modeNote": "The connection drops for a moment while the mode changes.",
+      "toWireless": "From cable to wireless",
+      "toWirelessIntro": "If the phone and this PC are on the same network, you can unplug the cable and carry on.",
+      "enableWireless": "Turn on wireless debugging",
+      "wirelessDone": "Connected over wireless debugging too. You can unplug the cable.",
+      "wirelessPair": "Could not connect yet. Allow it on the phone, or pair on this tab.",
+      "tcpIntro": "For Android 10 and older: TCP mode.",
+      "port": "Port",
+      "tcpOn": "Switch to TCP mode",
+      "tcpOff": "Back to USB",
+      "tcpDone": "Connected to {{address}}. You can unplug the cable.",
+      "tcpNote": "TCP mode stays on until the phone restarts. Use it only on a network you trust."
+    },
+    "wireless": {
+      "phones": "Phones",
+      "empty": "No paired phone yet.",
+      "connect": "Connect",
+      "forget": "Forget",
+      "forgetConfirm": "Remove {{name}} from the list? It is disconnected. The phone keeps its authorization.",
+      "connectedTo": "{{name}} connected",
+      "pairNew": "Pair a new phone",
+      "way": {
+        "qr": "QR code",
+        "code": "Pairing code",
+        "ip": "IP address"
+      },
+      "state": {
+        "connected": "Connected",
+        "online": "On the network",
+        "away": "Not on the network"
+      }
     },
     "qr": {
-      "intro": "On the phone: Wireless debugging > Pair device with QR code, then scan this code.",
-      "waiting": "Waiting for the phone...",
+      "intro": "On the phone: Developer options > Wireless debugging > Pair device with QR code.",
+      "already": "{{name}} is already connected. A QR code only pairs a new phone.",
+      "show": "Show QR code",
+      "waiting": "Waiting for a new phone to scan the code",
+      "next": "New code in {{seconds}} s",
       "pairing": "Phone found, pairing...",
-      "done": "Paired. The device appears in the list shortly.",
-      "timeout": "No phone found. Both devices must be on the same network.",
+      "connecting": "Paired, connecting...",
+      "connected": "{{name}} connected.",
+      "notConnected": "Paired, but could not connect. Check the list above.",
       "renew": "New code",
-      "note": "Uses mDNS discovery. Some networks block it; use the pairing code instead."
+      "note": "The phone and this PC must be on the same network. If the network blocks discovery, use the pairing code."
+    },
+    "code": {
+      "intro": "On the phone: Wireless debugging > Pair device with pairing code. The address fills in while that window is open.",
+      "address": "Address (IP:port)",
+      "code": "Code",
+      "pair": "Pair",
+      "paired": "Paired. Connect with the address shown under Wireless debugging.",
+      "connected": "Paired and connected."
     },
     "ip": {
-      "intro": "Connect to a paired device or one in TCP mode.",
+      "intro": "Connect to a paired phone, or one in TCP mode, by its address.",
       "address": "Address (IP:port)",
       "connect": "Connect",
       "done": "Connected to {{address}}"
     },
-    "usb": {
-      "intro": "For Android 10 and older: connect over USB first, then switch the device to TCP mode.",
-      "enable": "Enable Wi-Fi debugging",
-      "needUsb": "Select a USB device first.",
-      "done": "Connected to {{address}}. You can unplug the cable."
+    "settings": {
+      "connection": "Connection",
+      "wireless": "Wireless debugging",
+      "wirelessNote": "The first time, the phone may ask whether to allow it on this network.",
+      "auth_expires": "Authorizations lapse after 7 days without use",
+      "stay_awake": "Keep the screen on while charging",
+      "verify_installs": "Verify apps installed from the PC",
+      "openOnPhone": "Open developer options on the phone",
+      "changed": "Setting changed on the phone",
+      "computers": "Authorized computers",
+      "noComputers": "The phone told no computer.",
+      "danger": "Danger zone",
+      "revoke": "Revoke all PC authorizations",
+      "revokeNote": "Every computer, this one included, has to be allowed again.",
+      "revoked": "Authorizations revoked",
+      "usbOff": "Turn off USB debugging",
+      "usbOffNote": "Only the phone can turn it on again.",
+      "wirelessOffConfirm": "This phone is connected wirelessly. Turning it off drops the connection; only the phone, or a cable, can turn it on again.",
+      "revokeConfirm": "All PC authorizations on the phone will be deleted. This cannot be undone. You will have to pair this PC again.",
+      "usbOffConfirm": "adb is turned off altogether. EasyADB cannot turn it on again; you have to do it on the phone."
     },
-    "saved": {
-      "title": "Saved devices",
-      "empty": "No saved devices",
-      "reconnect": "Reconnect",
-      "disconnect": "Disconnect",
-      "forget": "Forget"
+    "pc": {
+      "version": "Version",
+      "path": "Location",
+      "mdns": "Network discovery (mDNS)",
+      "working": "Working",
+      "notWorking": "Not working",
+      "reconnect": "Reconnect offline phones",
+      "reconnected": "Offline phones asked to reconnect",
+      "restart": "Restart the adb server",
+      "restarted": "adb server restarted",
+      "restartConfirm": "Restart the adb server? Every phone is disconnected for a few seconds.",
+      "restartNote": "A restart drops every connection for a few seconds. It is refused while a job runs."
     }
   },
   "terminal": {
@@ -497,6 +572,11 @@
     }
   },
   "settings": {
+    "tabs": {
+      "general": "General",
+      "performance": "Performance",
+      "logcat": "Logcat"
+    },
     "language": "Language",
     "system": "System default",
     "backupDir": "Backup folder",
@@ -510,19 +590,11 @@
     "verifyHash": "Verify SHA-256 when restoring by default",
     "closeToTray": "Closing the window keeps EasyADB running in the tray",
     "saved": "Settings saved",
-    "shortcuts": {
-      "title": "Keyboard shortcuts",
-      "modules": "Ctrl+1 ... Ctrl+9: switch module",
-      "refresh": "F5: refresh",
-      "search": "Ctrl+F: search"
-    },
     "about": {
-      "title": "About",
       "version": "Version {{version}}",
       "license": "Licensed under GPL-3.0.",
       "credits": "Includes Android SDK Platform-Tools and data from Universal Android Debloater Next Generation."
     },
-    "preferences": "Preferences",
     "trusted": {
       "title": "Trusted phones",
       "empty": "No phone is trusted yet.",
@@ -530,7 +602,17 @@
       "hint": "A trusted phone can ask EasyADB for backups without a prompt.",
       "neverTitle": "Never asked about",
       "askAgain": "Ask again"
-    }
+    },
+    "sections": {
+      "label": "Settings sections",
+      "app": "Application",
+      "backup": "Backups",
+      "phones": "Phones",
+      "connection": "Connection",
+      "diagnostics": "Diagnostics",
+      "about": "About"
+    },
+    "autoConnect": "Connect paired phones when they show up on the network"
   },
   "trustPhone": {
     "title": "Trust this phone?",
@@ -629,7 +711,7 @@
     "value": "{{mb}} MB/s ({{mbit}} Mbit/s)",
     "link": {
       "usb": "USB",
-      "wifi": "Wi-Fi",
+      "wifi": "Wireless debugging",
       "emulator": "Emulator"
     }
   },
@@ -638,5 +720,13 @@
     "body": "Quitting cancels them. What is not finished is removed.",
     "stay": "Stay",
     "leave": "Cancel them and quit"
+  },
+  "connection": {
+    "wirelessOn": "{{name}} connected over wireless debugging",
+    "wirelessOff": "{{name}} lost the wireless connection",
+    "usbOn": "{{name}} connected over USB",
+    "usbOff": "{{name}} was unplugged",
+    "usbSwitched": "{{name}}: switched to USB",
+    "authorize": "Confirm the permission question on the phone ({{name}})"
   }
 }

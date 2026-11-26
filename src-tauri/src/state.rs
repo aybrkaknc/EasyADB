@@ -2,12 +2,16 @@ use std::sync::Arc;
 
 use crate::adb::{Adb, AdbRunner};
 use crate::error::{AppError, AppResult, ErrorCode};
+use crate::features::device::PhoneIds;
+use crate::features::wireless::Wireless;
 use crate::tasks::TaskRegistry;
 
 pub struct AppState {
     runner: Result<Arc<dyn AdbRunner>, AppError>,
     pub tasks: TaskRegistry,
     pub requests: crate::features::phone_requests::Requests,
+    pub phone_ids: Arc<PhoneIds>,
+    pub wireless: Arc<Wireless>,
 }
 
 impl AppState {
@@ -29,6 +33,8 @@ impl AppState {
             runner,
             tasks: TaskRegistry::default(),
             requests: Default::default(),
+            phone_ids: Default::default(),
+            wireless: Default::default(),
         }
     }
 

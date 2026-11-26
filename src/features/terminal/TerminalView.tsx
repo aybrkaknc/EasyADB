@@ -9,6 +9,7 @@ import { commands, events, type StreamKind } from "../../bindings";
 import { useDevices } from "../../shared/hooks/useDevices";
 import { useFeedback } from "../../shared/hooks/useFeedback";
 import { cn } from "../../shared/lib/cn";
+import { useHold } from "../../shared/jobs/store";
 import { Button } from "../../shared/ui/Button";
 import { ModuleHeader } from "../../shared/ui/ModuleHeader";
 import { complete } from "./completion";
@@ -31,6 +32,7 @@ export function TerminalView() {
   const [history, setHistory] = useState<string[]>([]);
   const [cursor, setCursor] = useState(-1);
   const [taskId, setTaskId] = useState<string | null>(null);
+  useHold(taskId !== null);
   const nextId = useRef(0);
   const packages = useQuery({
     queryKey: ["apps", serial],

@@ -345,6 +345,17 @@ impl Requests {
         })
     }
 
+    /// [`Self::hold`] for something that drops the connection: refused while any job uses the
+    /// phone.
+    pub fn exclusive(&self, serial: &str) -> AppResult<Hold> {
+        let phone = self.phones.lock().unwrap().get(serial).cloned();
+        let held = self.held.lock().unwrap().contains_key(serial);
+        if held || phone.is_some_and(|phone| self.is_held(&phone)) {
+            return Err(AppError::new(ErrorCode::Busy, ""));
+        }
+        self.hold(serial)
+    }
+
     /// A job of this PC runs on the phone, over whichever connection.
     fn is_held(&self, phone: &str) -> bool {
         let phones = self.phones.lock().unwrap();

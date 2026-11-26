@@ -60,6 +60,10 @@
       "title": "Cihaz",
       "subtitle": "Genel bakış, kurulum ve yeniden başlatma"
     },
+    "debugging": {
+      "title": "Hata ayıklama bağlantısı",
+      "subtitle": "Telefonu USB veya kablosuz hata ayıklama ile bağla ve ayarla"
+    },
     "backup": {
       "title": "Yedekleme",
       "subtitle": "Uygulamaları bu bilgisayara yedekle ve geri yükle"
@@ -76,21 +80,9 @@
       "title": "Dosyalar",
       "subtitle": "Cihaz dosyalarına göz at ve aktar"
     },
-    "logcat": {
-      "title": "Logcat",
-      "subtitle": "Canlı sistem günlüğü"
-    },
-    "performance": {
-      "title": "Performans",
-      "subtitle": "Canlı ölçümler ve donanım"
-    },
-    "wireless": {
-      "title": "Kablosuz",
-      "subtitle": "Wi-Fi üzerinden bağlan"
-    },
     "settings": {
-      "title": "Ayarlar",
-      "subtitle": "Tercihler ve hakkında"
+      "title": "Ayarlar ve araçlar",
+      "subtitle": "Tercihler, performans ve logcat"
     }
   },
   "devices": {
@@ -106,10 +98,15 @@
     },
     "kind": {
       "usb": "USB",
-      "wifi": "Wi-Fi",
+      "wifi": "Kablosuz",
       "emulator": "Emülatör"
     },
-    "select": "Cihaz seç"
+    "select": "Cihaz seç",
+    "kindLong": {
+      "usb": "USB",
+      "wifi": "Kablosuz hata ayıklama",
+      "emulator": "Emülatör"
+    }
   },
   "guide": {
     "noDevice": {
@@ -136,7 +133,7 @@
       "step1": "EasyADB.exe yanındaki gömülü adb.exe eksik. Uygulamayı yeniden kurun."
     },
     "wrongMode": "Bu cihaz {{state}} modunda. Bu modülü kullanmak için Android'e yeniden başlatın.",
-    "wireless": "Wi-Fi mi tercih edersiniz? Kablosuz modülünü kullanın."
+    "wireless": "Telefonu bağlamak ve ayarlamak için Hata ayıklama bağlantısı ekranına bakın."
   },
   "errors": {
     "adb_missing": "ADB uygulamanın yanında bulunamadı.",
@@ -160,7 +157,8 @@
     "internal": "Beklenmeyen hata.",
     "busy": "Bu telefonda başka bir iş sürüyor.",
     "phone_rejected": "Telefonda reddedildi.",
-    "phone_expired": "Telefonda 2 dakika içinde yanıt verilmedi."
+    "phone_expired": "Telefonda 2 dakika içinde yanıt verilmedi.",
+    "not_supported": "Bu telefon bunu sunmuyor ya da değişikliği reddetti."
   },
   "task": {
     "cancel": "İptal",
@@ -229,6 +227,12 @@
       "sideloadHint": "Cihaz sideload modunda olmalı (Kurtarma > ADB'den güncelleme uygula).",
       "apkDone": "APK kuruldu",
       "sideloadDone": "Sideload tamamlandı"
+    },
+    "connection": {
+      "title": "Bağlantı",
+      "used": "Kullanılan",
+      "address": "Adres",
+      "also": "Ayrıca bağlı"
     }
   },
   "backup": {
@@ -369,47 +373,118 @@
     "skipped": "{{count}} uygulama, eylem onlara uygulanamadığı için atlandı.",
     "webSearch": "Web'de ara"
   },
-  "wireless": {
+  "debugging": {
+    "open": "Hata ayıklama bağlantısını aç",
     "tabs": {
-      "code": "Eşleştirme kodu",
-      "qr": "QR kod",
-      "ip": "IP adresi",
-      "usb": "USB ile"
+      "usb": "USB",
+      "wireless": "Kablosuz",
+      "settings": "Telefon ayarları",
+      "pc": "PC"
     },
-    "code": {
-      "intro": "Telefonda: Geliştirici seçenekleri > Kablosuz hata ayıklama > Cihazı eşleme koduyla eşle.",
-      "address": "Eşleştirme adresi (IP:port)",
-      "code": "Eşleştirme kodu",
-      "pair": "Eşleştir",
-      "paired": "Eşleştirildi. Şimdi Kablosuz hata ayıklama altında görünen adresle bağlanın."
+    "usb": {
+      "cable": "Kablo bağlantısı",
+      "plugged": "{{name}} kabloyla bağlı.",
+      "none": "Kabloyla bağlı telefon yok.",
+      "mode": "USB modu",
+      "modes": {
+        "charging": "Yalnızca şarj",
+        "mtp": "Dosya aktarımı",
+        "ptp": "Fotoğraf",
+        "rndis": "İnternet paylaşımı",
+        "midi": "MIDI"
+      },
+      "modeNote": "Mod değişirken bağlantı kısa süre kopar.",
+      "toWireless": "Kablodan kablosuza",
+      "toWirelessIntro": "Telefon ve PC aynı ağdaysa kabloyu çıkarıp devam edebilirsiniz.",
+      "enableWireless": "Kablosuz hata ayıklamayı aç",
+      "wirelessDone": "Kablosuz hata ayıklama ile de bağlandı. Kabloyu çıkarabilirsiniz.",
+      "wirelessPair": "Henüz bağlanılamadı. Telefonda izin verin ya da bu sekmede eşleştirin.",
+      "tcpIntro": "Android 10 ve öncesi için: TCP modu.",
+      "port": "Port",
+      "tcpOn": "TCP moduna geç",
+      "tcpOff": "USB'ye dön",
+      "tcpDone": "{{address}} adresine bağlanıldı. Kabloyu çıkarabilirsiniz.",
+      "tcpNote": "TCP modu telefon yeniden başlayana kadar açık kalır. Yalnızca güvendiğiniz ağda kullanın."
+    },
+    "wireless": {
+      "phones": "Telefonlar",
+      "empty": "Henüz eşleşmiş telefon yok.",
+      "connect": "Bağlan",
+      "forget": "Unut",
+      "forgetConfirm": "{{name}} listeden çıkarılsın mı? Bağlantısı kesilir. Telefondaki yetki kalır.",
+      "connectedTo": "{{name}} bağlandı",
+      "pairNew": "Yeni telefon eşleştir",
+      "way": {
+        "qr": "QR kod",
+        "code": "Eşleştirme kodu",
+        "ip": "IP adresi"
+      },
+      "state": {
+        "connected": "Bağlı",
+        "online": "Ağda",
+        "away": "Ağda değil"
+      }
     },
     "qr": {
-      "intro": "Telefonda: Kablosuz hata ayıklama > Cihazı QR koduyla eşle, ardından bu kodu tarayın.",
-      "waiting": "Telefon bekleniyor...",
+      "intro": "Telefonda: Geliştirici seçenekleri > Kablosuz hata ayıklama > Cihazı QR koduyla eşle.",
+      "already": "{{name}} zaten bağlı. QR kod yalnızca yeni telefon eşleştirir.",
+      "show": "QR kodu göster",
+      "waiting": "Yeni telefonun kodu taraması bekleniyor",
+      "next": "Yeni kod: {{seconds}} sn",
       "pairing": "Telefon bulundu, eşleştiriliyor...",
-      "done": "Eşleştirildi. Cihaz kısa süre içinde listede görünecek.",
-      "timeout": "Telefon bulunamadı. İki cihaz da aynı ağda olmalı.",
+      "connecting": "Eşleşti, bağlanılıyor...",
+      "connected": "{{name}} bağlandı.",
+      "notConnected": "Eşleşti ama bağlanılamadı. Yukarıdaki listeye bakın.",
       "renew": "Yeni kod",
-      "note": "mDNS keşfi kullanır. Bazı ağlar bunu engeller; o durumda eşleştirme kodunu kullanın."
+      "note": "Telefon ve PC aynı ağda olmalı. Ağ keşfi engelliyse eşleştirme kodunu kullanın."
+    },
+    "code": {
+      "intro": "Telefonda: Kablosuz hata ayıklama > Cihazı eşleme koduyla eşle. O pencere açıkken adres kendiliğinden dolar.",
+      "address": "Adres (IP:port)",
+      "code": "Kod",
+      "pair": "Eşleştir",
+      "paired": "Eşleştirildi. Kablosuz hata ayıklama altında görünen adresle bağlanın.",
+      "connected": "Eşleştirildi ve bağlanıldı."
     },
     "ip": {
-      "intro": "Eşleştirilmiş veya TCP modundaki bir cihaza bağlanın.",
+      "intro": "Eşleşmiş veya TCP modundaki telefona adresiyle bağlanın.",
       "address": "Adres (IP:port)",
       "connect": "Bağlan",
       "done": "{{address}} adresine bağlanıldı"
     },
-    "usb": {
-      "intro": "Android 10 ve öncesi için: önce USB ile bağlayın, sonra cihazı TCP moduna geçirin.",
-      "enable": "Wi-Fi hata ayıklamayı aç",
-      "needUsb": "Önce bir USB cihazı seçin.",
-      "done": "{{address}} adresine bağlanıldı. Kabloyu çıkarabilirsiniz."
+    "settings": {
+      "connection": "Bağlantı",
+      "wireless": "Kablosuz hata ayıklama",
+      "wirelessNote": "İlk açılışta telefon bu ağa izin verilsin mi diye sorabilir.",
+      "auth_expires": "Yetki 7 gün kullanılmazsa düşsün",
+      "stay_awake": "Şarjdayken ekran açık kalsın",
+      "verify_installs": "PC'den kurulan uygulamaları doğrula",
+      "openOnPhone": "Geliştirici seçeneklerini telefonda aç",
+      "changed": "Ayar telefonda değişti",
+      "computers": "Yetkili bilgisayarlar",
+      "noComputers": "Telefon bilgisayar bildirmedi.",
+      "danger": "Tehlikeli",
+      "revoke": "Bütün PC yetkilerini iptal et",
+      "revokeNote": "Bu PC dahil hepsi yeniden onay ister.",
+      "revoked": "Yetkiler iptal edildi",
+      "usbOff": "USB hata ayıklamayı kapat",
+      "usbOffNote": "Yalnızca telefondan yeniden açılır.",
+      "wirelessOffConfirm": "Bu telefon kablosuz bağlı. Kapatırsanız bağlantı kopar ve yalnızca telefondan ya da kabloyla yeniden açılır.",
+      "revokeConfirm": "Telefondaki bütün PC yetkileri silinecek. Bu geri alınamaz. Bu PC'yi yeniden eşleştirmeniz gerekir.",
+      "usbOffConfirm": "adb tamamen kapanır. EasyADB geri açamaz, telefondan açmanız gerekir."
     },
-    "saved": {
-      "title": "Kayıtlı cihazlar",
-      "empty": "Kayıtlı cihaz yok",
-      "reconnect": "Yeniden bağlan",
-      "disconnect": "Bağlantıyı kes",
-      "forget": "Unut"
+    "pc": {
+      "version": "Sürüm",
+      "path": "Konum",
+      "mdns": "Ağ keşfi (mDNS)",
+      "working": "Çalışıyor",
+      "notWorking": "Çalışmıyor",
+      "reconnect": "Çevrimdışı telefonları yeniden bağla",
+      "reconnected": "Çevrimdışı telefonlara yeniden bağlanma istendi",
+      "restart": "adb sunucusunu yeniden başlat",
+      "restarted": "adb sunucusu yeniden başlatıldı",
+      "restartConfirm": "adb sunucusu yeniden başlatılsın mı? Bütün telefonların bağlantısı birkaç saniye kopar.",
+      "restartNote": "Yeniden başlatınca bütün telefonların bağlantısı birkaç saniye kopar. İş sürerken yapılmaz."
     }
   },
   "terminal": {
@@ -497,6 +572,11 @@
     }
   },
   "settings": {
+    "tabs": {
+      "general": "Genel",
+      "performance": "Performans",
+      "logcat": "Logcat"
+    },
     "language": "Dil",
     "system": "Sistem varsayılanı",
     "backupDir": "Yedek klasörü",
@@ -510,19 +590,11 @@
     "verifyHash": "Geri yüklerken varsayılan olarak SHA-256 doğrula",
     "closeToTray": "Pencere kapatılınca EasyADB tepside çalışmaya devam etsin",
     "saved": "Ayarlar kaydedildi",
-    "shortcuts": {
-      "title": "Klavye kısayolları",
-      "modules": "Ctrl+1 ... Ctrl+9: modül değiştir",
-      "refresh": "F5: yenile",
-      "search": "Ctrl+F: ara"
-    },
     "about": {
-      "title": "Hakkında",
       "version": "Sürüm {{version}}",
       "license": "GPL-3.0 lisansı ile dağıtılır.",
       "credits": "Android SDK Platform-Tools ve Universal Android Debloater Next Generation verilerini içerir."
     },
-    "preferences": "Tercihler",
     "trusted": {
       "title": "Güvenilen telefonlar",
       "empty": "Henüz güvenilen telefon yok.",
@@ -530,7 +602,17 @@
       "hint": "Güvenilen telefon, sormadan EasyADB'den yedek isteyebilir.",
       "neverTitle": "Bir daha sorulmayacaklar",
       "askAgain": "Yeniden sor"
-    }
+    },
+    "sections": {
+      "label": "Ayar bölümleri",
+      "app": "Uygulama",
+      "backup": "Yedekleme",
+      "phones": "Telefonlar",
+      "connection": "Bağlantı",
+      "diagnostics": "Tanılama",
+      "about": "Hakkında"
+    },
+    "autoConnect": "Eşleşmiş telefon ağda görününce bağlan"
   },
   "trustPhone": {
     "title": "Bu telefona güvenilsin mi?",
@@ -629,7 +711,7 @@
     "value": "{{mb}} MB/sn ({{mbit}} Mbit/sn)",
     "link": {
       "usb": "USB",
-      "wifi": "Wi-Fi",
+      "wifi": "Kablosuz hata ayıklama",
       "emulator": "Emülatör"
     }
   },
@@ -638,5 +720,13 @@
     "body": "Çıkarsanız iptal edilirler. Bitmemiş olanlar silinir.",
     "stay": "Kal",
     "leave": "İptal et ve çık"
+  },
+  "connection": {
+    "wirelessOn": "{{name}} kablosuz hata ayıklama ile bağlandı",
+    "wirelessOff": "{{name}} kablosuz bağlantısı koptu",
+    "usbOn": "{{name}} USB ile bağlandı",
+    "usbOff": "{{name}} USB bağlantısı kesildi",
+    "usbSwitched": "{{name}}: USB'ye geçildi",
+    "authorize": "Telefonda izin sorusunu onaylayın ({{name}})"
   }
 }

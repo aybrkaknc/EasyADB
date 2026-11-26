@@ -1,5 +1,6 @@
 pub mod backup;
 pub mod debloat;
+pub mod debugging;
 pub mod device;
 pub mod files;
 pub mod logcat;

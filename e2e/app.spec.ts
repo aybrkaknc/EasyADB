@@ -27,15 +27,6 @@ test("guides through authorization", async ({ page }) => {
   await expect(page.getByText("Authorization needed")).toBeVisible();
 });
 
-test("switches modules with keyboard shortcuts", async ({ page }) => {
-  await page.goto("/");
-  await expect(page.getByText("Device information")).toBeVisible();
-  await page.keyboard.press("Control+3");
-  await expect(page.getByRole("heading", { name: "Debloat", level: 1 })).toBeVisible();
-  await page.keyboard.press("Control+9");
-  await expect(page.getByRole("heading", { name: "Settings", level: 1 })).toBeVisible();
-});
-
 test("backs up a selected app and lists it in the archive", async ({ page }) => {
   await page.goto("/");
   await openModule(page, "Backup");
@@ -84,10 +75,10 @@ test("filters debloat packages by search", async ({ page }) => {
 
 test("switches the interface to Turkish", async ({ page }) => {
   await page.goto("/");
-  await openModule(page, "Settings");
+  await openModule(page, "Settings and tools");
   await page.getByRole("radio", { name: "Türkçe" }).click();
   await expect(page.getByRole("heading", { name: "Ayarlar", level: 1 })).toBeVisible();
-  await expect(page.getByText("Klavye kısayolları")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Uygulama" })).toBeVisible();
 });
 
 test("does not offer app data without root", async ({ page }) => {
@@ -202,9 +193,83 @@ test("asks about a phone's backup, follows it and shows how it ended", async ({ 
   await expect(dialog).toHaveCount(0);
 });
 
-test("measures the speed from the wireless module", async ({ page }) => {
+/** The arguments the app sent with a command. */
+const argsOf = (page: Page, command: string) =>
+  page.evaluate(
+    (name) =>
+      (window as unknown as { __calls: { cmd: string; args: unknown }[] }).__calls
+        .filter((c) => c.cmd === name)
+        .map((c) => c.args),
+    command,
+  );
+
+test("measures the speed of a connection", async ({ page }) => {
   await page.goto("/");
-  await openModule(page, "Wireless");
+  await openModule(page, "Settings and tools");
+  await page.getByRole("button", { name: "Connection", exact: true }).click();
   await page.getByRole("button", { name: "Start test" }).click();
   await expect(page.getByText("21.0 MB/s (168 Mbit/s)")).toBeVisible();
+});
+
+test("does not wait for a code while a phone is connected", async ({ page }) => {
+  await page.goto("/?scenario=wireless");
+  await openModule(page, "Debug connection");
+  await expect(page.getByText("Pixel 7 is already connected.", { exact: false })).toBeVisible();
+  expect(await calls(page)).not.toContain("wireless_new_qr");
+  await page.getByRole("button", { name: "Show QR code" }).click();
+  await expect(page.getByText("Waiting for a new phone to scan the code")).toBeVisible();
+});
+
+test("says which new phone a code connected", async ({ page }) => {
+  await page.goto("/?scenario=scan");
+  await openModule(page, "Debug connection");
+  await page.getByRole("tab", { name: "Wireless" }).click();
+  await expect(page.getByText("Pixel 9 connected.")).toBeVisible();
+});
+
+test("changes a setting of the phone and asks before revoking", async ({ page }) => {
+  await page.goto("/");
+  await openModule(page, "Debug connection");
+  await page.getByRole("tab", { name: "Phone settings" }).click();
+  await page.getByRole("switch", { name: "Keep the screen on while charging" }).click();
+  await expect(page.getByText("Setting changed on the phone")).toBeVisible();
+  expect(await argsOf(page, "set_debug_setting")).toEqual([
+    { serial: "R58M123", setting: { kind: "stay_awake", value: true } },
+  ]);
+  await page.getByRole("button", { name: "Revoke all PC authorizations" }).click();
+  await expect(page.getByRole("dialog")).toContainText("This cannot be undone.");
+  expect(await calls(page)).not.toContain("revoke_authorizations");
+});
+
+test("starts every visit at the first settings section", async ({ page }) => {
+  await page.goto("/");
+  await openModule(page, "Settings and tools");
+  await page.getByRole("button", { name: "Backups", exact: true }).click();
+  await expect(page.getByText("Verify SHA-256", { exact: false })).toBeVisible();
+  await openModule(page, "Device");
+  await openModule(page, "Settings and tools");
+  await expect(page.getByRole("button", { name: "Application" })).toHaveAttribute(
+    "aria-current",
+    "true",
+  );
+});
+
+test("turns automatic connection off", async ({ page }) => {
+  await page.goto("/");
+  await openModule(page, "Settings and tools");
+  await page.getByRole("button", { name: "Connection", exact: true }).click();
+  await page.getByRole("switch", { name: /Connect paired phones/ }).click();
+  await expect
+    .poll(() => argsOf(page, "save_settings"))
+    .toMatchObject([{ settings: { autoConnect: false } }]);
+});
+
+test("opens the tools inside the settings", async ({ page }) => {
+  await page.goto("/");
+  await openModule(page, "Settings and tools");
+  await page.getByRole("tab", { name: "Logcat" }).click();
+  await expect(page.getByRole("button", { name: "Start", exact: true })).toBeVisible();
+  await openModule(page, "Device");
+  await openModule(page, "Settings and tools");
+  await expect(page.getByRole("tab", { name: "General" })).toHaveAttribute("aria-selected", "true");
 });

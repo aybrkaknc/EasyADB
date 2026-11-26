@@ -30,6 +30,8 @@ pub enum ErrorCode {
     /// The user of the phone said no, or did not answer.
     PhoneRejected,
     PhoneExpired,
+    /// The phone does not offer this, or refused the change.
+    NotSupported,
     Internal,
 }
 

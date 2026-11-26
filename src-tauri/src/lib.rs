@@ -15,8 +15,8 @@ use tauri_plugin_log::{RotationStrategy, Target, TargetKind};
 use tauri_specta::{Builder, collect_commands, collect_events};
 
 use features::{
-    backup, debloat, device, files, logcat, packages, performance, phone_jobs, phone_requests,
-    settings, sideload, speed, system_backup, terminal, wireless,
+    backup, debloat, debugging, device, files, logcat, packages, performance, phone_jobs,
+    phone_requests, settings, sideload, speed, system_backup, terminal, wireless,
 };
 
 pub fn specta_builder() -> Builder<Wry> {
@@ -73,8 +73,16 @@ pub fn specta_builder() -> Builder<Wry> {
             wireless::wireless_enable_tcpip,
             wireless::wireless_new_qr,
             wireless::wireless_find_pairing,
-            wireless::wireless_saved,
+            wireless::wireless_discover,
             wireless::wireless_forget,
+            wireless::wireless_connect_usb,
+            debugging::get_debug_settings,
+            debugging::set_debug_setting,
+            debugging::revoke_authorizations,
+            debugging::open_phone_settings,
+            debugging::get_adb_info,
+            debugging::restart_adb_server,
+            debugging::reconnect_offline,
             terminal::run_terminal,
             sideload::sideload_zip,
             sideload::install_apk,
@@ -162,6 +170,7 @@ pub fn run() {
                 Err(err) => log::error!("adb sidecar not available: {err}"),
             }
             phone_requests::start(app.handle().clone());
+            wireless::watch(app.handle().clone());
             show_main_window(app.handle());
             Ok(())
         })

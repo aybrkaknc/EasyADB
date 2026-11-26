@@ -3,13 +3,17 @@ import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
+import { useAppStore } from "../../app/store";
 import type { DeviceEntry, DeviceState } from "../../bindings";
 import { useDevices } from "../hooks/useDevices";
 import { isAppError } from "../lib/errors";
+import { Button } from "./Button";
 import { Panel } from "./Panel";
 
 function Guide({ icon: Icon, guide, steps }: { icon: LucideIcon; guide: string; steps: number }) {
   const { t } = useTranslation();
+  const setModule = useAppStore((s) => s.setModule);
+  const here = useAppStore((s) => s.module === "debugging");
   return (
     <div className="flex h-full items-center justify-center p-6">
       <Panel className="w-full max-w-xl">
@@ -22,7 +26,14 @@ function Guide({ icon: Icon, guide, steps }: { icon: LucideIcon; guide: string; 
             <li key={i}>{t(`guide.${guide}.step${i + 1}`)}</li>
           ))}
         </ol>
-        {guide !== "adbMissing" && <p className="label mt-5 text-neon/70">{t("guide.wireless")}</p>}
+        {guide !== "adbMissing" && !here && (
+          <div className="mt-5 flex flex-wrap items-center gap-3">
+            <p className="label text-neon/70">{t("guide.wireless")}</p>
+            <Button size="sm" onClick={() => setModule("debugging")}>
+              {t("debugging.open")}
+            </Button>
+          </div>
+        )}
       </Panel>
     </div>
   );

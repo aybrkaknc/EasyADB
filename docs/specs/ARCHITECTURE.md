@@ -26,8 +26,8 @@ src-tauri/src/
     shell.rs    cihaz kabuğu için tırnaklama ve doğrulama
     parse.rs    ortak ayrıştırıcılar (devices, packages, getprop)
     fake.rs     testler için sahte AdbRunner
-  features/     device, packages, backup/, debloat, wireless, terminal,
-                sideload, performance, files, logcat, settings
+  features/     device, packages, backup/, debloat, debugging, wireless,
+                terminal, sideload, performance, files, logcat, settings
 ```
 
 ### 2.1 ADB çağrıları
@@ -70,7 +70,7 @@ src/
   app/          App, zustand deposu (modül, seçili cihaz), i18n, kabuk
   features/     her modül için ekran ve yardımcıları
   shared/
-    hooks/      useDevices, useSettings, useTask, useSelection, useConfirm, useFeedback
+    hooks/      useDevices, useConnections, useSettings, useTask, useSelection, useConfirm, useFeedback
     ui/         Radix tabanlı bileşenler, DeviceGuard, TaskBar, Toaster
     lib/        biçimlendirme ve hata metinleri
   bindings.ts   üretilir, elle düzenlenmez

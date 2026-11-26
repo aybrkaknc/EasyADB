@@ -1,75 +1,81 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { getVersion } from "@tauri-apps/api/app";
-import { open } from "@tauri-apps/plugin-dialog";
-import { FolderOpen, Settings as SettingsIcon } from "lucide-react";
+import { Archive, Bug, FileText, Info, Settings as SettingsIcon, Smartphone } from "lucide-react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { commands } from "../../bindings";
-import { useFeedback } from "../../shared/hooks/useFeedback";
-import { type Settings, useSaveSettings, useSettings } from "../../shared/hooks/useSettings";
-import { Button } from "../../shared/ui/Button";
-import { FilterChips, Switch } from "../../shared/ui/Controls";
+import { useAppStore } from "../../app/store";
+import { cn } from "../../shared/lib/cn";
+import { Tabs, TabsContent, TabsList } from "../../shared/ui/Controls";
 import { ModuleHeader } from "../../shared/ui/ModuleHeader";
-import { Panel } from "../../shared/ui/Panel";
+import { LogcatTab } from "../logcat/LogcatView";
+import { PerformanceTab } from "../performance/PerformanceView";
+import {
+  AboutSection,
+  AppSection,
+  BackupSection,
+  ConnectionSection,
+  DiagnosticsSection,
+  PhonesSection,
+} from "./Sections";
 
-type Toggle =
-  | "notifications"
-  | "sound"
-  | "confirmDestructive"
-  | "fileLogging"
-  | "verifyHashOnRestore"
-  | "closeToTray";
+const SECTIONS = {
+  app: [SettingsIcon, AppSection],
+  backup: [Archive, BackupSection],
+  phones: [Smartphone, PhonesSection],
+  connection: [Bug, ConnectionSection],
+  diagnostics: [FileText, DiagnosticsSection],
+  about: [Info, AboutSection],
+} as const;
 
-const TOGGLES: [Toggle, string][] = [
-  ["notifications", "settings.notifications"],
-  ["sound", "settings.sound"],
-  ["confirmDestructive", "settings.confirm"],
-  ["verifyHashOnRestore", "settings.verifyHash"],
-  ["closeToTray", "settings.closeToTray"],
-  ["fileLogging", "settings.fileLogging"],
-];
+type SectionId = keyof typeof SECTIONS;
+
+function General() {
+  const { t } = useTranslation();
+  const active = useAppStore((s) => s.module === "settings");
+  const [section, setSection] = useState<SectionId>("app");
+  // Every visit starts at the first section.
+  if (!active && section !== "app") setSection("app");
+  const Section = SECTIONS[section][1];
+  return (
+    <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-auto p-6 lg:flex-row lg:items-start">
+      <nav
+        aria-label={t("settings.sections.label")}
+        className="flex shrink-0 flex-row flex-wrap gap-1 lg:w-44 lg:flex-col"
+      >
+        {(Object.keys(SECTIONS) as SectionId[]).map((id) => {
+          const Icon = SECTIONS[id][0];
+          const selected = id === section;
+          return (
+            <button
+              key={id}
+              type="button"
+              aria-current={selected ? "true" : undefined}
+              onClick={() => setSection(id)}
+              className={cn(
+                "flex items-center gap-2 border px-3 py-2 text-left text-[11px] tracking-widest uppercase transition-colors",
+                selected
+                  ? "border-neon bg-neon/15 text-neon"
+                  : "border-white/15 text-white/60 hover:text-white",
+              )}
+            >
+              <Icon className="size-3.5 shrink-0" aria-hidden />
+              {t(`settings.sections.${id}`)}
+            </button>
+          );
+        })}
+      </nav>
+      <div className="w-full max-w-3xl min-w-0">
+        <Section />
+      </div>
+    </div>
+  );
+}
 
 export function SettingsView() {
   const { t } = useTranslation();
-  const settings = useSettings();
-  const save = useSaveSettings();
-  const feedback = useFeedback();
-  const backupRoot = useQuery({
-    queryKey: ["backupRoot", settings.backupDir],
-    queryFn: () => commands.getBackupRoot(),
-  });
-  const version = useQuery({ queryKey: ["version"], queryFn: getVersion, staleTime: Infinity });
-  const client = useQueryClient();
-  const trusted = useQuery({
-    queryKey: ["trustedPhones"],
-    queryFn: () => commands.listTrustedPhones(),
-  });
-  const never = useQuery({
-    queryKey: ["neverAskPhones"],
-    queryFn: () => commands.listNeverAskPhones(),
-  });
-  const askAgain = (phone: string) => {
-    void commands
-      .neverAskPhone(phone, false)
-      .then(() => client.invalidateQueries({ queryKey: ["neverAskPhones"] }))
-      .catch(feedback.failure);
-  };
-  const forget = (phone: string) => {
-    void commands
-      .forgetTrustedPhone(phone)
-      .then(() => client.invalidateQueries({ queryKey: ["trustedPhones"] }))
-      .catch(feedback.failure);
-  };
-
-  const update = (patch: Partial<Settings>) => {
-    save.mutate({ ...settings, ...patch }, { onError: (error) => feedback.failure(error) });
-  };
-
-  const chooseBackupDir = async () => {
-    const dir = await open({ directory: true });
-    if (dir) update({ backupDir: dir });
-  };
-
+  const active = useAppStore((s) => s.module === "settings");
+  const [tab, setTab] = useState("general");
+  // Every visit starts at the general settings.
+  if (!active && tab !== "general") setTab("general");
   return (
     <>
       <ModuleHeader
@@ -77,114 +83,28 @@ export function SettingsView() {
         title={t("modules.settings.title")}
         subtitle={t("modules.settings.subtitle")}
       />
-      <div className="grid min-h-0 flex-1 grid-cols-1 content-start gap-4 overflow-auto p-6 xl:grid-cols-2">
-        <Panel title={t("settings.language")}>
-          <FilterChips
-            value={settings.language ?? "system"}
-            options={[
-              { value: "system", label: t("settings.system") },
-              { value: "en", label: "English" },
-              { value: "tr", label: "Türkçe" },
-            ]}
-            onChange={(value) => update({ language: value === "system" ? null : value })}
-          />
-        </Panel>
-
-        <Panel title={t("settings.backupDir")}>
-          <p className="mb-3 truncate text-xs text-white/80" title={backupRoot.data}>
-            {backupRoot.data ?? "-"}
-          </p>
-          <div className="flex gap-2">
-            <Button variant="ghost" onClick={() => void chooseBackupDir()}>
-              {t("settings.change")}
-            </Button>
-            <Button
-              variant="ghost"
-              onClick={() => update({ backupDir: null })}
-              disabled={!settings.backupDir}
-            >
-              {t("settings.reset")}
-            </Button>
-            {backupRoot.data && (
-              <Button variant="ghost" onClick={() => void commands.revealPath(backupRoot.data)}>
-                <FolderOpen className="size-3.5" />
-                {t("common.openFolder")}
-              </Button>
-            )}
-          </div>
-        </Panel>
-
-        <Panel title={t("settings.preferences")} className="xl:col-span-2">
-          <div className="flex flex-col divide-y divide-white/5">
-            {TOGGLES.map(([key, label]) => (
-              <Switch
-                key={key}
-                checked={settings[key]}
-                onChange={(value) => update({ [key]: value })}
-                label={t(label)}
-              />
-            ))}
-          </div>
-          <Button
-            variant="ghost"
-            className="mt-3"
-            onClick={() => void commands.openLogDir().catch(feedback.failure)}
-          >
-            {t("settings.openLogs")}
-          </Button>
-        </Panel>
-
-        <Panel title={t("settings.trusted.title")}>
-          {trusted.data?.length ? (
-            <ul className="flex flex-col divide-y divide-white/5 text-xs">
-              {trusted.data.map((phone) => (
-                <li key={phone} className="flex items-center justify-between gap-3 py-1.5">
-                  <span className="truncate font-mono text-white/80">{phone}</span>
-                  <Button variant="ghost" size="sm" onClick={() => forget(phone)}>
-                    {t("settings.trusted.forget")}
-                  </Button>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-xs text-white/50">{t("settings.trusted.empty")}</p>
-          )}
-          <p className="mt-3 text-[11px] text-white/40">{t("settings.trusted.hint")}</p>
-          {never.data && never.data.length > 0 && (
-            <>
-              <p className="label mt-4 mb-1">{t("settings.trusted.neverTitle")}</p>
-              <ul className="flex flex-col divide-y divide-white/5 text-xs">
-                {never.data.map((phone) => (
-                  <li key={phone} className="flex items-center justify-between gap-3 py-1.5">
-                    <span className="truncate font-mono text-white/80">{phone}</span>
-                    <Button variant="ghost" size="sm" onClick={() => askAgain(phone)}>
-                      {t("settings.trusted.askAgain")}
-                    </Button>
-                  </li>
-                ))}
-              </ul>
-            </>
-          )}
-        </Panel>
-
-        <Panel title={t("settings.shortcuts.title")}>
-          <ul className="flex flex-col gap-1.5 text-xs text-white/80">
-            <li>{t("settings.shortcuts.modules")}</li>
-            <li>{t("settings.shortcuts.refresh")}</li>
-            <li>{t("settings.shortcuts.search")}</li>
-          </ul>
-        </Panel>
-
-        <Panel title={t("settings.about.title")}>
-          <div className="flex flex-col gap-1.5 text-xs text-white/80">
-            <p className="text-neon">
-              {t("settings.about.version", { version: version.data ?? "-" })}
-            </p>
-            <p>{t("settings.about.license")}</p>
-            <p>{t("settings.about.credits")}</p>
-          </div>
-        </Panel>
-      </div>
+      <Tabs value={tab} onValueChange={setTab} className="flex min-h-0 flex-1 flex-col">
+        <TabsList
+          tabs={(["general", "performance", "logcat"] as const).map((value) => ({
+            value,
+            label: t(`settings.tabs.${value}`),
+          }))}
+        />
+        <TabsContent value="general" className="flex min-h-0 flex-1 flex-col">
+          <General />
+        </TabsContent>
+        <TabsContent value="performance" className="flex min-h-0 flex-1 flex-col">
+          <PerformanceTab />
+        </TabsContent>
+        {/* Kept mounted so that a running log goes on while another tab is open. */}
+        <TabsContent
+          value="logcat"
+          forceMount
+          className="flex min-h-0 flex-1 flex-col data-[state=inactive]:hidden"
+        >
+          <LogcatTab />
+        </TabsContent>
+      </Tabs>
     </>
   );
 }
