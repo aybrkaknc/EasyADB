@@ -14,7 +14,7 @@ use super::permissions::is_valid_permission;
 use super::transfer;
 use crate::adb::{Device, shell};
 use crate::error::{AppError, AppResult, ErrorCode};
-use crate::features::device;
+use crate::features::{device, packages};
 use crate::tasks::{Reporter, TaskHandle};
 
 #[derive(Debug, Clone, Deserialize, Type)]
@@ -339,7 +339,8 @@ fn restore_archive(
     task.check()?;
     let remote = format!("/data/local/tmp/{name}.tar");
     device.adb(&["push", &tar.display().to_string(), &remote])?;
-    device.su(&data_script(package, layer, &remote, sdk))?;
+    let stop = !packages::is_system(device, package);
+    device.su(&data_script(package, layer, &remote, sdk, stop))?;
     Ok(())
 }
 
@@ -347,7 +348,8 @@ fn restore_archive(
 ///
 /// The owner, mode and SELinux label are read before extracting: the folder was made by
 /// the installer for the app's current uid, which can differ from the uid in the archive.
-fn data_script(package: &str, layer: Layer, remote: &str, sdk: u32) -> String {
+/// `stop` is false for system apps, which Android would start again at once.
+fn data_script(package: &str, layer: Layer, remote: &str, sdk: u32, stop: bool) -> String {
     let parent = layer.parent();
     let target = format!("{parent}/{package}");
     let remote = shell::quote(remote);
@@ -374,9 +376,14 @@ fn data_script(package: &str, layer: Layer, remote: &str, sdk: u32) -> String {
              *) restorecon -RF {target};; esac"
         ),
     };
+    let halt = if stop {
+        format!("am force-stop {package}")
+    } else {
+        "true".to_string()
+    };
     let steps = [
         prepare,
-        format!("am force-stop {package}"),
+        halt,
         format!("find {target} -mindepth 1 -maxdepth 1 ! -name lib -exec rm -rf {{}} +"),
         format!("tar -xf {remote} -C {parent}"),
         finish,
@@ -392,6 +399,16 @@ mod tests {
     use super::*;
     use crate::adb::fake::FakeAdb;
     use crate::features::backup::manifest::PermissionGrant;
+
+    #[test]
+    fn leaves_a_system_app_running() {
+        let script = data_script("com.a", Layer::Private, "/data/local/tmp/x.tar", 34, false);
+        assert!(!script.contains("force-stop"));
+        assert!(
+            data_script("com.a", Layer::Private, "/data/local/tmp/x.tar", 34, true)
+                .contains("am force-stop com.a")
+        );
+    }
 
     #[test]
     fn installs_single_and_split_apks() {
@@ -444,7 +461,7 @@ mod tests {
 
     #[test]
     fn reads_owner_before_extracting() {
-        let script = data_script("com.a", Layer::Private, "/data/local/tmp/x.tar", 34);
+        let script = data_script("com.a", Layer::Private, "/data/local/tmp/x.tar", 34, true);
         let stat = script.find("stat -c '%u:%g %a'").unwrap();
         let tar = script.find("tar -xf").unwrap();
         assert!(stat < tar, "{script}");
@@ -452,16 +469,22 @@ mod tests {
         assert!(script.contains("chcon") && script.contains("restorecon"));
         assert!(script.ends_with("exit $status"));
 
-        let de = data_script("com.a", Layer::DeviceProtected, "/data/local/tmp/x.tar", 34);
+        let de = data_script(
+            "com.a",
+            Layer::DeviceProtected,
+            "/data/local/tmp/x.tar",
+            34,
+            true,
+        );
         assert!(de.contains("/data/user_de/0/com.a"));
     }
 
     #[test]
     fn external_data_belongs_to_the_app_on_new_android() {
-        let new = data_script("com.a", Layer::External, "/data/local/tmp/x.tar", 34);
+        let new = data_script("com.a", Layer::External, "/data/local/tmp/x.tar", 34, true);
         assert!(new.contains("$(stat -c %u /data/data/com.a):ext_data_rw"));
         assert!(new.contains("mkdir -p /data/media/0/Android/data/com.a"));
-        let old = data_script("com.a", Layer::External, "/data/local/tmp/x.tar", 29);
+        let old = data_script("com.a", Layer::External, "/data/local/tmp/x.tar", 29, true);
         assert!(old.contains("media_rw:media_rw"));
     }
 

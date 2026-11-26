@@ -37,6 +37,11 @@ fn package_set(device: Device, flags: &[&str]) -> AppResult<HashSet<String>> {
     Ok(parse_packages(&device.shell(&args)?).into_iter().collect())
 }
 
+/// A package of the system image. Stopping one makes Android start it again at once.
+pub fn is_system(device: Device, package: &str) -> bool {
+    package_set(device, &["-s", "-u"]).is_ok_and(|system| system.contains(package))
+}
+
 pub fn list_apps(device: Device) -> AppResult<Vec<AppInfo>> {
     let installed = package_set(device, &[])?;
     let all = package_set(device, &["-u"]).unwrap_or_else(|_| installed.clone());

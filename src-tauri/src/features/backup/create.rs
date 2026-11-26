@@ -300,8 +300,8 @@ fn fill(
         // No root: do not even try, so the device is not asked for root once per app.
         data_skipped = true;
     } else if !layers.is_empty() {
-        // The data is only consistent while the app is stopped.
-        if !keeps_running(package) {
+        // The data is only consistent while the app is stopped. A system app is left alone.
+        if !keeps_running(package) && !packages::is_system(job.device, package) {
             let _ = job
                 .device
                 .shell(&["am", "force-stop", "--user", "0", package]);
