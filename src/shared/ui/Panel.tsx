@@ -1,6 +1,13 @@
-import type { ReactNode } from "react";
+import { createContext, type ReactNode, useContext } from "react";
 
 import { cn } from "../lib/cn";
+
+const Plain = createContext(false);
+
+/** Inside the settings, panels have no side bar and their titles are underlined like tabs. */
+export function PlainPanels({ children }: { children: ReactNode }) {
+  return <Plain.Provider value>{children}</Plain.Provider>;
+}
 
 export function Panel({
   title,
@@ -13,8 +20,20 @@ export function Panel({
   className?: string;
   children: ReactNode;
 }) {
+  const plain = useContext(Plain);
+  if (plain) {
+    return (
+      <section className={className}>
+        {title && (
+          <h3 className="mb-4 text-xs font-medium tracking-widest text-white uppercase">{title}</h3>
+        )}
+        {actions && <div className="mb-3 flex items-center gap-2">{actions}</div>}
+        {children}
+      </section>
+    );
+  }
   return (
-    <section className={cn("clip-corners border border-line bg-panel/70 p-4", className)}>
+    <section className={cn("border-l-2 border-neon py-1 pl-4", className)}>
       {(title || actions) && (
         <header className="mb-3 flex items-center justify-between gap-3">
           {title && <h3 className="label text-neon/80">{title}</h3>}

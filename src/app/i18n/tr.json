@@ -29,7 +29,9 @@
       "checking": "Root erişimi kontrol ediliyor...",
       "yes": "Root erişimi var",
       "no": "Root erişimi yok"
-    }
+    },
+    "railCollapse": "Menüyü daralt",
+    "railExpand": "Menüyü genişlet"
   },
   "phone": {
     "title": "Telefonda yedekler bulundu",
@@ -57,7 +59,7 @@
   },
   "modules": {
     "device": {
-      "title": "Cihaz"
+      "title": "Ana Sayfa"
     },
     "backup": {
       "title": "Yedekleme"
@@ -220,6 +222,13 @@
       "used": "Kullanılan",
       "address": "Adres",
       "also": "Ayrıca bağlı"
+    },
+    "quick": {
+      "title": "Hızlı işlemler",
+      "backup": "Yedekle",
+      "debloat": "Debloat",
+      "files": "Dosyalar",
+      "settings": "Ayarlar"
     }
   },
   "backup": {
@@ -479,11 +488,9 @@
   },
   "terminal": {
     "placeholder": "adb veya fastboot komutu, örneğin shell getprop ro.product.model",
-    "run": "Çalıştır",
     "stop": "Durdur",
     "export": "Dışa aktar",
     "exit": "{{code}} koduyla sonlandı",
-    "hint": "Yukarı/Aşağı: geçmiş, Tab: tamamla",
     "noDevice": "Cihaz seçili değil: yalnızca devices gibi genel komutlar çalışır."
   },
   "files": {
@@ -499,7 +506,7 @@
     "empty": "Bu klasör boş",
     "name": "Ad",
     "size": "Boyut",
-    "modified": "Değiştirilme",
+    "modified": "Değiştirilme Tarihi",
     "done": "Aktarım tamamlandı"
   },
   "logcat": {

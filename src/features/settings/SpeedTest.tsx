@@ -4,6 +4,7 @@ import { commands } from "../../bindings";
 import { useDevices } from "../../shared/hooks/useDevices";
 import { runJob } from "../../shared/jobs/store";
 import { Button } from "../../shared/ui/Button";
+import { SubHeading } from "../../shared/ui/SubHeading";
 
 /** Measures the connection to the selected phone, wireless or not. */
 export function SpeedTest() {
@@ -23,7 +24,7 @@ export function SpeedTest() {
   };
   return (
     <>
-      <p className="label mb-1">{t("speed.title")}</p>
+      <SubHeading>{t("speed.title")}</SubHeading>
       <p className="mb-3 text-xs text-white/60">{t("speed.intro")}</p>
       <Button onClick={start} disabled={!ready}>
         {t("speed.start")}

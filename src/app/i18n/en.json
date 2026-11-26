@@ -29,7 +29,9 @@
       "checking": "Checking root access...",
       "yes": "Root access available",
       "no": "No root access"
-    }
+    },
+    "railCollapse": "Collapse menu",
+    "railExpand": "Expand menu"
   },
   "phone": {
     "title": "Backups found on the phone",
@@ -57,7 +59,7 @@
   },
   "modules": {
     "device": {
-      "title": "Device"
+      "title": "Home"
     },
     "backup": {
       "title": "Backup"
@@ -220,6 +222,13 @@
       "used": "In use",
       "address": "Address",
       "also": "Also connected"
+    },
+    "quick": {
+      "title": "Quick actions",
+      "backup": "Back up",
+      "debloat": "Debloat",
+      "files": "Files",
+      "settings": "Settings"
     }
   },
   "backup": {
@@ -479,11 +488,9 @@
   },
   "terminal": {
     "placeholder": "adb or fastboot command, e.g. shell getprop ro.product.model",
-    "run": "Run",
     "stop": "Stop",
     "export": "Export",
     "exit": "Exited with code {{code}}",
-    "hint": "Up/Down: history, Tab: complete",
     "noDevice": "No device selected: only global commands such as devices will work."
   },
   "files": {
@@ -499,7 +506,7 @@
     "empty": "This folder is empty",
     "name": "Name",
     "size": "Size",
-    "modified": "Modified",
+    "modified": "Modified date",
     "done": "Transfer finished"
   },
   "logcat": {

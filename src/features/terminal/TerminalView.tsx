@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { save } from "@tauri-apps/plugin-dialog";
-import { Play, Square } from "lucide-react";
-import { type KeyboardEvent, useRef, useState } from "react";
+import { Square } from "lucide-react";
+import { type KeyboardEvent, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Virtuoso } from "react-virtuoso";
 
@@ -15,7 +15,7 @@ import { complete } from "./completion";
 
 interface Line {
   id: number;
-  kind: StreamKind | "input";
+  kind: StreamKind | "input" | "prompt";
   text: string;
 }
 
@@ -33,6 +33,11 @@ export function TerminalTab() {
   const [taskId, setTaskId] = useState<string | null>(null);
   useHold(taskId !== null);
   const nextId = useRef(0);
+  const inputRef = useRef<HTMLInputElement>(null);
+  // The prompt is back after each run, so the typing goes on at once.
+  useEffect(() => {
+    if (!taskId) inputRef.current?.focus();
+  }, [taskId]);
   const packages = useQuery({
     queryKey: ["apps", serial],
     queryFn: () => commands.listDeviceApps(serial!),
@@ -69,7 +74,10 @@ export function TerminalTab() {
   };
 
   const onKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === "Enter") {
+    if (event.ctrlKey && event.key.toLowerCase() === "c" && taskId) {
+      event.preventDefault();
+      void commands.cancelTask(taskId);
+    } else if (event.key === "Enter") {
       void run();
     } else if (event.key === "ArrowUp" || event.key === "ArrowDown") {
       event.preventDefault();
@@ -99,9 +107,21 @@ export function TerminalTab() {
     }
   };
 
+  // The prompt is the last row of the output, as in an ordinary terminal.
+  const rows: Line[] = taskId ? lines : [...lines, { id: -1, kind: "prompt", text: "" }];
+  const focusPrompt = () => {
+    if (!window.getSelection()?.toString()) inputRef.current?.focus();
+  };
+
   return (
     <>
-      <div className="flex justify-end gap-2 px-6 py-3">
+      <div className="flex items-center justify-end gap-2 px-6 py-3">
+        {taskId && (
+          <Button size="sm" variant="danger" onClick={() => void commands.cancelTask(taskId)}>
+            <Square className="size-3" />
+            {t("terminal.stop")}
+          </Button>
+        )}
         <Button variant="ghost" size="sm" onClick={() => setLines([])}>
           {t("common.clear")}
         </Button>
@@ -114,53 +134,48 @@ export function TerminalTab() {
           {t("terminal.export")}
         </Button>
       </div>
-      <div className="flex min-h-0 flex-1 flex-col bg-black/80 font-mono text-xs">
+      {!serial && <p className="px-6 pb-1 text-[11px] text-warn/80">{t("terminal.noDevice")}</p>}
+      <div
+        className="flex min-h-0 flex-1 flex-col bg-black/80 font-mono text-xs"
+        onClick={focusPrompt}
+      >
         <Virtuoso
           className="flex-1"
-          data={lines}
+          data={rows}
           followOutput="auto"
-          computeItemKey={(_, line) => line.id}
-          itemContent={(_, line) => (
-            <pre
-              className={cn(
-                "px-6 py-px break-all whitespace-pre-wrap select-text",
-                line.kind === "input" && "pt-2 text-acid",
-                line.kind === "stderr" && "text-danger",
-                line.kind === "exit" && "pb-2 text-white/40",
-                line.kind === "stdout" && "text-neon/90",
-              )}
-            >
-              {line.text}
-            </pre>
-          )}
+          computeItemKey={(_, line) => (line.kind === "prompt" ? "prompt" : line.id)}
+          itemContent={(_, line) =>
+            line.kind === "prompt" ? (
+              <div className="flex items-center gap-2 px-6 py-2">
+                <span className="shrink-0 text-acid">{serial ?? "-"} $</span>
+                <input
+                  ref={inputRef}
+                  data-search
+                  className="min-w-0 flex-1 bg-transparent caret-neon text-neon outline-none placeholder:text-white/25"
+                  placeholder={t("terminal.placeholder")}
+                  aria-label={t("terminal.placeholder")}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={onKeyDown}
+                  spellCheck={false}
+                  autoComplete="off"
+                />
+              </div>
+            ) : (
+              <pre
+                className={cn(
+                  "px-6 py-px break-all whitespace-pre-wrap select-text",
+                  line.kind === "input" && "pt-2 text-acid",
+                  line.kind === "stderr" && "text-danger",
+                  line.kind === "exit" && "pb-2 text-white/40",
+                  line.kind === "stdout" && "text-neon/90",
+                )}
+              >
+                {line.text}
+              </pre>
+            )
+          }
         />
-        {!serial && <p className="px-6 py-1 text-[11px] text-warn/80">{t("terminal.noDevice")}</p>}
-        <div className="flex items-center gap-2 border-t border-line px-6 py-3">
-          <span className="text-acid">$</span>
-          <input
-            data-search
-            className="flex-1 bg-transparent text-neon outline-none placeholder:text-white/25"
-            placeholder={t("terminal.placeholder")}
-            aria-label={t("terminal.placeholder")}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={onKeyDown}
-            spellCheck={false}
-            autoComplete="off"
-          />
-          <span className="label hidden lg:inline">{t("terminal.hint")}</span>
-          {taskId ? (
-            <Button size="sm" variant="danger" onClick={() => void commands.cancelTask(taskId)}>
-              <Square className="size-3" />
-              {t("terminal.stop")}
-            </Button>
-          ) : (
-            <Button size="sm" onClick={() => void run()} disabled={!input.trim()}>
-              <Play className="size-3" />
-              {t("terminal.run")}
-            </Button>
-          )}
-        </div>
       </div>
     </>
   );

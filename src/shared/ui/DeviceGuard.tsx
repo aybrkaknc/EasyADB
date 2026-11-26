@@ -8,20 +8,20 @@ import type { DeviceEntry, DeviceState } from "../../bindings";
 import { useDevices } from "../hooks/useDevices";
 import { isAppError } from "../lib/errors";
 import { Button } from "./Button";
-import { Panel } from "./Panel";
+import { SubHeading } from "./SubHeading";
 
 function Guide({ icon: Icon, guide, steps }: { icon: LucideIcon; guide: string; steps: number }) {
   const { t } = useTranslation();
   const openSettings = useAppStore((s) => s.openSettings);
   const here = useAppStore((s) => s.module === "settings" && s.settingsTab === "debugging");
   return (
-    <div className="flex h-full items-center justify-center p-6">
-      <Panel className="w-full max-w-xl">
+    <div className="flex h-full w-full items-center justify-center p-6">
+      <div className="w-full max-w-2xl">
         <div className="mb-4 flex items-center gap-3">
-          <Icon className="size-6 text-warn" aria-hidden />
-          <h2 className="heading text-lg">{t(`guide.${guide}.title`)}</h2>
+          <Icon className="size-8 text-warn" aria-hidden />
+          <SubHeading>{t(`guide.${guide}.title`)}</SubHeading>
         </div>
-        <ol className="flex list-decimal flex-col gap-2 pl-5 text-xs text-white/80">
+        <ol className="flex list-decimal flex-col gap-3 pl-5 text-sm text-white/80">
           {Array.from({ length: steps }, (_, i) => (
             <li key={i}>{t(`guide.${guide}.step${i + 1}`)}</li>
           ))}
@@ -34,7 +34,7 @@ function Guide({ icon: Icon, guide, steps }: { icon: LucideIcon; guide: string; 
             </Button>
           </div>
         )}
-      </Panel>
+      </div>
     </div>
   );
 }
@@ -62,10 +62,10 @@ export function DeviceGuard({
   if (selected.state === "offline") return <Guide icon={PlugZap} guide="offline" steps={3} />;
   if (!allow.includes(selected.state)) {
     return (
-      <div className="flex h-full items-center justify-center p-6">
-        <Panel className="max-w-xl text-xs">
+      <div className="flex h-full w-full items-center justify-center p-6">
+        <p className="max-w-2xl text-sm">
           {t("guide.wrongMode", { state: t(`devices.state.${selected.state}`) })}
-        </Panel>
+        </p>
       </div>
     );
   }

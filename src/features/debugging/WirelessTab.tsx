@@ -10,6 +10,7 @@ import { Button } from "../../shared/ui/Button";
 import { Field, FilterChips, Input } from "../../shared/ui/Controls";
 import { Badge } from "../../shared/ui/Feedback";
 import { Panel } from "../../shared/ui/Panel";
+import { SubHeading } from "../../shared/ui/SubHeading";
 import { QrPairing } from "./QrPairing";
 import { ADDRESS, useBusy, useDiscovery, useRefresh } from "./shared";
 
@@ -53,7 +54,8 @@ function Phones({ phones }: { phones: WirelessPhone[] }) {
     });
 
   return (
-    <Panel title={t("debugging.wireless.phones")}>
+    <Panel>
+      <SubHeading>{t("debugging.wireless.phones")}</SubHeading>
       {phones.length === 0 ? (
         <p className="text-xs text-white/50">{t("debugging.wireless.empty")}</p>
       ) : (
@@ -199,7 +201,8 @@ export function WirelessTab() {
   return (
     <div className="flex max-w-3xl flex-col gap-4">
       <Phones phones={phones} />
-      <Panel title={t("debugging.wireless.pairNew")}>
+      <Panel>
+        <SubHeading>{t("debugging.wireless.pairNew")}</SubHeading>
         <div className="mb-4">
           <FilterChips
             value={way}

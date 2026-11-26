@@ -11,6 +11,7 @@ import { Switch } from "../../shared/ui/Controls";
 import { DeviceGuard } from "../../shared/ui/DeviceGuard";
 import { Spinner } from "../../shared/ui/Feedback";
 import { Panel } from "../../shared/ui/Panel";
+import { PhoneActions } from "./PhoneActions";
 import { useDebugSettings } from "./shared";
 
 type Flag = "wireless" | "auth_expires" | "stay_awake" | "verify_installs";
@@ -120,5 +121,14 @@ function Settings({ device }: { device: DeviceEntry }) {
 }
 
 export function PhoneSettingsTab() {
-  return <DeviceGuard>{(device) => <Settings key={device.serial} device={device} />}</DeviceGuard>;
+  return (
+    <DeviceGuard>
+      {(device) => (
+        <div className="flex max-w-3xl flex-col gap-6">
+          <PhoneActions key={device.serial} device={device} />
+          <Settings key={device.serial} device={device} />
+        </div>
+      )}
+    </DeviceGuard>
+  );
 }

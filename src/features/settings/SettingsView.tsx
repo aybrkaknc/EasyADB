@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 
 import { SETTINGS_TABS, useAppStore } from "../../app/store";
 import { Tabs, TabsContent, TabsList } from "../../shared/ui/Controls";
+import { PlainPanels } from "../../shared/ui/Panel";
 import { ModuleHeader } from "../../shared/ui/ModuleHeader";
 import { SectionNav } from "../../shared/ui/SectionNav";
 import { DebuggingTab } from "../debugging/DebuggingTab";
@@ -66,31 +67,33 @@ export function SettingsView() {
   return (
     <>
       <ModuleHeader icon={SettingsIcon} title={t("modules.settings.title")} />
-      <Tabs
-        value={tab}
-        onValueChange={(value) => openSettings(value as typeof tab)}
-        className={CONTENT}
-      >
-        <TabsList
-          tabs={SETTINGS_TABS.map((value) => ({ value, label: t(`settings.tabs.${value}`) }))}
-        />
-        <TabsContent value="general" className={CONTENT}>
-          <General />
-        </TabsContent>
-        <TabsContent value="debugging" className={CONTENT}>
-          <DebuggingTab />
-        </TabsContent>
-        {/* Kept mounted so that history and a running command or log survive other tabs. */}
-        <TabsContent value="terminal" forceMount className={KEPT}>
-          {terminalOpened && <TerminalTab />}
-        </TabsContent>
-        <TabsContent value="performance" className={CONTENT}>
-          <PerformanceTab />
-        </TabsContent>
-        <TabsContent value="logcat" forceMount className={KEPT}>
-          <LogcatTab />
-        </TabsContent>
-      </Tabs>
+      <PlainPanels>
+        <Tabs
+          value={tab}
+          onValueChange={(value) => openSettings(value as typeof tab)}
+          className={CONTENT}
+        >
+          <TabsList
+            tabs={SETTINGS_TABS.map((value) => ({ value, label: t(`settings.tabs.${value}`) }))}
+          />
+          <TabsContent value="general" className={CONTENT}>
+            <General />
+          </TabsContent>
+          <TabsContent value="debugging" className={CONTENT}>
+            <DebuggingTab />
+          </TabsContent>
+          {/* Kept mounted so that history and a running command or log survive other tabs. */}
+          <TabsContent value="terminal" forceMount className={KEPT}>
+            {terminalOpened && <TerminalTab />}
+          </TabsContent>
+          <TabsContent value="performance" className={CONTENT}>
+            <PerformanceTab />
+          </TabsContent>
+          <TabsContent value="logcat" forceMount className={KEPT}>
+            <LogcatTab />
+          </TabsContent>
+        </Tabs>
+      </PlainPanels>
     </>
   );
 }

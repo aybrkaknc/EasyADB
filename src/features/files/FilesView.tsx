@@ -2,6 +2,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { open } from "@tauri-apps/plugin-dialog";
 import {
   ArrowUp,
+  ChevronDown,
+  ChevronUp,
   Download,
   File,
   Folder,
@@ -12,7 +14,7 @@ import {
   Trash2,
   Upload,
 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Virtuoso } from "react-virtuoso";
 
@@ -31,6 +33,63 @@ import { Dialog } from "../../shared/ui/Dialog";
 import { EmptyState, Spinner, TaskBar } from "../../shared/ui/Feedback";
 import { ModuleHeader } from "../../shared/ui/ModuleHeader";
 import { parentPath } from "./paths";
+
+type SortKey = "name" | "size" | "modified";
+type Sort = { key: SortKey; dir: "asc" | "desc" };
+
+const byName = (a: FileEntry, b: FileEntry) =>
+  a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" });
+
+/** Folders first, then the chosen column. Missing values go last. */
+function sortFiles(files: FileEntry[], sort: Sort): FileEntry[] {
+  const compare = (a: FileEntry, b: FileEntry) => {
+    if (sort.key === "name") return byName(a, b);
+    const x = sort.key === "size" ? a.size : a.modified;
+    const y = sort.key === "size" ? b.size : b.modified;
+    if (x === y) return byName(a, b);
+    if (x === null) return 1;
+    if (y === null) return -1;
+    return x - y;
+  };
+  return [...files].sort(
+    (a, b) =>
+      Number(b.isDir) - Number(a.isDir) || (sort.dir === "asc" ? compare(a, b) : -compare(a, b)),
+  );
+}
+
+function SortButton({
+  label,
+  column,
+  sort,
+  onSort,
+  right,
+}: {
+  label: string;
+  column: SortKey;
+  sort: Sort;
+  onSort: (key: SortKey) => void;
+  right?: boolean;
+}) {
+  const active = sort.key === column;
+  return (
+    <button
+      type="button"
+      onClick={() => onSort(column)}
+      className={cn(
+        "flex w-full items-center gap-1 whitespace-nowrap uppercase",
+        right && "justify-end",
+      )}
+    >
+      {label}
+      {active &&
+        (sort.dir === "asc" ? (
+          <ChevronUp className="size-3" />
+        ) : (
+          <ChevronDown className="size-3" />
+        ))}
+    </button>
+  );
+}
 
 function NameDialog({
   title,
@@ -83,11 +142,15 @@ function Explorer({ device }: { device: DeviceEntry }) {
   useHold(task.running);
   const selection = useSelection();
   const [path, setPath] = useState("/sdcard");
+  const [sort, setSort] = useState<Sort>({ key: "name", dir: "asc" });
+  const onSort = (key: SortKey) =>
+    setSort((s) => ({ key, dir: s.key === key && s.dir === "asc" ? "desc" : "asc" }));
   const [draft, setDraft] = useState("/sdcard");
   const [dialog, setDialog] = useState<null | "mkdir" | "rename">(null);
   const key = ["files", device.serial, path];
   const files = useQuery({ queryKey: key, queryFn: () => commands.listFiles(device.serial, path) });
   const refresh = () => void client.invalidateQueries({ queryKey: key });
+  const sorted = useMemo(() => sortFiles(files.data ?? [], sort), [files.data, sort]);
 
   const go = (next: string) => {
     selection.clear();
@@ -190,11 +253,11 @@ function Explorer({ device }: { device: DeviceEntry }) {
           </Button>
         </div>
       </div>
-      <div className="grid grid-cols-[24px_1fr_100px_170px] gap-3 border-y border-line px-6 py-1.5 label">
+      <div className="grid grid-cols-[24px_1fr_100px_220px] gap-x-6 px-6 py-1.5 label">
         <span />
-        <span>{t("files.name")}</span>
-        <span className="text-right">{t("files.size")}</span>
-        <span>{t("files.modified")}</span>
+        <SortButton label={t("files.name")} column="name" sort={sort} onSort={onSort} />
+        <SortButton label={t("files.size")} column="size" sort={sort} onSort={onSort} right />
+        <SortButton label={t("files.modified")} column="modified" sort={sort} onSort={onSort} />
       </div>
       {files.isLoading ? (
         <div className="p-6">
@@ -209,14 +272,14 @@ function Explorer({ device }: { device: DeviceEntry }) {
       ) : (
         <Virtuoso
           className="flex-1"
-          data={files.data}
+          data={sorted}
           computeItemKey={(_, f) => f.path}
           itemContent={(_, file: FileEntry) => (
             <div
               onDoubleClick={() => file.isDir && go(file.path)}
               onClick={() => selection.toggle(file.path)}
               className={cn(
-                "grid cursor-pointer grid-cols-[24px_1fr_100px_170px] items-center gap-3 border-b border-white/5 px-6 py-1.5 text-xs hover:bg-neon/5",
+                "grid cursor-pointer grid-cols-[24px_1fr_100px_220px] items-center gap-x-6 border-b border-white/5 px-6 py-1.5 text-xs hover:bg-neon/5",
                 selection.has(file.path) && "bg-neon/10",
               )}
             >

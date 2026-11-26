@@ -14,6 +14,9 @@ interface AppStore {
   serial: string | null;
   /** The user picked a wireless connection while the cable was plugged in. */
   pinned: boolean;
+  /** The module rail shows the module names beside its icons. */
+  railOpen: boolean;
+  toggleRail: () => void;
   setModule: (module: ModuleId) => void;
   openSettings: (tab: SettingsTab) => void;
   setSerial: (serial: string | null) => void;
@@ -24,6 +27,8 @@ export const useAppStore = create<AppStore>((set) => ({
   settingsTab: "general",
   serial: null,
   pinned: false,
+  railOpen: false,
+  toggleRail: () => set((s) => ({ railOpen: !s.railOpen })),
   // Every visit of the settings starts at the general tab.
   setModule: (module) => set({ module, settingsTab: "general" }),
   openSettings: (settingsTab) => set({ module: "settings", settingsTab }),

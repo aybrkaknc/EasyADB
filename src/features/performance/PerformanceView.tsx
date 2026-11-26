@@ -6,7 +6,8 @@ import { commands, type DeviceEntry } from "../../bindings";
 import { formatBytes, percent } from "../../shared/lib/format";
 import { DeviceGuard } from "../../shared/ui/DeviceGuard";
 import { ProgressBar, Spinner } from "../../shared/ui/Feedback";
-import { KeyValue, Panel } from "../../shared/ui/Panel";
+import { KeyValue } from "../../shared/ui/Panel";
+import { SubHeading } from "../../shared/ui/SubHeading";
 
 const HISTORY = 60;
 
@@ -42,11 +43,12 @@ function Tile({
   history?: number[];
 }) {
   return (
-    <Panel title={title}>
-      <p className="font-display text-3xl font-bold text-white tabular-nums">{value}</p>
-      {sub && <p className="mt-1 text-[11px] text-white/60">{sub}</p>}
+    <div className="min-w-0">
+      <p className="label">{title}</p>
+      <p className="font-display text-2xl font-bold text-white tabular-nums">{value}</p>
+      {sub && <p className="mt-1 truncate text-[11px] text-white/60">{sub}</p>}
       {bar !== undefined && (
-        <div className="mt-3">
+        <div className="mt-2">
           <ProgressBar value={bar} />
         </div>
       )}
@@ -55,7 +57,7 @@ function Tile({
           <Sparkline values={history} />
         </div>
       )}
-    </Panel>
+    </div>
   );
 }
 
@@ -104,96 +106,102 @@ function Metrics({ device }: { device: DeviceEntry }) {
   const b = m.battery;
   const d = hw.data?.device;
   return (
-    <div className="grid min-h-0 flex-1 grid-cols-1 content-start gap-4 overflow-auto p-6 md:grid-cols-2 xl:grid-cols-4">
-      <Tile
-        title={t("performance.cpu")}
-        value={m.cpuPercent === null ? "-" : `${m.cpuPercent.toFixed(0)}%`}
-        sub={
-          m.loadAverage === null
-            ? undefined
-            : `${t("performance.load")} ${m.loadAverage.toFixed(2)}`
-        }
-        history={history.cpu}
-      />
-      <Tile
-        title={t("performance.ram")}
-        value={`${percent(ramUsed, memTotal).toFixed(0)}%`}
-        sub={`${formatBytes(ramUsed)} / ${formatBytes(memTotal)}`}
-        history={history.ram}
-      />
-      <Tile
-        title={t("performance.battery")}
-        value={b.level === null ? "-" : `${b.level}%`}
-        sub={[
-          t(`performance.batteryStatus.${b.status}`),
-          b.temperatureC === null ? null : `${b.temperatureC.toFixed(1)} C`,
-          b.voltageMv === null ? null : `${(b.voltageMv / 1000).toFixed(2)} V`,
-        ]
-          .filter(Boolean)
-          .join(" | ")}
-        bar={b.level}
-      />
-      <Tile
-        title={t("performance.storage")}
-        value={m.storage ? `${percent(storageUsed, storageTotal).toFixed(0)}%` : "-"}
-        sub={m.storage ? `${formatBytes(storageUsed)} / ${formatBytes(storageTotal)}` : undefined}
-        bar={m.storage ? percent(storageUsed, storageTotal) : null}
-      />
-      <Panel title={t("performance.hardware.title")} className="md:col-span-2">
-        {hw.data && d ? (
-          <KeyValue
-            rows={[
-              [t("performance.hardware.brand"), hw.data.brand],
-              [t("device.info.model"), d.model],
-              [t("performance.hardware.soc"), hw.data.soc],
-              [t("performance.hardware.cores"), hw.data.cpuCores?.toString() ?? ""],
-              [t("device.info.android"), `${d.androidVersion} (SDK ${d.sdk})`],
-              [t("performance.hardware.kernel"), hw.data.kernel],
-              [t("performance.hardware.resolution"), hw.data.resolution],
-              [t("performance.hardware.density"), hw.data.density],
-              [t("performance.hardware.ram"), formatBytes((hw.data.ramTotalKb ?? 0) * 1024)],
-              [
-                t("performance.hardware.storage"),
-                formatBytes((hw.data.storageTotalKb ?? 0) * 1024),
-              ],
-              [
-                t("device.info.bootloader"),
-                d.bootloaderLocked === null
-                  ? t("common.unknown")
-                  : t(d.bootloaderLocked ? "device.info.locked" : "device.info.unlocked"),
-              ],
-              [t("device.info.verifiedBoot"), d.verifiedBoot],
-              [t("device.info.selinux"), d.selinux],
-            ]}
-          />
-        ) : (
-          <Spinner label={t("common.loading")} />
-        )}
-      </Panel>
-      <Panel title={t("performance.network.title")} className="md:col-span-2">
-        {net.data?.wifiIp ? (
-          <KeyValue
-            rows={[
-              [t("performance.network.ip"), net.data.wifiIp],
-              [t("performance.network.ssid"), net.data.ssid ?? "-"],
-              [
-                t("performance.network.rssi"),
-                net.data.rssi === null ? "-" : `${net.data.rssi} dBm`,
-              ],
-              [
-                t("performance.network.speed"),
-                net.data.linkSpeedMbps === null ? "-" : `${net.data.linkSpeedMbps} Mbps`,
-              ],
-              [
-                t("performance.network.frequency"),
-                net.data.frequencyMhz === null ? "-" : `${net.data.frequencyMhz} MHz`,
-              ],
-            ]}
-          />
-        ) : (
-          <p className="text-xs text-white/50">{t("performance.network.offline")}</p>
-        )}
-      </Panel>
+    <div className="m-6 flex flex-col gap-6 self-start">
+      <div className="grid grid-cols-2 gap-5 md:grid-cols-4">
+        <Tile
+          title={t("performance.cpu")}
+          value={m.cpuPercent === null ? "-" : `${m.cpuPercent.toFixed(0)}%`}
+          sub={
+            m.loadAverage === null
+              ? undefined
+              : `${t("performance.load")} ${m.loadAverage.toFixed(2)}`
+          }
+          history={history.cpu}
+        />
+        <Tile
+          title={t("performance.ram")}
+          value={`${percent(ramUsed, memTotal).toFixed(0)}%`}
+          sub={`${formatBytes(ramUsed)} / ${formatBytes(memTotal)}`}
+          history={history.ram}
+        />
+        <Tile
+          title={t("performance.battery")}
+          value={b.level === null ? "-" : `${b.level}%`}
+          sub={[
+            t(`performance.batteryStatus.${b.status}`),
+            b.temperatureC === null ? null : `${b.temperatureC.toFixed(1)} C`,
+            b.voltageMv === null ? null : `${(b.voltageMv / 1000).toFixed(2)} V`,
+          ]
+            .filter(Boolean)
+            .join(" | ")}
+          bar={b.level}
+        />
+        <Tile
+          title={t("performance.storage")}
+          value={m.storage ? `${percent(storageUsed, storageTotal).toFixed(0)}%` : "-"}
+          sub={m.storage ? `${formatBytes(storageUsed)} / ${formatBytes(storageTotal)}` : undefined}
+          bar={m.storage ? percent(storageUsed, storageTotal) : null}
+        />
+      </div>
+      <div className="grid grid-cols-1 gap-5 border-t border-white/10 pt-5 md:grid-cols-2">
+        <section>
+          <SubHeading>{t("performance.hardware.title")}</SubHeading>
+          {hw.data && d ? (
+            <KeyValue
+              rows={[
+                [t("performance.hardware.brand"), hw.data.brand],
+                [t("device.info.model"), d.model],
+                [t("performance.hardware.soc"), hw.data.soc],
+                [t("performance.hardware.cores"), hw.data.cpuCores?.toString() ?? ""],
+                [t("device.info.android"), `${d.androidVersion} (SDK ${d.sdk})`],
+                [t("performance.hardware.kernel"), hw.data.kernel],
+                [t("performance.hardware.resolution"), hw.data.resolution],
+                [t("performance.hardware.density"), hw.data.density],
+                [t("performance.hardware.ram"), formatBytes((hw.data.ramTotalKb ?? 0) * 1024)],
+                [
+                  t("performance.hardware.storage"),
+                  formatBytes((hw.data.storageTotalKb ?? 0) * 1024),
+                ],
+                [
+                  t("device.info.bootloader"),
+                  d.bootloaderLocked === null
+                    ? t("common.unknown")
+                    : t(d.bootloaderLocked ? "device.info.locked" : "device.info.unlocked"),
+                ],
+                [t("device.info.verifiedBoot"), d.verifiedBoot],
+                [t("device.info.selinux"), d.selinux],
+              ]}
+            />
+          ) : (
+            <Spinner label={t("common.loading")} />
+          )}
+        </section>
+        <section>
+          <SubHeading>{t("performance.network.title")}</SubHeading>
+          {net.data?.wifiIp ? (
+            <KeyValue
+              rows={[
+                [t("performance.network.ip"), net.data.wifiIp],
+                [t("performance.network.ssid"), net.data.ssid ?? "-"],
+                [
+                  t("performance.network.rssi"),
+                  net.data.rssi === null ? "-" : `${net.data.rssi} dBm`,
+                ],
+                [
+                  t("performance.network.speed"),
+                  net.data.linkSpeedMbps === null ? "-" : `${net.data.linkSpeedMbps} Mbps`,
+                ],
+                [
+                  t("performance.network.frequency"),
+                  net.data.frequencyMhz === null ? "-" : `${net.data.frequencyMhz} MHz`,
+                ],
+              ]}
+            />
+          ) : (
+            <p className="text-xs text-white/50">{t("performance.network.offline")}</p>
+          )}
+        </section>
+      </div>
     </div>
   );
 }

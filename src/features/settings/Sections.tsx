@@ -11,6 +11,7 @@ import { type Settings, useSaveSettings, useSettings } from "../../shared/hooks/
 import { Button } from "../../shared/ui/Button";
 import { FilterChips, Switch } from "../../shared/ui/Controls";
 import { Panel } from "../../shared/ui/Panel";
+import { SubHeading } from "../../shared/ui/SubHeading";
 import { SpeedTest } from "./SpeedTest";
 
 type Toggle = {
@@ -48,7 +49,7 @@ export function AppSection() {
   const { t } = useTranslation();
   const { settings, update } = useUpdate();
   return (
-    <Panel title={t("settings.sections.app")}>
+    <Panel>
       <div className="flex flex-wrap items-center justify-between gap-3 pb-2 text-xs">
         <span>{t("settings.language")}</span>
         <FilterChips
@@ -85,8 +86,8 @@ export function BackupSection() {
     if (dir) update({ backupDir: dir });
   };
   return (
-    <Panel title={t("settings.sections.backup")}>
-      <p className="label mb-1">{t("settings.backupDir")}</p>
+    <Panel>
+      <SubHeading>{t("settings.backupDir")}</SubHeading>
       <p className="mb-3 truncate text-xs text-white/80" title={backupRoot.data}>
         {backupRoot.data ?? "-"}
       </p>
@@ -172,8 +173,8 @@ export function PhonesSection() {
       .catch(feedback.failure);
   };
   return (
-    <Panel title={t("settings.sections.phones")}>
-      <p className="label mb-1">{t("settings.trusted.title")}</p>
+    <Panel>
+      <SubHeading>{t("settings.trusted.title")}</SubHeading>
       {trusted.data?.length ? (
         <PhoneList
           phones={trusted.data}
@@ -187,7 +188,9 @@ export function PhonesSection() {
       <p className="mt-3 text-[11px] text-white/40">{t("settings.trusted.hint")}</p>
       {never.data && never.data.length > 0 && (
         <>
-          <p className="label mt-4 mb-1">{t("settings.trusted.neverTitle")}</p>
+          <div className="mt-4">
+            <SubHeading>{t("settings.trusted.neverTitle")}</SubHeading>
+          </div>
           <PhoneList
             phones={never.data}
             name={name}
@@ -201,9 +204,8 @@ export function PhonesSection() {
 }
 
 export function ConnectionSection() {
-  const { t } = useTranslation();
   return (
-    <Panel title={t("settings.sections.connection")}>
+    <Panel>
       <Toggles toggles={[["autoConnect", "settings.autoConnect"]]} />
       <div className="mt-3 border-t border-white/5 pt-3">
         <SpeedTest />
@@ -216,7 +218,7 @@ export function DiagnosticsSection() {
   const { t } = useTranslation();
   const feedback = useFeedback();
   return (
-    <Panel title={t("settings.sections.diagnostics")}>
+    <Panel>
       <Toggles toggles={[["fileLogging", "settings.fileLogging"]]} />
       <Button
         variant="ghost"
@@ -233,7 +235,7 @@ export function AboutSection() {
   const { t } = useTranslation();
   const version = useQuery({ queryKey: ["version"], queryFn: getVersion, staleTime: Infinity });
   return (
-    <Panel title={t("settings.sections.about")}>
+    <Panel>
       <div className="flex flex-col gap-1.5 text-xs text-white/80">
         <p className="text-neon">{t("settings.about.version", { version: version.data ?? "-" })}</p>
         <p>{t("settings.about.license")}</p>

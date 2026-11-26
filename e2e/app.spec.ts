@@ -150,7 +150,7 @@ test("restores a system settings snapshot", async ({ page }) => {
 
 test("stays quiet when the phone has no backups", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: /Device/ }).first()).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Home/ }).first()).toBeVisible();
   await expect(page.getByText("Backups found on the phone")).toHaveCount(0);
 });
 
@@ -258,7 +258,7 @@ test("starts every visit at the first settings section", async ({ page }) => {
   await openModule(page, "Settings");
   await page.getByRole("button", { name: "Backups", exact: true }).click();
   await expect(page.getByText("Verify SHA-256", { exact: false })).toBeVisible();
-  await openModule(page, "Device");
+  await openModule(page, "Home");
   await openModule(page, "Settings");
   await expect(page.getByRole("button", { name: "Application" })).toHaveAttribute(
     "aria-current",
@@ -301,7 +301,26 @@ test("opens the tools inside the settings", async ({ page }) => {
   await openModule(page, "Settings");
   await page.getByRole("tab", { name: "Logcat" }).click();
   await expect(page.getByRole("button", { name: "Start", exact: true })).toBeVisible();
-  await openModule(page, "Device");
+  await openModule(page, "Home");
   await openModule(page, "Settings");
   await expect(page.getByRole("tab", { name: "General" })).toHaveAttribute("aria-selected", "true");
+});
+
+test("opens and closes the module rail from the corner", async ({ page }) => {
+  await page.goto("/");
+  const rail = page.getByRole("navigation", { name: "Modules" });
+  await expect(rail.getByText("Backup", { exact: true })).toHaveCount(0);
+  await page.getByRole("button", { name: "Expand menu" }).click();
+  await expect(rail.getByText("Backup", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Collapse menu" }).click();
+  await expect(rail.getByText("Backup", { exact: true })).toHaveCount(0);
+});
+
+test("runs a terminal command typed on the prompt line", async ({ page }) => {
+  await page.goto("/");
+  await openModule(page, "Settings");
+  await page.getByRole("tab", { name: "Terminal" }).click();
+  await page.getByRole("textbox", { name: /adb/ }).fill("devices");
+  await page.keyboard.press("Enter");
+  await expect(page.getByText("R58M123 $ devices")).toBeVisible();
 });
