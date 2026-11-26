@@ -278,6 +278,9 @@ struct Latest {
     done: f64,
     total: f64,
     finished: bool,
+    /// Held while a status travels to the phone, so that they arrive in the order they were made.
+    /// Apart from the lock around this struct, which progress must not wait on for that long.
+    writing: Arc<Mutex<()>>,
 }
 
 struct Active {
@@ -437,6 +440,25 @@ fn publish(device: Device, json: &str) -> bool {
     sent
 }
 
+/// Polls the phone and writes the progress of the job `id` on the same trip.
+fn poll_with_progress(device: Device, id: &str, latest: &Mutex<Latest>) -> AppResult<String> {
+    let writing = latest.lock().unwrap().writing.clone();
+    let _order = writing.lock().unwrap();
+    let status = {
+        let latest = latest.lock().unwrap();
+        (!latest.finished).then(|| status_json(id, "running", Some(&latest), None, vec![]))
+    };
+    device.script(&poll_script(status.as_deref()))
+}
+
+/// Closes the progress of a job and writes its final status. False when it did not arrive.
+fn finish_status(device: Device, latest: &Mutex<Latest>, json: &str) -> bool {
+    let writing = latest.lock().unwrap().writing.clone();
+    let _order = writing.lock().unwrap();
+    latest.lock().unwrap().finished = true;
+    publish(device, json)
+}
+
 fn trusted(app: &AppHandle) -> Vec<String> {
     store::load(app, TRUSTED_KEY)
 }
@@ -594,18 +616,18 @@ fn visit(
     let requests = &state.requests;
     let device = Device::new(&**runner, serial);
     // The status of the job that runs over this connection rides along with the visit.
-    let status = {
-        let active = requests.active.lock().unwrap();
-        active
-            .values()
-            .filter(|a| a.serial == serial)
-            .find_map(|a| {
-                let latest = a.latest.lock().unwrap();
-                (!latest.finished)
-                    .then(|| status_json(&a.id, "running", Some(&latest), None, vec![]))
-            })
-    };
-    let out = device.script(&poll_script(status.as_deref())).ok()?;
+    let job = requests
+        .active
+        .lock()
+        .unwrap()
+        .values()
+        .find(|a| a.serial == serial)
+        .map(|a| (a.id.clone(), a.latest.clone()));
+    let out = match job {
+        Some((id, latest)) => poll_with_progress(device, &id, &latest),
+        None => device.script(&poll_script(None)),
+    }
+    .ok()?;
     let poll = parse_poll(&out)?;
     requests
         .phones
@@ -923,12 +945,12 @@ impl RunningJob {
         let (phone, batch) = (&self.event.phone, &self.event.batch);
         let requests = &app_state(&self.app).requests;
         {
-            // The lock keeps a late progress update from overwriting the final status.
-            let mut l = self.latest.lock().unwrap();
-            l.finished = true;
-            let json = status_json(&self.event.id, state, Some(&l), error, notes.clone());
+            let json = {
+                let l = self.latest.lock().unwrap();
+                status_json(&self.event.id, state, Some(&l), error, notes.clone())
+            };
             // A status that did not arrive is kept for the next poll of the phone.
-            if !connected || !publish(device, &json) {
+            if !finish_status(device, &self.latest, &json) || !connected {
                 // Without its end the phone would wait for this job as soon as it is back.
                 requests.unsent.lock().unwrap().insert(phone.clone(), json);
             }
@@ -1178,12 +1200,66 @@ pub fn trust_phone(app: AppHandle, phone: String) -> AppResult<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::adb::Tool;
+    use crate::adb::client::Output;
+    use std::process::Child;
 
     fn request(kind: &str, extra: &str) -> Request {
         serde_json::from_str(&format!(
             r#"{{"format":"easyandroid-request","version":1,"id":"a-1","created":1000,"type":"{kind}"{extra}}}"#
         ))
         .unwrap()
+    }
+
+    /// Records the status writes; the progress poll is slow to arrive.
+    struct SlowPoll {
+        entered: Mutex<std::sync::mpsc::Sender<()>>,
+        writes: Mutex<Vec<String>>,
+    }
+
+    impl AdbRunner for SlowPoll {
+        fn exec(&self, _: Tool, args: &[&str]) -> AppResult<Output> {
+            let script = args.join(" ");
+            if script.contains("@@request") {
+                self.entered.lock().unwrap().send(()).unwrap();
+                std::thread::sleep(Duration::from_millis(200));
+            }
+            self.writes.lock().unwrap().push(script);
+            Ok(Output {
+                success: true,
+                stdout: String::new(),
+                stderr: String::new(),
+            })
+        }
+
+        fn spawn(&self, _: Tool, _: &[&str]) -> AppResult<Child> {
+            unreachable!()
+        }
+
+        fn spawn_with_input(&self, _: Tool, _: &[&str]) -> AppResult<Child> {
+            unreachable!()
+        }
+    }
+
+    #[test]
+    fn late_progress_never_lands_on_the_final_status() {
+        let (entered, wait) = std::sync::mpsc::channel();
+        let runner = SlowPoll {
+            entered: Mutex::new(entered),
+            writes: Mutex::new(vec![]),
+        };
+        let latest = Mutex::new(Latest::default());
+        std::thread::scope(|scope| {
+            scope.spawn(|| poll_with_progress(Device::new(&runner, "x"), "a-1", &latest));
+            wait.recv().unwrap();
+            let json = status_json("a-1", "done", None, None, vec![]);
+            finish_status(Device::new(&runner, "x"), &latest, &json);
+        });
+        let writes = runner.writes.lock().unwrap();
+        assert!(
+            writes.last().unwrap().contains(r#""state":"done""#),
+            "{writes:?}"
+        );
     }
 
     #[test]
@@ -1348,6 +1424,7 @@ mod tests {
             done: 10.0,
             total: 20.0,
             finished: false,
+            ..Default::default()
         };
         let json = status_json("a-1", "running", Some(&latest), None, vec!["n".into()]);
         let value: serde_json::Value = serde_json::from_str(&json).unwrap();
