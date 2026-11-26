@@ -58,9 +58,19 @@ impl Layer {
 }
 
 /// `tar` script for one data layer. The caches are rebuilt by the app and only add size.
-fn tar_script(layer: Layer, package: &str) -> String {
+/// `sockets` are full paths, one per line: `tar` fails on them and the app makes them again.
+fn tar_script(layer: Layer, package: &str, sockets: &str) -> String {
+    let parent = format!("{}/", layer.parent());
     let excludes = ["cache", "code_cache", "lib"]
         .map(|dir| format!("--exclude {package}/{dir}"))
+        .into_iter()
+        .chain(
+            sockets
+                .lines()
+                .filter_map(|path| path.strip_prefix(&parent))
+                .map(|path| format!("--exclude {}", shell::quote(path))),
+        )
+        .collect::<Vec<_>>()
         .join(" ");
     format!(
         "tar -cf - -C {} {excludes} {package}",
@@ -322,7 +332,14 @@ fn fill(
                 continue;
             }
             let stored = layer.stored();
-            let script = shell::join(&["su", "-c", &tar_script(layer, package)]);
+            let sockets = job
+                .device
+                .su(&format!(
+                    "find {} -type s 2>/dev/null",
+                    shell::quote(&source)
+                ))
+                .unwrap_or_default();
+            let script = shell::join(&["su", "-c", &tar_script(layer, package, &sockets)]);
             let pulled = pull(
                 FileKind::Data,
                 "data",
@@ -385,6 +402,27 @@ mod tests {
             "main.1.com.a.obb"
         );
         assert!(file_name("/data/app/..").is_err());
+    }
+
+    #[test]
+    fn leaves_sockets_out_of_the_archive() {
+        let found = "/data/data/com.a/files/socket_pipe
+/data/data/com.a/it's here
+
+";
+        let script = tar_script(Layer::Private, "com.a", found);
+        assert!(
+            script.contains("--exclude com.a/files/socket_pipe "),
+            "{script}"
+        );
+        assert!(script.contains(&format!("--exclude {}", shell::quote("com.a/it's here"))));
+        assert!(script.ends_with(" com.a"), "{script}");
+        assert_eq!(
+            tar_script(Layer::Private, "com.a", "")
+                .matches("--exclude")
+                .count(),
+            3
+        );
     }
 
     #[test]
