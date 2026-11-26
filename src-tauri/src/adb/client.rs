@@ -49,6 +49,11 @@ pub struct Adb {
     fastboot: PathBuf,
 }
 
+/// The first 300 characters of a line that is logged.
+fn clip(text: &str) -> String {
+    text.chars().take(300).collect()
+}
+
 /// Finds `<name>.exe`, or the sidecar name `<name>-x86_64-pc-windows-msvc.exe` that Tauri
 /// keeps in the source `binaries` folder.
 fn find_tool(dir: &Path, name: &str) -> Option<PathBuf> {
@@ -99,12 +104,23 @@ fn decode(bytes: &[u8]) -> String {
 
 impl AdbRunner for Adb {
     fn exec(&self, tool: Tool, args: &[&str]) -> AppResult<Output> {
+        let started = std::time::Instant::now();
         let out = self.command(tool, args).output()?;
-        Ok(Output {
+        let output = Output {
             success: out.status.success(),
             stdout: decode(&out.stdout),
             stderr: decode(&out.stderr),
-        })
+        };
+        // Only failures are written; logging every command would make the file huge.
+        if !output.success {
+            log::warn!(
+                "{tool:?} {} failed in {} ms: {}",
+                clip(&args.join(" ")),
+                started.elapsed().as_millis(),
+                clip(output.stderr.trim()),
+            );
+        }
+        Ok(output)
     }
 
     fn spawn(&self, tool: Tool, args: &[&str]) -> AppResult<Child> {

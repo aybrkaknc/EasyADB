@@ -420,11 +420,21 @@ fn status_json(
     .unwrap_or_default()
 }
 
-fn publish(device: Device, json: &str) {
-    let _ = device.script(&format!(
-        "printf %s {} > {BOX}/status.tmp && mv {BOX}/status.tmp {BOX}/status.json",
-        shell::quote(json)
-    ));
+/// Writes the status to the phone. False when it did not arrive, so that it is sent again.
+fn publish(device: Device, json: &str) -> bool {
+    let sent = device
+        .script(&format!(
+            "printf %s {} > {BOX}/status.tmp && mv {BOX}/status.tmp {BOX}/status.json",
+            shell::quote(json)
+        ))
+        .is_ok();
+    if !sent {
+        log::warn!(
+            "status not sent to the phone: {}",
+            json.chars().take(120).collect::<String>()
+        );
+    }
+    sent
 }
 
 fn trusted(app: &AppHandle) -> Vec<String> {
@@ -777,6 +787,12 @@ fn handle(
                 .unwrap()
                 .insert(format!("{}/{}", poll.phone, request.batch()), ask.clone());
             crate::show_main_window(app);
+            log::info!(
+                "phone ask {} {} {}",
+                poll.phone,
+                request.batch(),
+                request.kind
+            );
             let _ = ask.emit(app);
             return;
         }
@@ -871,6 +887,12 @@ pub fn is_connected(device: Device) -> bool {
 
 impl RunningJob {
     fn run(self) {
+        log::info!(
+            "phone job start {} {} {}",
+            self.event.phone,
+            self.event.id,
+            self.event.kind
+        );
         let _ = self.event.emit(&self.app);
         let device = Device::new(&*self.runner, &self.serial);
         let latest = self.latest.clone();
@@ -905,9 +927,8 @@ impl RunningJob {
             let mut l = self.latest.lock().unwrap();
             l.finished = true;
             let json = status_json(&self.event.id, state, Some(&l), error, notes.clone());
-            if connected {
-                publish(device, &json);
-            } else {
+            // A status that did not arrive is kept for the next poll of the phone.
+            if !connected || !publish(device, &json) {
                 // Without its end the phone would wait for this job as soon as it is back.
                 requests.unsent.lock().unwrap().insert(phone.clone(), json);
             }
@@ -956,6 +977,11 @@ impl RunningJob {
             ..self.event.clone()
         }
         .emit(&self.app);
+        log::info!(
+            "phone job end {} {} {state:?} {reason:?}",
+            phone,
+            self.event.id
+        );
         if let Some(reason) = ended {
             end_batch(&self.app, phone, batch, reason, "");
         }
