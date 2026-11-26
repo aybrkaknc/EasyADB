@@ -217,12 +217,6 @@
       "apkDone": "APK installed",
       "sideloadDone": "Sideload completed"
     },
-    "connection": {
-      "title": "Connection",
-      "used": "In use",
-      "address": "Address",
-      "also": "Also connected"
-    },
     "quick": {
       "title": "Quick actions",
       "backup": "Back up",

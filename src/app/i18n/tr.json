@@ -217,12 +217,6 @@
       "apkDone": "APK kuruldu",
       "sideloadDone": "Sideload tamamlandı"
     },
-    "connection": {
-      "title": "Bağlantı",
-      "used": "Kullanılan",
-      "address": "Adres",
-      "also": "Ayrıca bağlı"
-    },
     "quick": {
       "title": "Hızlı işlemler",
       "backup": "Yedekle",
