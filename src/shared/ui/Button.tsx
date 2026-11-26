@@ -22,7 +22,7 @@ export function Button({
       type={type}
       className={cn(
         "clip-corners-sm inline-flex items-center justify-center gap-2 border bg-black/40 font-mono uppercase tracking-widest transition-colors duration-150 disabled:pointer-events-none disabled:opacity-40",
-        size === "sm" ? "px-2.5 py-1 text-[10px]" : "px-4 py-2 text-[11px]",
+        size === "sm" ? "px-2.5 py-1 text-[11px]" : "px-4 py-2 text-[11px]",
         VARIANTS[variant],
         className,
       )}

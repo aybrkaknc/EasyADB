@@ -26,7 +26,7 @@ export function ConnectionBadges({ phone }: { phone: Phone }) {
             title={device.serial}
             onClick={() => setSerial(device.serial)}
             className={cn(
-              "flex items-center gap-1 border px-1.5 py-0.5 text-[10px] tracking-widest uppercase",
+              "flex items-center gap-1 border px-1.5 py-0.5 text-[11px] tracking-widest uppercase",
               used
                 ? "border-neon bg-neon/15 text-neon"
                 : "border-white/15 text-white/60 hover:text-white",

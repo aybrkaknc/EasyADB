@@ -94,7 +94,7 @@ export function Badge({
   children: string;
 }) {
   return (
-    <span className={cn("border px-1.5 py-px text-[9px] tracking-widest uppercase", BADGE[tone])}>
+    <span className={cn("border px-1.5 py-px text-[11px] tracking-widest uppercase", BADGE[tone])}>
       {children}
     </span>
   );

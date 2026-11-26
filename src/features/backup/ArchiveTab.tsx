@@ -195,12 +195,12 @@ export function ArchiveTab({ device }: { device: DeviceEntry | null }) {
                 <div className="flex items-center gap-2">
                   <p className="truncate text-xs text-white">{appName(backup)}</p>
                   {backup.versionName && (
-                    <span className="text-[10px] text-white/40">{backup.versionName}</span>
+                    <span className="text-[11px] text-white/40">{backup.versionName}</span>
                   )}
                   {backup.hasData && <Badge tone="neon">{t("backup.archive.data")}</Badge>}
                   {backup.hasObb && <Badge>{t("backup.archive.obb")}</Badge>}
                 </div>
-                <p className="truncate text-[10px] text-white/40">
+                <p className="truncate text-[11px] text-white/40">
                   {backup.package} | {formatDate(backup.createdAt, i18n.language)} |{" "}
                   {formatBytes(backup.totalBytes)}
                   {backup.deviceModel && ` | ${backup.deviceModel}`}

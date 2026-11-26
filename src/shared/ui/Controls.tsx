@@ -115,7 +115,7 @@ export function FilterChips<T extends string>({
           aria-checked={value === option.value}
           onClick={() => onChange(option.value)}
           className={cn(
-            "border px-2.5 py-1 text-[10px] tracking-widest uppercase transition-colors",
+            "border px-2.5 py-1 text-[11px] tracking-widest uppercase transition-colors",
             value === option.value
               ? "border-neon bg-neon/15 text-neon"
               : "border-white/15 text-white/60 hover:text-white",

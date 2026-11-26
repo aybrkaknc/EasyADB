@@ -264,7 +264,7 @@ function Debloater({ device }: { device: DeviceEntry }) {
                   >
                     <div className="min-w-0">
                       <p className="truncate text-xs text-white">{appName(item.app)}</p>
-                      <p className="truncate text-[10px] text-white/40">{item.app.package}</p>
+                      <p className="truncate text-[11px] text-white/40">{item.app.package}</p>
                     </div>
                     {item.info ? (
                       <Badge tone={REMOVAL_TONE[item.info.removal]}>

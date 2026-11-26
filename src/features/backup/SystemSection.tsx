@@ -118,7 +118,7 @@ export function SystemSection({ device }: { device: DeviceEntry | null }) {
                 {formatDate(snapshot.createdAt, i18n.language)}
                 {snapshot.deviceModel && ` | ${snapshot.deviceModel}`}
               </p>
-              <p className="truncate text-[10px] text-white/40">
+              <p className="truncate text-[11px] text-white/40">
                 {t("backup.system.summary", {
                   settings: snapshot.settingsCount,
                   roles: snapshot.rolesCount,

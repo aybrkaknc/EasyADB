@@ -31,7 +31,7 @@ function BackupOptionsPanel({
   const rootOnly = (name: string) => (
     <span className="flex flex-col">
       {name}
-      <span className="text-[10px] text-white/40">{t("backup.options.needsRoot")}</span>
+      <span className="text-[11px] text-white/40">{t("backup.options.needsRoot")}</span>
     </span>
   );
   return (

@@ -17,7 +17,7 @@ export function DebloatDetails({ item }: { item: DebloatApp | null }) {
     <div className="flex flex-col gap-3 p-4 text-xs">
       <div>
         <p className="text-sm text-white">{appName(app)}</p>
-        <p className="break-all text-[10px] text-white/40">{app.package}</p>
+        <p className="break-all text-[11px] text-white/40">{app.package}</p>
       </div>
       <div className="flex flex-wrap gap-1.5">
         {info ? (
