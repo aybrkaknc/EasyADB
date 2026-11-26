@@ -18,7 +18,7 @@ export function SectionNav<T extends string>({
   children: ReactNode;
 }) {
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-auto p-6 lg:flex-row lg:items-start">
+    <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-auto p-6 lg:flex-row lg:items-start lg:gap-10">
       <nav
         aria-label={label}
         className="flex shrink-0 flex-row flex-wrap gap-1 lg:w-44 lg:flex-col"
