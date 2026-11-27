@@ -276,8 +276,7 @@ function Explorer({ device }: { device: DeviceEntry }) {
           computeItemKey={(_, f) => f.path}
           itemContent={(_, file: FileEntry) => (
             <div
-              onDoubleClick={() => file.isDir && go(file.path)}
-              onClick={() => selection.toggle(file.path)}
+              onClick={() => (file.isDir ? go(file.path) : selection.toggle(file.path))}
               className={cn(
                 "grid cursor-pointer grid-cols-[24px_1fr_100px_220px] items-center gap-x-6 border-b border-white/5 px-6 py-1.5 text-xs hover:bg-neon/5",
                 selection.has(file.path) && "bg-neon/10",

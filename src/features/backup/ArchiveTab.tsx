@@ -126,10 +126,7 @@ export function ArchiveTab({ device }: { device: DeviceEntry | null }) {
   const ready = device?.state === "device";
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="flex items-center justify-between gap-3 px-6 py-3">
-        <p className="truncate text-[11px] text-white/50">
-          {root.data && t("backup.location", { path: root.data })}
-        </p>
+      <div className="flex items-center justify-end gap-3 px-6 py-3">
         <div className="flex shrink-0 gap-2">
           {root.data && (
             <Button variant="ghost" size="sm" onClick={() => void commands.revealPath(root.data)}>
