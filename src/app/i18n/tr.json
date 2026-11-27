@@ -33,6 +33,12 @@
     "railCollapse": "Menüyü daralt",
     "railExpand": "Menüyü genişlet"
   },
+  "notice": {
+    "bell": "Bildirimler",
+    "none": "Bildirim yok",
+    "count": "{{count}} öğe bulundu",
+    "remove": "Bildirimi kaldır"
+  },
   "phone": {
     "title": "Telefonda yedekler bulundu",
     "body": "Bu telefonda {{count}} EasyAndroid yedeği bulundu. Bu bilgisayardaki yedek klasörüne çekilsin mi? Daha sonra Geri yükle sekmesinden geri yükleyebilirsiniz.",
@@ -248,7 +254,6 @@
     },
     "start": "{{count}} uygulamayı yedekle",
     "estimate": "Tahmini boyut: {{size}}",
-    "location": "Yedekler şuraya kaydedilir: {{path}}",
     "systemHint": "Sistem uygulamaları genellikle başka bir cihaza kurulamaz.",
     "empty": "Uygulama bulunamadı",
     "archive": {

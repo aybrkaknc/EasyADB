@@ -33,6 +33,12 @@
     "railCollapse": "Collapse menu",
     "railExpand": "Expand menu"
   },
+  "notice": {
+    "bell": "Notifications",
+    "none": "No notifications",
+    "count": "{{count}} items found",
+    "remove": "Remove notification"
+  },
   "phone": {
     "title": "Backups found on the phone",
     "body": "{{count}} EasyAndroid backups were found on this phone. Copy them to the backup folder on this PC? You can restore them later from the Restore tab.",
@@ -248,7 +254,6 @@
     },
     "start": "Back up {{count}} apps",
     "estimate": "Estimated size: {{size}}",
-    "location": "Backups are saved to {{path}}",
     "systemHint": "System apps usually cannot be installed on another device.",
     "empty": "No apps found",
     "archive": {

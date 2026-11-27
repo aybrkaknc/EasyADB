@@ -3,6 +3,7 @@ import { Minus, PanelLeftClose, PanelLeftOpen, Square, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
+import { PhoneNoticeBell } from "../../features/backup/PhoneNoticeBell";
 import { useAppStore } from "../store";
 import { DeviceSelector } from "./DeviceSelector";
 
@@ -59,7 +60,9 @@ export function TitleBar() {
           EasyADB
         </span>
       </div>
-      <div className="flex items-center px-2">
+      <div className="flex items-center gap-2 px-2">
+        <PhoneNoticeBell />
+        <span aria-hidden className="h-5 w-px bg-line" />
         <DeviceSelector />
       </div>
       <WindowButton label={t("titlebar.minimize")} onClick={() => void appWindow().minimize()}>

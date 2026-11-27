@@ -126,6 +126,9 @@ test("opens a web search for the selected app", async ({ page }) => {
 
 test("offers to copy phone backups and warns about root", async ({ page }) => {
   await page.goto("/?scenario=phonebackups");
+  await expect(page.getByText("Backups found on the phone")).toHaveCount(0);
+  await page.getByRole("button", { name: "Notifications" }).click();
+  await page.getByRole("menuitem", { name: /Backups found on the phone/ }).click();
   await expect(page.getByText("Backups found on the phone")).toBeVisible();
   await expect(page.getByText("Old App")).toBeVisible();
   await expect(page.getByText(/Allow root for the shell/)).toBeVisible();

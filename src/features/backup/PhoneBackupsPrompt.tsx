@@ -1,14 +1,14 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { commands, type PhoneBackup } from "../../bindings";
-import { useDevices } from "../../shared/hooks/useDevices";
 import { reportOutcomes, runJob, useIdle, useJobs } from "../../shared/jobs/store";
 import { appName, formatBytes } from "../../shared/lib/format";
 import { Button } from "../../shared/ui/Button";
 import { Dialog } from "../../shared/ui/Dialog";
 import { PhoneCopiesDialog } from "./PhoneCopiesDialog";
+import { usePhoneDialog, usePhoneFindings } from "./phoneNotice";
 
 const SHOWN = 5;
 
@@ -23,27 +23,12 @@ export function PhoneBackupsPrompt() {
   const client = useQueryClient();
   const idle = useIdle();
   const trustOpen = useJobs((s) => s.trustOpen);
-  const { selected } = useDevices();
-  const serial = selected?.state === "device" ? selected.serial : null;
-  const [dismissed, setDismissed] = useState<string[]>([]);
+  const { selected, serial, fresh, files } = usePhoneFindings();
+  const open = usePhoneDialog((s) => s.open);
+  const setOpen = usePhoneDialog((s) => s.setOpen);
+  const dismissed = usePhoneDialog((s) => s.dismissed);
   // Backups that now exist on the PC too, offered for removal from the phone.
   const [copied, setCopied] = useState<PhoneBackup[]>([]);
-  const found = useQuery({
-    queryKey: ["phoneBackups", serial],
-    queryFn: () => commands.listPhoneBackups(serial!),
-    enabled: serial !== null,
-    staleTime: Infinity,
-    retry: false,
-  });
-  const system = useQuery({
-    queryKey: ["phoneSystem", serial],
-    queryFn: () => commands.listPhoneSystem(serial!),
-    enabled: serial !== null,
-    staleTime: Infinity,
-    retry: false,
-  });
-  const fresh = (found.data ?? []).filter((b) => !b.onPc);
-  const files = system.data ?? [];
   // One window at a time: jobs and the question about trust come first.
   if (!idle || trustOpen) return null;
   if (copied.length > 0 && serial !== null) {
@@ -60,11 +45,16 @@ export function PhoneBackupsPrompt() {
     );
   }
 
-  if (serial === null || (fresh.length === 0 && files.length === 0) || dismissed.includes(serial)) {
+  if (
+    !open ||
+    serial === null ||
+    dismissed.includes(serial) ||
+    (fresh.length === 0 && files.length === 0)
+  ) {
     return null;
   }
 
-  const dismiss = () => setDismissed((list) => [...list, serial]);
+  const dismiss = () => setOpen(false);
   const pull = async (ids: string[], snapshots: string[]) => {
     dismiss();
     const name = (id: string) => {
@@ -95,7 +85,7 @@ export function PhoneBackupsPrompt() {
   return (
     <Dialog
       open
-      onOpenChange={(open) => !open && dismiss()}
+      onOpenChange={(next) => !next && dismiss()}
       title={t("phone.title")}
       footer={
         <>
