@@ -299,6 +299,7 @@ struct Status<'a> {
     item: &'a str,
     done: u64,
     total: u64,
+    seen: &'a [String],
     error: Option<String>,
     notes: Vec<String>,
 }
@@ -310,6 +311,9 @@ struct Latest {
     done: f64,
     total: f64,
     finished: bool,
+    /// The steps of the current item that moved something. The phone only looks now and then,
+    /// so it is told which short steps it missed.
+    seen: Vec<String>,
     /// Held while a status travels to the phone, so that they arrive in the order they were made.
     /// Apart from the lock around this struct, which progress must not wait on for that long.
     writing: Arc<Mutex<()>>,
@@ -432,6 +436,21 @@ pub enum Decision {
     Trust,
 }
 
+impl Latest {
+    fn progress(&mut self, stage: &str, item: &str, done: f64, total: f64) {
+        if self.item != item {
+            self.seen.clear();
+        }
+        if done > 0.0 && !self.seen.iter().any(|s| s == stage) {
+            self.seen.push(stage.to_string());
+        }
+        self.stage = stage.to_string();
+        self.item = item.to_string();
+        self.done = done;
+        self.total = total;
+    }
+}
+
 fn status_json(
     id: &str,
     state: &str,
@@ -449,6 +468,7 @@ fn status_json(
         item,
         done: done as u64,
         total: total as u64,
+        seen: latest.map(|l| l.seen.as_slice()).unwrap_or_default(),
         error,
         notes,
     })
@@ -957,11 +977,7 @@ impl RunningJob {
         let latest = self.latest.clone();
         let reporter = Reporter::new(self.app.clone(), &self.task_id).observed(Arc::new(
             move |stage, item, done, total| {
-                let mut l = latest.lock().unwrap();
-                l.stage = stage.to_string();
-                l.item = item.to_string();
-                l.done = done;
-                l.total = total;
+                latest.lock().unwrap().progress(stage, item, done, total);
             },
         ));
         let result = self.work(device, &reporter);
@@ -1466,6 +1482,19 @@ mod tests {
         );
         let list: Vec<serde_json::Value> = serde_json::from_str(&capped).unwrap();
         assert_eq!(list.len(), 500);
+    }
+
+    #[test]
+    fn remembers_the_steps_that_moved_something_for_each_item() {
+        let mut latest = Latest::default();
+        latest.progress("apk", "com.a", 5.0, 10.0);
+        latest.progress("data", "com.a", 0.0, 10.0);
+        latest.progress("external", "com.a", 8.0, 10.0);
+        let json = status_json("a-1", "running", Some(&latest), None, vec![]);
+        let value: serde_json::Value = serde_json::from_str(&json).unwrap();
+        assert_eq!(value["seen"], serde_json::json!(["apk", "external"]));
+        latest.progress("apk", "com.b", 1.0, 10.0);
+        assert_eq!(latest.seen, ["apk"]);
     }
 
     #[test]
