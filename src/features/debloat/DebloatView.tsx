@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { open, save } from "@tauri-apps/plugin-dialog";
-import { Eraser, FileDown, FileUp } from "lucide-react";
+import { Eraser, FileDown, FileUp, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Virtuoso } from "react-virtuoso";
@@ -80,11 +80,13 @@ function Debloater({ device }: { device: DeviceEntry }) {
 
   const visible = useMemo(() => {
     const term = search.trim().toLowerCase();
-    return items.filter(
-      (i) =>
-        matches(i, filter) &&
-        (!term || i.app.package.includes(term) || appName(i.app).toLowerCase().includes(term)),
-    );
+    // A search looks through every app; the filter only narrows the list when nothing is searched.
+    if (term) {
+      return items.filter(
+        (i) => i.app.package.includes(term) || appName(i.app).toLowerCase().includes(term),
+      );
+    }
+    return items.filter((i) => matches(i, filter));
   }, [items, filter, search]);
 
   const apply = async (entries: ProfileEntry[], skipped = 0, keepSelection = false) => {
@@ -179,13 +181,20 @@ function Debloater({ device }: { device: DeviceEntry }) {
         />
       </div>
       <div className="flex flex-wrap items-center gap-2 px-6 pb-3">
-        <Input
-          data-search
-          className="max-w-64"
-          placeholder={t("debloat.search")}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+        <div className="relative min-w-0 max-w-64 flex-1">
+          <Search
+            className="pointer-events-none absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-white/50"
+            aria-hidden
+          />
+          <Input
+            data-search
+            className="pl-9"
+            placeholder={t("debloat.search")}
+            aria-label={t("debloat.search")}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
         <Checkbox
           checked={visible.length > 0 && visible.every((i) => selection.has(i.app.package))}
           onChange={(on) =>
@@ -194,8 +203,13 @@ function Debloater({ device }: { device: DeviceEntry }) {
               on,
             )
           }
-          label={t("common.selected", { count: selection.count })}
+          label={t("common.selectAll")}
         />
+        {selection.count > 0 && (
+          <span className="text-[11px] text-white/50">
+            {t("common.selected", { count: selection.count })}
+          </span>
+        )}
         <div className="flex flex-wrap gap-1.5">
           {selection.count > 0 &&
             ROW_ACTIONS.map((action) => (
@@ -216,18 +230,22 @@ function Debloater({ device }: { device: DeviceEntry }) {
             variant="ghost"
             onClick={() => void saveProfile()}
             disabled={task.running}
+            aria-label={t("debloat.profile.save")}
+            title={t("debloat.profile.save")}
+            className="size-9 p-0"
           >
-            <FileDown className="size-3" />
-            {t("debloat.profile.save")}
+            <FileDown className="size-4" />
           </Button>
           <Button
             size="sm"
             variant="ghost"
             onClick={() => void loadProfile()}
             disabled={task.running}
+            aria-label={t("debloat.profile.load")}
+            title={t("debloat.profile.load")}
+            className="size-9 p-0"
           >
-            <FileUp className="size-3" />
-            {t("debloat.profile.load")}
+            <FileUp className="size-4" />
           </Button>
         </div>
       </div>
