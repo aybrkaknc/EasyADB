@@ -182,10 +182,9 @@ function Debloater({ device }: { device: DeviceEntry }) {
       </div>
       <div className="flex flex-wrap items-center gap-2 px-6 pb-3">
         <div className="relative min-w-0 max-w-64 flex-1">
-          <Search
-            className="pointer-events-none absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-white/50"
-            aria-hidden
-          />
+          <div className="pointer-events-none absolute inset-y-0 left-3 flex items-center">
+            <Search className="size-3.5 text-white/50" aria-hidden />
+          </div>
           <Input
             data-search
             className="pl-9"

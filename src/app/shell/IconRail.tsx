@@ -16,7 +16,7 @@ export function IconRail() {
       <nav
         className={cn(
           "flex shrink-0 flex-col gap-1 overflow-hidden border-r border-line bg-black px-2 py-3 transition-[width] duration-150",
-          railOpen ? "w-44" : "w-14",
+          railOpen ? "w-56" : "w-14",
         )}
         aria-label="Modules"
       >

@@ -362,16 +362,18 @@ function Explorer({ device }: { device: DeviceEntry }) {
     <div ref={root} className="relative flex min-h-0 flex-1 flex-col">
       <div className="flex items-center gap-2 px-6 py-3">
         <div className="relative min-w-0 flex-1">
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => go(parentPath(path))}
-            disabled={path === "/"}
-            aria-label={t("files.up")}
-            className="absolute top-1/2 left-1 z-10 size-8 -translate-y-1/2 border-transparent bg-transparent p-0 hover:border-transparent hover:bg-transparent"
-          >
-            <ArrowUp className="size-4" />
-          </Button>
+          <div className="absolute inset-y-0 left-1 z-10 flex items-center">
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => go(parentPath(path))}
+              disabled={path === "/"}
+              aria-label={t("files.up")}
+              className="size-8 border-transparent bg-transparent p-0 hover:border-transparent hover:bg-transparent"
+            >
+              <ArrowUp className="size-4" />
+            </Button>
+          </div>
           <Input
             data-search
             className="px-9"
@@ -382,18 +384,20 @@ function Explorer({ device }: { device: DeviceEntry }) {
               e.key === "Enter" && draft.startsWith("/") && go(draft.replace(/\/+$/, "") || "/")
             }
           />
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={refresh}
-            aria-label={t("common.refresh")}
-            className="absolute top-1/2 right-1 z-10 size-8 -translate-y-1/2 border-transparent bg-transparent p-0 hover:border-transparent hover:bg-transparent"
-          >
-            <RefreshCw
-              className="size-4 transition-transform duration-500"
-              style={{ transform: `rotate(${refreshes * 360}deg)` }}
-            />
-          </Button>
+          <div className="absolute inset-y-0 right-1 z-10 flex items-center">
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={refresh}
+              aria-label={t("common.refresh")}
+              className="size-8 border-transparent bg-transparent p-0 hover:border-transparent hover:bg-transparent"
+            >
+              <RefreshCw
+                className="size-4 transition-transform duration-500"
+                style={{ transform: `rotate(${refreshes * 360}deg)` }}
+              />
+            </Button>
+          </div>
         </div>
         {searchOpen || search !== "" ? (
           <Input

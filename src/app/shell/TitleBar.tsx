@@ -41,7 +41,7 @@ export function TitleBar() {
   return (
     <div className="flex h-10 shrink-0 items-stretch border-b border-line bg-black">
       <div
-        className={`flex shrink-0 items-center justify-center border-r border-line transition-[width] duration-150 ${railOpen ? "w-44" : "w-14"}`}
+        className={`flex shrink-0 items-center justify-center border-r border-line transition-[width] duration-150 ${railOpen ? "w-56" : "w-14"}`}
       >
         <button
           type="button"

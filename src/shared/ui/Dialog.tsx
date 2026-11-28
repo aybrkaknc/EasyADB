@@ -41,7 +41,7 @@ export function Dialog({
           onEscapeKeyDown={keep}
           onInteractOutside={keep}
           className={cn(
-            "clip-corners fixed top-1/2 left-1/2 z-50 -translate-x-1/2 -translate-y-1/2 border border-white/15 bg-black p-6 shadow-2xl",
+            "clip-corners fixed inset-0 z-50 m-auto h-fit border border-white/15 bg-black p-6 shadow-2xl",
             huge ? "w-[min(960px,94vw)]" : wide ? "w-[min(600px,92vw)]" : "w-[min(520px,92vw)]",
           )}
         >
