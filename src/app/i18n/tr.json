@@ -153,7 +153,9 @@
     "busy": "Bu telefonda başka bir iş sürüyor.",
     "phone_rejected": "Telefonda reddedildi.",
     "phone_expired": "Telefonda 2 dakika içinde yanıt verilmedi.",
-    "not_supported": "Bu telefon bunu sunmuyor ya da değişikliği reddetti."
+    "not_supported": "Bu telefon bunu sunmuyor ya da değişikliği reddetti.",
+    "phone_no_space": "Telefonda yeterli boş alan yok.",
+    "phone_outdated": "Telefondaki EasyAndroid bunun için eski. Güncelleyip yeniden deneyin."
   },
   "task": {
     "cancel": "İptal",
@@ -503,12 +505,27 @@
     "newName": "Yeni ad",
     "deleteConfirm": "Cihazdan {{count}} öğe silinsin mi? Bu işlem geri alınamaz.",
     "download": "İndir",
-    "upload": "Dosya yükle",
+    "upload": "Yükle",
     "empty": "Bu klasör boş",
     "name": "Ad",
     "size": "Boyut",
     "modified": "Değiştirilme Tarihi",
-    "done": "Aktarım tamamlandı"
+    "transferred": "{{count}} öğe aktarıldı ({{size}}, {{time}})",
+    "transferCancelled": "Aktarım iptal edildi: {{total}} öğeden {{done}} tanesi aktarıldı.",
+    "transferFailed": "Aktarım başarısız: {{total}} öğeden {{done}} tanesi aktarıldı.",
+    "partial": "Yarım kalmış olabilir: {{path}}",
+    "cancelConfirm": "Aktarım iptal edilsin mi? Yarım kopyalanan dosya olduğu yerde kalır.",
+    "overwrite": "Zaten var: {{names}}. Üzerine yazılsın mı?",
+    "overwriteFolders": "Zaten var: {{names}}. Klasörler birleştirilir, aynı adlı dosyaların üzerine yazılır. Devam edilsin mi?",
+    "noSpacePhone": "Telefonda yeterli boş alan yok: {{needed}} gerekli, {{free}} boş.",
+    "noSpacePc": "Bu bilgisayarda yeterli boş alan yok: {{needed}} gerekli, {{free}} boş.",
+    "openFolder": "Klasörü aç",
+    "cancelledOnPhone": "Telefondan iptal edildi.",
+    "search": "Bu klasörde ara",
+    "copyPath": "Yolu kopyala",
+    "pathCopied": "Yol kopyalandı",
+    "dropConfirm": "{{count}} öğe {{path}} klasörüne gönderilsin mi?",
+    "dropHere": "{{path}} klasörüne göndermek için bırakın"
   },
   "logcat": {
     "start": "Başlat",
@@ -749,5 +766,23 @@
     "usbOff": "{{name}} USB bağlantısı kesildi",
     "usbSwitched": "{{name}}: USB'ye geçildi",
     "authorize": "Telefonda izin sorusunu onaylayın ({{name}})"
+  },
+  "pick": {
+    "uploadTitle": "Telefona yükle",
+    "downloadTitle": "Bu bilgisayara indir",
+    "downloadHere": "Buraya indir",
+    "places": "Kısayollar",
+    "place": {
+      "downloads": "İndirilenler",
+      "desktop": "Masaüstü",
+      "documents": "Belgeler",
+      "pictures": "Resimler"
+    },
+    "path": "Bilgisayar klasörü",
+    "hidden": "Gizli dosyaları göster",
+    "chosen": "Seçilenler ({{count}})",
+    "total": "Toplam: {{size}}",
+    "remove": "{{name}} öğesini çıkar",
+    "sameName": "Seçili başka bir öğenin adı da {{name}}. İkisi aynı klasöre gidemez."
   }
 }

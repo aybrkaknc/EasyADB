@@ -6,8 +6,11 @@ use tauri::{AppHandle, State};
 
 use crate::adb::{Device, shell};
 use crate::error::{AppError, AppResult, ErrorCode};
+use crate::features::phone_jobs::{self, Incoming, Pc};
+use crate::features::phone_requests;
+use crate::features::transfer::{self, TransferReport};
 use crate::state::{AppState, blocking};
-use crate::tasks::Reporter;
+use crate::tasks::{Reporter, TaskHandle};
 
 #[derive(Debug, Clone, Serialize, Type, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -145,7 +148,19 @@ pub async fn move_path(
     .await
 }
 
-/// Copies device paths into a local folder, one adb call per item.
+/// The bytes of each file, or of everything in each folder.
+#[tauri::command]
+#[specta::specta]
+pub async fn get_path_sizes(
+    state: State<'_, AppState>,
+    serial: String,
+    paths: Vec<String>,
+) -> AppResult<Vec<f64>> {
+    let runner = state.runner()?;
+    blocking(move || transfer::sizes(Device::new(&*runner, &serial), &paths)).await
+}
+
+/// Copies device paths into a local folder.
 #[tauri::command]
 #[specta::specta]
 pub async fn pull_paths(
@@ -155,19 +170,15 @@ pub async fn pull_paths(
     serial: String,
     paths: Vec<String>,
     local_dir: String,
-) -> AppResult<()> {
+) -> AppResult<TransferReport> {
     let runner = state.runner()?;
+    // Keeps the PC awake, asks before the app is closed and holds back the phone's own jobs.
+    let _hold = state.requests.hold(&serial)?;
     let task = state.tasks.start(&task_id);
     let reporter = Reporter::new(app, &task_id);
     let result = blocking(move || {
         let device = Device::new(&*runner, &serial);
-        let total = paths.len() as f64;
-        let result = paths.iter().enumerate().try_for_each(|(i, path)| {
-            task.check()?;
-            shell::validate_device_path(path)?;
-            reporter.progress("pull", path, i as f64, total);
-            device.adb(&["pull", "-a", path, &local_dir]).map(|_| ())
-        });
+        let result = transfer::pull(device, &paths, &local_dir, &task, &reporter);
         reporter.finish(&result);
         result
     })
@@ -186,30 +197,60 @@ pub async fn push_paths(
     serial: String,
     paths: Vec<String>,
     remote_dir: String,
-) -> AppResult<()> {
+) -> AppResult<TransferReport> {
     let runner = state.runner()?;
+    let _hold = state.requests.hold(&serial)?;
     let task = state.tasks.start(&task_id);
-    let reporter = Reporter::new(app, &task_id);
+    let reporter = Reporter::new(app.clone(), &task_id);
     let result = blocking(move || {
-        shell::validate_device_path(&remote_dir)?;
         let device = Device::new(&*runner, &serial);
-        let total = paths.len() as f64;
-        let target = if remote_dir.ends_with('/') {
-            remote_dir.clone()
-        } else {
-            format!("{remote_dir}/")
+        let pc = Pc {
+            id: phone_requests::pc_id(&app),
+            name: phone_requests::pc_name(),
         };
-        let result = paths.iter().enumerate().try_for_each(|(i, path)| {
-            task.check()?;
-            reporter.progress("push", path, i as f64, total);
-            device.adb(&["push", path, &target]).map(|_| ())
-        });
+        let result = send(device, &pc, &paths, &remote_dir, &task, &reporter);
         reporter.finish(&result);
         result
     })
     .await;
     state.tasks.finish(&task_id);
     result
+}
+
+/// Sends files after the phone allowed it, where it can be asked.
+fn send(
+    device: Device,
+    pc: &Pc,
+    paths: &[String],
+    target: &str,
+    task: &TaskHandle,
+    reporter: &Reporter,
+) -> AppResult<TransferReport> {
+    let upload = transfer::plan(device, paths, target, task)?;
+    let incoming = Incoming {
+        names: upload.items.iter().map(|i| i.name.as_str()).collect(),
+        target,
+        bytes: upload.total,
+    };
+    let Some(phone) = phone_jobs::ask_to_receive(device, pc, &incoming, task, reporter)? else {
+        return Ok(transfer::push(
+            device,
+            &upload,
+            task,
+            reporter,
+            &|_, _, _| {},
+        ));
+    };
+    let (mut report, stopped_there) = phone.follow(
+        device,
+        task,
+        |watch| transfer::push(device, &upload, task, reporter, watch),
+        |report| report.error.is_none(),
+    );
+    if stopped_there && report.error.is_some() {
+        report.error = Some(AppError::new(ErrorCode::Cancelled, "phone"));
+    }
+    Ok(report)
 }
 
 #[cfg(test)]

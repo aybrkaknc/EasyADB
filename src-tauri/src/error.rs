@@ -23,6 +23,8 @@ pub enum ErrorCode {
     NotFound,
     /// Not enough free space on the PC.
     NoSpace,
+    /// Not enough free space on the phone.
+    PhoneNoSpace,
     /// A package that must not be disabled or removed.
     Protected,
     /// Another job runs on the same phone.
@@ -30,6 +32,8 @@ pub enum ErrorCode {
     /// The user of the phone said no, or did not answer.
     PhoneRejected,
     PhoneExpired,
+    /// EasyAndroid on the phone is too old for this.
+    PhoneOutdated,
     /// The phone does not offer this, or refused the change.
     NotSupported,
     Internal,

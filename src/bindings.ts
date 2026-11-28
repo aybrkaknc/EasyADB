@@ -98,10 +98,19 @@ export const commands = {
 	makeDir: (serial: string, path: string, options?: InvokeOptions) => __TAURI_INVOKE<null>("make_dir", { serial, path }, options),
 	deletePaths: (serial: string, paths: string[], options?: InvokeOptions) => __TAURI_INVOKE<null>("delete_paths", { serial, paths }, options),
 	movePath: (serial: string, from: string, to: string, options?: InvokeOptions) => __TAURI_INVOKE<null>("move_path", { serial, from, to }, options),
-	/**  Copies device paths into a local folder, one adb call per item. */
-	pullPaths: (taskId: string, serial: string, paths: string[], localDir: string, options?: InvokeOptions) => __TAURI_INVOKE<null>("pull_paths", { taskId, serial, paths, localDir }, options),
+	/**  Copies device paths into a local folder. */
+	pullPaths: (taskId: string, serial: string, paths: string[], localDir: string, options?: InvokeOptions) => __TAURI_INVOKE<TransferReport_Serialize>("pull_paths", { taskId, serial, paths, localDir }, options),
 	/**  Copies local files or folders into a device folder. */
-	pushPaths: (taskId: string, serial: string, paths: string[], remoteDir: string, options?: InvokeOptions) => __TAURI_INVOKE<null>("push_paths", { taskId, serial, paths, remoteDir }, options),
+	pushPaths: (taskId: string, serial: string, paths: string[], remoteDir: string, options?: InvokeOptions) => __TAURI_INVOKE<TransferReport_Serialize>("push_paths", { taskId, serial, paths, remoteDir }, options),
+	/**  The bytes of each file, or of everything in each folder. */
+	getPathSizes: (serial: string, paths: string[], options?: InvokeOptions) => __TAURI_INVOKE<(number | null)[]>("get_path_sizes", { serial, paths }, options),
+	listLocal: (path: string, options?: InvokeOptions) => __TAURI_INVOKE<LocalEntry[]>("list_local", { path }, options),
+	/**  The known folders and the drives of this PC. The downloads folder comes first. */
+	localPlaces: (options?: InvokeOptions) => __TAURI_INVOKE<LocalPlace[]>("local_places", undefined, options),
+	/**  Makes a folder in `parent` and returns its path. */
+	makeLocalDir: (parent: string, name: string, options?: InvokeOptions) => __TAURI_INVOKE<string>("make_local_dir", { parent, name }, options),
+	/**  The bytes of a file, or of everything in a folder. */
+	localSize: (path: string, options?: InvokeOptions) => __TAURI_INVOKE<number | null>("local_size", { path }, options),
 	/**  Streams logcat until the task is cancelled. */
 	startLogcat: (taskId: string, serial: string, recordPath: string | null, options?: InvokeOptions) => __TAURI_INVOKE<null>("start_logcat", { taskId, serial, recordPath }, options),
 	clearLogcat: (serial: string, options?: InvokeOptions) => __TAURI_INVOKE<null>("clear_logcat", { serial }, options),
@@ -469,12 +478,16 @@ export type EndReason =
 export type ErrorCode = "adb_missing" | "adb_failed" | "device_not_found" | "device_unauthorized" | "device_offline" | "invalid_input" | "invalid_path" | "io" | "parse" | "backup_invalid" | "integrity_failed" | "install_failed" | "pair_failed" | "connect_failed" | "cancelled" | "not_found" | 
 /**  Not enough free space on the PC. */
 "no_space" | 
+/**  Not enough free space on the phone. */
+"phone_no_space" | 
 /**  A package that must not be disabled or removed. */
 "protected" | 
 /**  Another job runs on the same phone. */
 "busy" | 
 /**  The user of the phone said no, or did not answer. */
 "phone_rejected" | "phone_expired" | 
+/**  EasyAndroid on the phone is too old for this. */
+"phone_outdated" | 
 /**  The phone does not offer this, or refused the change. */
 "not_supported" | "internal";
 
@@ -543,6 +556,23 @@ export type LiveMetrics_Serialize = {
 	memAvailableKb: number | null,
 	battery: Battery_Serialize,
 	storage: Storage | null,
+};
+
+export type LocalEntry = {
+	name: string,
+	path: string,
+	isDir: boolean,
+	/**  Hidden or a system file, which Explorer does not show. */
+	isHidden: boolean,
+	size: number | null,
+	/**  Unix seconds. */
+	modified: number | null,
+};
+
+export type LocalPlace = {
+	/**  `downloads`, `desktop`, `documents`, `pictures` or `drive`. */
+	kind: string,
+	path: string,
 };
 
 export type LogLine = {
@@ -849,6 +879,42 @@ export type TaskProgress = {
 };
 
 export type TaskState = "running" | "done" | "failed" | "cancelled";
+
+/**
+ *  How a transfer ended. A transfer that was cut off is not an error of the command, because what
+ *  did arrive matters to the user.
+ */
+export type TransferReport = TransferReport_Serialize | TransferReport_Deserialize;
+
+/**
+ *  How a transfer ended. A transfer that was cut off is not an error of the command, because what
+ *  did arrive matters to the user.
+ */
+export type TransferReport_Deserialize = {
+	/**  Selected items that arrived completely. */
+	done: number,
+	total: number,
+	bytes: number | null,
+	/**  A file that may be incomplete on the receiving side. */
+	partial?: string | null,
+	/**  Why it stopped; null when everything arrived. */
+	error?: AppError | null,
+};
+
+/**
+ *  How a transfer ended. A transfer that was cut off is not an error of the command, because what
+ *  did arrive matters to the user.
+ */
+export type TransferReport_Serialize = {
+	/**  Selected items that arrived completely. */
+	done: number,
+	total: number,
+	bytes: number | null,
+	/**  A file that may be incomplete on the receiving side. */
+	partial: string | null,
+	/**  Why it stopped; null when everything arrived. */
+	error: AppError | null,
+};
 
 export type UsbMode = "charging" | "mtp" | "ptp" | "rndis" | "midi";
 

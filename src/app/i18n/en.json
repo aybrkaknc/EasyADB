@@ -153,7 +153,9 @@
     "busy": "Another job runs on this phone.",
     "phone_rejected": "Rejected on the phone.",
     "phone_expired": "Nobody answered on the phone within 2 minutes.",
-    "not_supported": "This phone does not offer that, or refused the change."
+    "not_supported": "This phone does not offer that, or refused the change.",
+    "phone_no_space": "There is not enough free space on the phone.",
+    "phone_outdated": "EasyAndroid on the phone is too old for this. Update it and try again."
   },
   "task": {
     "cancel": "Cancel",
@@ -503,12 +505,27 @@
     "newName": "New name",
     "deleteConfirm": "Delete {{count}} items from the device? This cannot be undone.",
     "download": "Download",
-    "upload": "Upload files",
+    "upload": "Upload",
     "empty": "This folder is empty",
     "name": "Name",
     "size": "Size",
     "modified": "Modified date",
-    "done": "Transfer finished"
+    "transferred": "{{count}} items transferred ({{size}}, {{time}})",
+    "transferCancelled": "Transfer cancelled: {{done}} of {{total}} items transferred.",
+    "transferFailed": "Transfer failed: {{done}} of {{total}} items transferred.",
+    "partial": "May be incomplete: {{path}}",
+    "cancelConfirm": "Cancel the transfer? A partly copied file stays where it is.",
+    "overwrite": "Already there: {{names}}. Overwrite?",
+    "overwriteFolders": "Already there: {{names}}. Folders are merged and files with the same name are overwritten. Continue?",
+    "noSpacePhone": "Not enough free space on the phone: {{needed}} needed, {{free}} free.",
+    "noSpacePc": "Not enough free space on this PC: {{needed}} needed, {{free}} free.",
+    "openFolder": "Open folder",
+    "cancelledOnPhone": "Cancelled on the phone.",
+    "search": "Search this folder",
+    "copyPath": "Copy path",
+    "pathCopied": "Path copied",
+    "dropConfirm": "Send {{count}} items to {{path}}?",
+    "dropHere": "Drop to send to {{path}}"
   },
   "logcat": {
     "start": "Start",
@@ -749,5 +766,23 @@
     "usbOff": "{{name}} was unplugged",
     "usbSwitched": "{{name}}: switched to USB",
     "authorize": "Confirm the permission question on the phone ({{name}})"
+  },
+  "pick": {
+    "uploadTitle": "Upload to the phone",
+    "downloadTitle": "Download to this PC",
+    "downloadHere": "Download here",
+    "places": "Shortcuts",
+    "place": {
+      "downloads": "Downloads",
+      "desktop": "Desktop",
+      "documents": "Documents",
+      "pictures": "Pictures"
+    },
+    "path": "PC folder",
+    "hidden": "Show hidden files",
+    "chosen": "Selected ({{count}})",
+    "total": "Total: {{size}}",
+    "remove": "Remove {{name}}",
+    "sameName": "Another selected item is also named {{name}}. Both cannot go to the same folder."
   }
 }

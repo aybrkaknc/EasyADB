@@ -15,8 +15,8 @@ use tauri_plugin_log::{RotationStrategy, Target, TargetKind};
 use tauri_specta::{Builder, collect_commands, collect_events};
 
 use features::{
-    backup, debloat, debugging, device, files, logcat, packages, performance, phone_jobs,
-    phone_requests, settings, sideload, speed, system_backup, terminal, wireless,
+    backup, debloat, debugging, device, files, local_files, logcat, packages, performance,
+    phone_jobs, phone_requests, settings, sideload, speed, system_backup, terminal, wireless,
 };
 
 pub fn specta_builder() -> Builder<Wry> {
@@ -95,6 +95,11 @@ pub fn specta_builder() -> Builder<Wry> {
             files::move_path,
             files::pull_paths,
             files::push_paths,
+            files::get_path_sizes,
+            local_files::list_local,
+            local_files::local_places,
+            local_files::make_local_dir,
+            local_files::local_size,
             logcat::start_logcat,
             logcat::clear_logcat,
             settings::save_text_file,

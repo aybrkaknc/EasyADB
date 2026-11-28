@@ -1,7 +1,7 @@
 //! Registry of running tasks so the frontend can cancel them.
 
 use std::collections::HashMap;
-use std::process::Child;
+use std::process::{Child, ExitStatus};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
@@ -44,6 +44,14 @@ impl TaskHandle {
 
     pub fn detach(&self) -> Option<Child> {
         self.child.lock().unwrap().take()
+    }
+
+    /// Whether the attached process has ended.
+    pub fn try_wait(&self) -> AppResult<Option<ExitStatus>> {
+        match self.child.lock().unwrap().as_mut() {
+            Some(child) => Ok(child.try_wait()?),
+            None => Err(AppError::cancelled()),
+        }
     }
 
     pub fn cancel(&self) {

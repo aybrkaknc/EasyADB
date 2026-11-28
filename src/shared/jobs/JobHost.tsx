@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { commands, type Decision, events } from "../../bindings";
 import { useFeedback } from "../hooks/useFeedback";
 import { cn } from "../lib/cn";
-import { appName, formatBytes, percent } from "../lib/format";
+import { clock, appName, formatBytes, percent } from "../lib/format";
 import { Button } from "../ui/Button";
 import { Dialog } from "../ui/Dialog";
 import { ProgressBar } from "../ui/Feedback";
@@ -47,11 +47,6 @@ function useNow(on: boolean) {
     return () => clearInterval(timer);
   }, [on]);
   return now;
-}
-
-function clock(seconds: number) {
-  const s = Math.max(0, Math.floor(seconds));
-  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 }
 
 const STATE_ICON = {

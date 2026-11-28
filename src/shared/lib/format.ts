@@ -18,6 +18,12 @@ export function formatDate(value: string | number, locale: string): string {
   return date.toLocaleString(locale, { dateStyle: "medium", timeStyle: "short" });
 }
 
+/** Minutes and seconds, as in `1:05`. */
+export function clock(seconds: number) {
+  const s = Math.max(0, Math.floor(seconds));
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+}
+
 export function percent(current: number, total: number): number {
   if (total <= 0) return 0;
   return Math.min(100, Math.max(0, (current / total) * 100));

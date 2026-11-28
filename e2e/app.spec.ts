@@ -328,3 +328,43 @@ test("runs a terminal command typed on the prompt line", async ({ page }) => {
   await page.keyboard.press("Enter");
   await expect(page.getByText("R58M123 $ devices")).toBeVisible();
 });
+
+test("uploads files picked from several folders and refuses the same name twice", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await openModule(page, "Files");
+  await page.getByRole("button", { name: "Upload", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.getByText("desktop.ini")).toHaveCount(0);
+  await dialog.getByText("movie.zip").click();
+  await dialog.getByText("album", { exact: true }).click();
+  await expect(dialog.getByRole("textbox", { name: "PC folder" })).toHaveValue(/album$/);
+  await expect(dialog.getByText("desktop.ini")).toHaveCount(0);
+  await expect(dialog.getByText("movie.zip")).toHaveCount(2);
+  await dialog.getByText("movie.zip").first().click();
+  await expect(dialog.getByRole("alert")).toContainText("movie.zip");
+  await expect(dialog.getByText("Selected (1)")).toBeVisible();
+  await dialog.getByRole("button", { name: "Upload", exact: true }).click();
+  await expect(page.getByText(/1 items transferred/)).toBeVisible();
+  expect(await calls(page)).toContain("push_paths");
+});
+
+test("downloads to a folder picked in the app, from the right-click menu", async ({ page }) => {
+  await page.goto("/");
+  await openModule(page, "Files");
+  await page.getByText("notes.txt").click({ button: "right" });
+  await page.getByRole("menuitem", { name: "Download" }).click();
+  await page.getByRole("button", { name: "Download here" }).click();
+  await expect(page.getByText(/1 items transferred/)).toBeVisible();
+  expect(await calls(page)).toContain("pull_paths");
+});
+
+test("filters the phone folder by name", async ({ page }) => {
+  await page.goto("/");
+  await openModule(page, "Files");
+  await page.getByRole("button", { name: "Search this folder" }).click();
+  await page.getByRole("textbox", { name: "Search this folder" }).fill("note");
+  await expect(page.getByText("notes.txt")).toBeVisible();
+  await expect(page.getByText("Download", { exact: true })).toHaveCount(0);
+});

@@ -292,6 +292,57 @@ const handlers: Record<string, (args: Args) => unknown> = {
     permissionsTotal: 0,
     specialFailed: 0,
   }),
+  list_files: () => [
+    {
+      name: "Download",
+      path: "/sdcard/Download",
+      isDir: true,
+      isLink: false,
+      size: 0,
+      modified: 1700000000,
+    },
+    {
+      name: "notes.txt",
+      path: "/sdcard/notes.txt",
+      isDir: false,
+      isLink: false,
+      size: 1024,
+      modified: 1700000000,
+    },
+  ],
+  local_places: () => [
+    { kind: "downloads", path: "C:\\Users\\Test\\Downloads" },
+    { kind: "drive", path: "D:\\" },
+  ],
+  list_local: (a) => {
+    const entry = (name: string, isDir: boolean, isHidden = false) => ({
+      name,
+      path: `${a.path as string}\\${name}`,
+      isDir,
+      isHidden,
+      size: isDir ? 0 : 2048,
+      modified: 1700000000,
+    });
+    return String(a.path).endsWith("album")
+      ? [entry("movie.zip", false)]
+      : [entry("album", true), entry("movie.zip", false), entry("desktop.ini", false, true)];
+  },
+  local_size: () => 4096,
+  get_path_sizes: (a) => (a.paths as string[]).map(() => 1024),
+  push_paths: (a) => ({
+    done: (a.paths as string[]).length,
+    total: (a.paths as string[]).length,
+    bytes: 2048,
+    partial: null,
+    error: null,
+  }),
+  pull_paths: (a) => ({
+    done: (a.paths as string[]).length,
+    total: (a.paths as string[]).length,
+    bytes: 1024,
+    partial: null,
+    error: null,
+  }),
   list_debloat_apps: () =>
     apps.map((app) => ({
       app,

@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 
 import { commands, events, type TaskProgress } from "../../bindings";
+import { type Lane, nextLane } from "../jobs/store";
 
 /**
  * Runs a long command with a fresh task id, tracks its progress events and
@@ -9,6 +10,7 @@ import { commands, events, type TaskProgress } from "../../bindings";
 export function useTask() {
   const [running, setRunning] = useState(false);
   const [progress, setProgress] = useState<TaskProgress | null>(null);
+  const [lane, setLane] = useState<Lane | null>(null);
   const taskId = useRef<string | null>(null);
 
   const run = useCallback(async <T>(work: (taskId: string) => Promise<T>): Promise<T> => {
@@ -16,9 +18,12 @@ export function useTask() {
     taskId.current = id;
     setRunning(true);
     setProgress(null);
+    setLane(null);
     const unlisten = await events.taskProgress.listen((event) => {
       if (event.payload.taskId === id && event.payload.state === "running") {
         setProgress(event.payload);
+        const { current, total } = event.payload;
+        setLane((prev) => nextLane(prev, current ?? 0, total ?? 0, Date.now()));
       }
     });
     try {
@@ -28,6 +33,7 @@ export function useTask() {
       taskId.current = null;
       setRunning(false);
       setProgress(null);
+      setLane(null);
     }
   }, []);
 
@@ -35,5 +41,5 @@ export function useTask() {
     if (taskId.current) void commands.cancelTask(taskId.current);
   }, []);
 
-  return { running, progress, run, cancel };
+  return { running, progress, lane, run, cancel };
 }

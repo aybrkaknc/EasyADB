@@ -8,7 +8,7 @@ import { useTranslation } from "react-i18next";
 
 import { errorText, isAppError } from "../lib/errors";
 import { useSettings } from "./useSettings";
-import { useToasts } from "./useToasts";
+import { type ToastAction, useToasts } from "./useToasts";
 
 function beep(ok: boolean) {
   try {
@@ -44,8 +44,8 @@ export function useFeedback() {
   const push = useToasts((s) => s.push);
 
   const success = useCallback(
-    (text: string, longTask = false) => {
-      push("success", text);
+    (text: string, longTask = false, action?: ToastAction) => {
+      push("success", text, action);
       if (!longTask) return;
       if (settings.sound) beep(true);
       if (settings.notifications && !document.hasFocus()) void notify(t("notify.done"), text);

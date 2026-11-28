@@ -1,6 +1,15 @@
 @import "tailwindcss";
 
 @theme {
+  --animate-flash: flash 600ms ease-out;
+  @keyframes flash {
+    from {
+      background-color: rgb(0 255 65 / 0.22);
+    }
+    to {
+      background-color: rgb(0 255 65 / 0);
+    }
+  }
   --color-neon: #00ff41;
   --color-neon-dim: #00ff4133;
   --color-acid: #aaff00;

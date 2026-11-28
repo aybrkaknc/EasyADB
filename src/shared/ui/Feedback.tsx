@@ -4,7 +4,8 @@ import { useTranslation } from "react-i18next";
 
 import type { TaskProgress } from "../../bindings";
 import { cn } from "../lib/cn";
-import { percent } from "../lib/format";
+import { type Lane, secondsLeft } from "../jobs/store";
+import { clock, formatBytes, percent } from "../lib/format";
 import { useToasts } from "../hooks/useToasts";
 import { Button } from "./Button";
 
@@ -26,12 +27,35 @@ export function ProgressBar({ value }: { value: number | null }) {
   );
 }
 
+const MB = 1024 * 1024;
+
+/** Always one line, so that nothing jumps; what is not known yet shows as a dash. */
+function Amount({ lane }: { lane: Lane }) {
+  const { t } = useTranslation();
+  const left = secondsLeft(lane);
+  return (
+    <p className="mt-1.5 flex justify-between gap-3 text-[11px] text-white/60 tabular-nums">
+      <span>
+        {formatBytes(lane.done)} / {formatBytes(lane.total)}
+      </span>
+      <span>
+        {t("job.rate", { rate: lane.rate > 0 ? (lane.rate / MB).toFixed(1) : "-" })}
+        {" - "}
+        {t("job.left", { time: left === null ? "-" : clock(left) })}
+      </span>
+    </p>
+  );
+}
+
 /** Progress line for a running task with a cancel button. */
 export function TaskBar({
   progress,
+  lane,
   onCancel,
 }: {
   progress: TaskProgress | null;
+  /** Given for transfers: the amount, speed and time left are shown below the bar. */
+  lane?: Lane | null;
   onCancel?: () => void;
 }) {
   const { t } = useTranslation();
@@ -51,6 +75,7 @@ export function TaskBar({
           {value !== null && <span className="tabular-nums">{value.toFixed(0)}%</span>}
         </div>
         <ProgressBar value={value} />
+        {lane && lane.total > 0 && <Amount lane={lane} />}
       </div>
       {onCancel && (
         <Button variant="danger" size="sm" onClick={onCancel}>
@@ -121,6 +146,11 @@ export function Toaster() {
           )}
         >
           <p className="flex-1 break-words whitespace-pre-wrap">{toast.text}</p>
+          {toast.action && (
+            <button type="button" className="shrink-0 underline" onClick={toast.action.run}>
+              {toast.action.label}
+            </button>
+          )}
           <button type="button" onClick={() => dismiss(toast.id)} aria-label={t("common.close")}>
             <X className="size-3.5" />
           </button>

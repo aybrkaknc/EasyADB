@@ -15,6 +15,7 @@ export function Dialog({
   locked = false,
   large = false,
   wide = false,
+  huge = false,
   titleClass,
 }: {
   open: boolean;
@@ -27,6 +28,8 @@ export function Dialog({
   /** Bigger text, for the windows of jobs. */
   large?: boolean;
   wide?: boolean;
+  /** For windows that list files. */
+  huge?: boolean;
   titleClass?: string;
 }) {
   const keep = (event: Event) => locked && event.preventDefault();
@@ -39,7 +42,7 @@ export function Dialog({
           onInteractOutside={keep}
           className={cn(
             "clip-corners fixed top-1/2 left-1/2 z-50 -translate-x-1/2 -translate-y-1/2 border border-white/15 bg-black p-6 shadow-2xl",
-            wide ? "w-[min(600px,92vw)]" : "w-[min(520px,92vw)]",
+            huge ? "w-[min(960px,94vw)]" : wide ? "w-[min(600px,92vw)]" : "w-[min(520px,92vw)]",
           )}
         >
           <RDialog.Title

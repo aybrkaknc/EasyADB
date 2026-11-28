@@ -114,6 +114,7 @@ PC ile telefon arasında iş istemek için ağ gerekmez. Klasör `/data/local/tm
 | `job.json` | EasyADB | PC'den telefona iş isteği |
 | `job-status.json` | EasyAndroid | `job.json` durumu |
 | `job-cancel` | EasyADB | İptal edilecek işin `id` değeri |
+| `job-progress.json` | EasyADB | `receive` işinde gönderimin ilerlemesi |
 | `pc-backups.json` | EasyADB | PC'ye alınmış yedekler (aşağıda) |
 
 **İstek** (`format: "easyandroid-request"`, `version: 1`): `id` (`[A-Za-z0-9-]{1,64}`), `batch` (tek dokunuşla gönderilen isteklerin ortak kimliği, `id` biçiminde), `index` (gruptaki sıra, 0'dan) ve `size` (gruptaki istek sayısı, en çok 1000), `created` (telefon saniyesi), `phone` (`ro.serialno`), `type` ve alanlar:
@@ -137,6 +138,10 @@ PC ile telefon arasında iş istemek için ağ gerekmez. Klasör `/data/local/tm
 - `system`: sistem ayarı yedeği. Ayarlar ve varsayılan uygulamalar alınır, Wi-Fi ağları alınmaz.
 
 EasyADB işi yazar ve EasyAndroid'in dışa kapalı `JobService`'ini root ile başlatır (`am start-foreground-service`). Başlamazsa ana ekranı açar. EasyAndroid dosyayı okur ve siler. PC güvenilmiyorsa kullanıcıya sorar (bildirim ve uygulama içi pencere): Reddet, Yalnızca bu sefer, Bu bilgisayara güven. Beklerken durum `waiting` olur (`stage`: `approval`, bildirim gösterilemiyorsa `open` ve EasyADB uygulamayı ekrana açar). Yanıt `rejected`, 2 dakika sonra `expired` olur. `pc` alanı boşsa her seferinde sorulur. Durum `job-status.json` dosyasındadır (istek durumuyla aynı biçim). Bittiğinde `notes[]` yapılan yedekleri bildirir: `id:<yedek klasörü>` ve `system:<system_*.json>`. EasyADB bunları bir `pull` gibi PC'ye çeker. `job-cancel` dosyası `id` değerini taşıyorsa EasyAndroid işi durdurur ve `cancelled` yazar. İş yalnızca bu dosyadan alınır, intent'ten değil.
+
+**Dosya gönderimi** (`type: "receive"`). Dosyalar sayfasından telefona gönderim. Alanlar: `names[]` (üst düzey öğe adları), `target` (hedef klasör), `bytes` (toplam). Aktarımı EasyADB kendisi yapar; EasyAndroid onay verir ve izler. Onay, güven listesi ve 2 dakikalık süre yukarıdaki gibidir. Telefon başka iş yapıyorsa `failed` yazar ve gönderim başlamaz. Kabulde `running` yazar. EasyADB bunu görünce gönderir ve saniyede bir `job-progress.json` yazar: `id`, `state` (`running`, `done`, `failed`, `cancelled`), `index` (gönderilen öğenin sırası, 0'dan), `done` ve `total` (o öğenin baytları), `beat` (artan sayaç). `beat` 20 saniye değişmezse EasyAndroid "bağlantı koptu" diye bitirir. Telefondan iptal edilince EasyAndroid `job-status.json` dosyasına `cancelled` yazar ve EasyADB gönderimi durdurur. Yarım dosya telefonda kalır.
+
+EasyADB sormadan gönderir: EasyAndroid kurulu değilse, `su` çalışmıyorsa veya 15 saniye içinde durum gelmezse (`job.json` silinir). `receive` türünü bilmeyen eski EasyAndroid `failed` (`unsupported: receive`) yazar; EasyADB gönderimi durdurur ve güncelleme ister.
 
 **PC kaydı** (`pc-backups.json`): `[{ "package": "...", "versionName": "...", "createdAt": "..." }]` (en yeni 500 kayıt). EasyADB PC'ye uygulama yedeği aldığında ekler; EasyAndroid "bekleyen" ve "güncellenen" hesabında kullanır.
 
