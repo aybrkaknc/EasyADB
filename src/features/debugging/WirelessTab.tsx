@@ -55,7 +55,7 @@ function Phones({ phones }: { phones: WirelessPhone[] }) {
 
   return (
     <Panel>
-      <SubHeading>{t("debugging.wireless.phones")}</SubHeading>
+      <SubHeading level="section">{t("debugging.wireless.phones")}</SubHeading>
       {phones.length === 0 ? (
         <p className="text-xs text-white/50">{t("debugging.wireless.empty")}</p>
       ) : (
@@ -202,7 +202,7 @@ export function WirelessTab() {
     <div className="flex max-w-3xl flex-col gap-4">
       <Phones phones={phones} />
       <Panel>
-        <SubHeading>{t("debugging.wireless.pairNew")}</SubHeading>
+        <SubHeading level="section">{t("debugging.wireless.pairNew")}</SubHeading>
         <div className="mb-4">
           <FilterChips
             value={way}

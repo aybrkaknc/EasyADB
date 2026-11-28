@@ -87,7 +87,7 @@ export function BackupSection() {
   };
   return (
     <Panel>
-      <SubHeading>{t("settings.backupDir")}</SubHeading>
+      <SubHeading level="section">{t("settings.backupDir")}</SubHeading>
       <p className="mb-3 truncate text-xs text-white/80" title={backupRoot.data}>
         {backupRoot.data ?? "-"}
       </p>
@@ -174,7 +174,7 @@ export function PhonesSection() {
   };
   return (
     <Panel>
-      <SubHeading>{t("settings.trusted.title")}</SubHeading>
+      <SubHeading level="section">{t("settings.trusted.title")}</SubHeading>
       {trusted.data?.length ? (
         <PhoneList
           phones={trusted.data}
@@ -189,7 +189,7 @@ export function PhonesSection() {
       {never.data && never.data.length > 0 && (
         <>
           <div className="mt-4">
-            <SubHeading>{t("settings.trusted.neverTitle")}</SubHeading>
+            <SubHeading level="sub">{t("settings.trusted.neverTitle")}</SubHeading>
           </div>
           <PhoneList
             phones={never.data}

@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { useDevices } from "../../shared/hooks/useDevices";
+import { PlainPanels } from "../../shared/ui/Panel";
 import { SectionNav } from "../../shared/ui/SectionNav";
 import { PcTab } from "./PcTab";
 import { PhoneSettingsTab } from "./PhoneSettingsTab";
@@ -34,10 +35,12 @@ export function DebuggingTab() {
       value={section}
       onChange={setSection}
     >
-      {section === "usb" && <UsbTab onPairNeeded={() => setSection("wireless")} />}
-      {section === "wireless" && <WirelessTab />}
-      {section === "settings" && <PhoneSettingsTab />}
-      {section === "pc" && <PcTab />}
+      <PlainPanels trail>
+        {section === "usb" && <UsbTab onPairNeeded={() => setSection("wireless")} />}
+        {section === "wireless" && <WirelessTab />}
+        {section === "settings" && <PhoneSettingsTab />}
+        {section === "pc" && <PcTab />}
+      </PlainPanels>
     </SectionNav>
   );
 }

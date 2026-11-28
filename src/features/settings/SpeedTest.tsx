@@ -24,7 +24,7 @@ export function SpeedTest() {
   };
   return (
     <>
-      <SubHeading>{t("speed.title")}</SubHeading>
+      <SubHeading level="section">{t("speed.title")}</SubHeading>
       <p className="mb-3 text-xs text-white/60">{t("speed.intro")}</p>
       <Button onClick={start} disabled={!ready}>
         {t("speed.start")}

@@ -1,12 +1,13 @@
 import { createContext, type ReactNode, useContext } from "react";
 
 import { cn } from "../lib/cn";
+import { SubHeading } from "./SubHeading";
 
-const Plain = createContext(false);
+const Plain = createContext<false | "underline" | "trail">(false);
 
 /** Inside the settings, panels have no side bar and their titles are underlined like tabs. */
-export function PlainPanels({ children }: { children: ReactNode }) {
-  return <Plain.Provider value>{children}</Plain.Provider>;
+export function PlainPanels({ trail, children }: { trail?: boolean; children: ReactNode }) {
+  return <Plain.Provider value={trail ? "trail" : "underline"}>{children}</Plain.Provider>;
 }
 
 export function Panel({
@@ -24,9 +25,14 @@ export function Panel({
   if (plain) {
     return (
       <section className={className}>
-        {title && (
-          <h3 className="mb-4 text-xs font-medium tracking-widest text-white uppercase">{title}</h3>
-        )}
+        {title &&
+          (plain === "trail" ? (
+            <SubHeading level="section">{title}</SubHeading>
+          ) : (
+            <h3 className="mb-3 inline-block border-b-2 border-neon pb-1 text-[11px] tracking-widest text-neon uppercase">
+              {title}
+            </h3>
+          ))}
         {actions && <div className="mb-3 flex items-center gap-2">{actions}</div>}
         {children}
       </section>
@@ -35,8 +41,12 @@ export function Panel({
   return (
     <section className={cn("border-l-2 border-neon py-1 pl-4", className)}>
       {(title || actions) && (
-        <header className="mb-3 flex items-center justify-between gap-3">
-          {title && <h3 className="label text-neon/80">{title}</h3>}
+        <header className={cn("flex items-start justify-between gap-3", !title && "mb-3")}>
+          {title && (
+            <h3 className="mb-3 inline-block border-b-2 border-neon pb-1 text-[11px] tracking-widest text-neon uppercase">
+              {title}
+            </h3>
+          )}
           {actions && <div className="flex items-center gap-2">{actions}</div>}
         </header>
       )}
