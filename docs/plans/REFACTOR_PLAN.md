@@ -32,7 +32,7 @@
 - **Terminal:** komut komut çalıştırma, canlı çıktı akışı ve iptal; geçmiş, öneri, paket adı tamamlama. PTY yok.
 - **Kurulum:** ZIP/ROM sideload (ilerlemeli) + tek APK kurma.
 - **Performans:** CPU/RAM/pil (geçmiş grafiği), donanım envanteri, depolama ve sıcaklık, ağ/Wi-Fi bilgisi.
-- **Dosyalar:** gezinme, push/pull (ilerlemeli), klasör oluştur/sil/taşı/yeniden adlandır.
+- **Dosya Yöneticisi:** gezinme, push/pull (ilerlemeli), klasör oluştur/sil/taşı/yeniden adlandır.
 - **Logcat:** seviye + etiket filtresi, regex arama ve vurgulama, oturumu dosyaya kaydet/dışa aktar.
 - **Ayarlar:** dil, yedek konumu, bildirim ve ses (ayrı ayrı), onay diyalogları, günlük.
 

@@ -1,8 +1,8 @@
 import { create } from "zustand";
 
-export type ModuleId = "device" | "backup" | "debloat" | "files" | "settings";
+export type ModuleId = "device" | "backup" | "restore" | "debloat" | "files" | "settings";
 
-export const MODULES: ModuleId[] = ["device", "backup", "debloat", "files", "settings"];
+export const MODULES: ModuleId[] = ["device", "backup", "restore", "debloat", "files", "settings"];
 
 export const SETTINGS_TABS = ["general", "debugging", "terminal", "performance", "logcat"] as const;
 

@@ -15,6 +15,7 @@ import { Checkbox, FilterChips, Input } from "../../shared/ui/Controls";
 import { EmptyState, Spinner } from "../../shared/ui/Feedback";
 import { Panel } from "../../shared/ui/Panel";
 import { RootStatus } from "./RootStatus";
+import { PhoneDataTab } from "./PhoneDataTab";
 
 type Filter = "user" | "system" | "all";
 
@@ -215,6 +216,9 @@ export function AppsTab({ device, onDone }: { device: DeviceEntry; onDone: () =>
         <Button onClick={() => void start(selectedIds)} disabled={selection.count === 0}>
           {t("backup.start", { count: selection.count })}
         </Button>
+        <div className="mt-auto">
+          <PhoneDataTab device={device} />
+        </div>
       </aside>
     </div>
   );

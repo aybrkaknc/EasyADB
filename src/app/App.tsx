@@ -9,6 +9,7 @@ import { TrustNewPhone } from "../features/backup/TrustNewPhone";
 import { DebloatView } from "../features/debloat/DebloatView";
 import { DeviceView } from "../features/device/DeviceView";
 import { FilesView } from "../features/files/FilesView";
+import { RestoreView } from "../features/backup/RestoreView";
 import { SettingsView } from "../features/settings/SettingsView";
 import { useConnections } from "../shared/hooks/useConnections";
 import { useSettings } from "../shared/hooks/useSettings";
@@ -23,6 +24,7 @@ import { MODULES, type ModuleId, useAppStore } from "./store";
 const VIEWS: Record<ModuleId, ComponentType> = {
   device: DeviceView,
   backup: BackupView,
+  restore: RestoreView,
   debloat: DebloatView,
   files: FilesView,
   settings: SettingsView,

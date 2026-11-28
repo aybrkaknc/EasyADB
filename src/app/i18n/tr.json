@@ -68,13 +68,16 @@
       "title": "Ana Sayfa"
     },
     "backup": {
-      "title": "Yedekleme"
+      "title": "Yedekle"
+    },
+    "restore": {
+      "title": "Geri yükle"
     },
     "debloat": {
       "title": "Debloat"
     },
     "files": {
-      "title": "Dosyalar"
+      "title": "Dosya Yöneticisi"
     },
     "settings": {
       "title": "Ayarlar"
@@ -230,16 +233,14 @@
       "title": "Hızlı işlemler",
       "backup": "Yedekle",
       "debloat": "Debloat",
-      "files": "Dosyalar",
+      "files": "Dosya Yöneticisi",
       "settings": "Ayarlar"
     }
   },
   "backup": {
     "tabs": {
       "apps": "Uygulamalar",
-      "archive": "Geri yükle",
-      "folders": "Klasörler",
-      "phone": "Telefon verileri"
+      "folders": "Klasörler"
     },
     "filter": {
       "user": "Kullanıcı",

@@ -79,7 +79,7 @@ Ekran görüntüleri bir sonraki sürümle eklenecek.
 * **Debloater:** UAD-NG listesinden paket açıklamaları ve güvenlik seviyeleri, toplu devre dışı bırakma, etkinleştirme, kaldırma ve geri getirme, yeni bir ROM'dan sonra tekrar uygulanabilen profiller.
 * **Hata ayıklama:** **Ayarlar** ekranının sekmesi. USB ve kablosuz hata ayıklama tek yerde. QR kod veya eşleştirme koduyla eşleştirin, IP veya `adb tcpip` ile bağlanın, eşleşmiş telefonları kendiliğinden bağlayın, telefonun hata ayıklama ayarlarını değiştirin ve adb sunucusunu yönetin.
 * **Terminal:** **Ayarlar** ekranının sekmesi. adb ve fastboot komutlarını canlı çıktı, geçmiş, tamamlama ve iptal ile çalıştırır.
-* **Dosyalar:** Cihaza göz atma ve arama, oluşturma, yeniden adlandırma, taşıma ve silme, bilgisayar ile cihaz arasında hız ve kalan süre göstererek dosya ve klasör kopyalama. Seçerek veya sürükleyip bırakarak yükleme, düğmelerle veya sağ tık menüsüyle. EasyAndroid kuruluysa telefon, güvenmediği bir bilgisayardan dosya almadan önce sorar ve ilerlemeyi gösterir.
+* **Dosya Yöneticisi:** Cihaza göz atma ve arama, oluşturma, yeniden adlandırma, taşıma ve silme, bilgisayar ile cihaz arasında hız ve kalan süre göstererek dosya ve klasör kopyalama. Seçerek veya sürükleyip bırakarak yükleme, düğmelerle veya sağ tık menüsüyle. EasyAndroid kuruluysa telefon, güvenmediği bir bilgisayardan dosya almadan önce sorar ve ilerlemeyi gösterir.
 * **Logcat:** Seviye ve etiket filtreli canlı günlük, vurgulamalı regex arama, dosyaya kaydetme ve dışa aktarma.
 * **Performans:** Canlı CPU, RAM, pil ve depolama, donanım bilgileri ve ağ ayrıntıları.
 * **Kurulum ve yeniden başlatma:** APK kurma, ZIP sideload ve sistem, kurtarma, önyükleyici, sideload veya fastbootd moduna yeniden başlatma.

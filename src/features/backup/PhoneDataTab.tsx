@@ -68,7 +68,7 @@ export function PhoneDataTab({ device }: { device: DeviceEntry }) {
   };
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-auto p-6">
+    <div className="flex flex-col gap-4">
       <Panel title={t("backup.phoneData.title")}>
         <p className="mb-3 text-xs text-white/60">{t("backup.phoneData.hint")}</p>
         <div className="flex flex-col gap-2.5">

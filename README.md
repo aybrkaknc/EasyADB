@@ -79,7 +79,7 @@ Screenshots will be added with the next release.
 * **Debloater:** Package descriptions and safety levels from the UAD-NG list, batch disable, enable, remove and restore, and profiles you can save and re-apply after a new ROM.
 * **Debugging:** A tab of **Settings**: one place for USB and wireless debugging. Pair with a QR code or a pairing code, connect by IP or `adb tcpip`, connect paired phones automatically, change the phone's debugging settings and manage the adb server.
 * **Terminal:** A tab of **Settings**. Runs adb and fastboot commands with live output, history, completion and cancel.
-* **Files:** Browse and search the device, create, rename, move and delete, and copy files and folders between PC and device with speed and time left. Upload by picking or by drag and drop, from the buttons or the right-click menu. With EasyAndroid installed, the phone asks before it receives files from a PC it does not trust and shows the progress.
+* **File manager:** Browse and search the device, create, rename, move and delete, and copy files and folders between PC and device with speed and time left. Upload by picking or by drag and drop, from the buttons or the right-click menu. With EasyAndroid installed, the phone asks before it receives files from a PC it does not trust and shows the progress.
 * **Logcat:** Live log with level and tag filters, regex search with highlighting, recording to a file and export.
 * **Performance:** Live CPU, RAM, battery and storage, hardware inventory and network details.
 * **Install and reboot:** Install an APK, sideload a ZIP and reboot into system, recovery, bootloader, sideload or fastbootd.

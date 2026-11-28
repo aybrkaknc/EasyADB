@@ -68,13 +68,16 @@
       "title": "Home"
     },
     "backup": {
-      "title": "Backup"
+      "title": "Back up"
+    },
+    "restore": {
+      "title": "Restore"
     },
     "debloat": {
       "title": "Debloat"
     },
     "files": {
-      "title": "Files"
+      "title": "File manager"
     },
     "settings": {
       "title": "Settings"
@@ -230,16 +233,14 @@
       "title": "Quick actions",
       "backup": "Back up",
       "debloat": "Debloat",
-      "files": "Files",
+      "files": "File manager",
       "settings": "Settings"
     }
   },
   "backup": {
     "tabs": {
       "apps": "Apps",
-      "archive": "Restore",
-      "folders": "Folders",
-      "phone": "Phone data"
+      "folders": "Folders"
     },
     "filter": {
       "user": "User",

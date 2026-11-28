@@ -1,56 +1,42 @@
-import { Archive } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { useDevices } from "../../shared/hooks/useDevices";
+import { useAppStore } from "../../app/store";
 import { Tabs, TabsContent, TabsList } from "../../shared/ui/Controls";
 import { DeviceGuard } from "../../shared/ui/DeviceGuard";
+import { MODULE_ICONS } from "../../app/modules";
 import { ModuleHeader } from "../../shared/ui/ModuleHeader";
 import { AppsTab } from "./AppsTab";
-import { ArchiveTab } from "./ArchiveTab";
 import { FoldersTab } from "./FoldersTab";
-import { PhoneDataTab } from "./PhoneDataTab";
 
 export function BackupView() {
   const { t } = useTranslation();
-  const { selected } = useDevices();
   const [tab, setTab] = useState("apps");
+  // Once a backup is made, its list is in the restore module.
+  const setModule = useAppStore((s) => s.setModule);
   return (
     <>
-      <ModuleHeader icon={Archive} title={t("modules.backup.title")} />
+      <ModuleHeader icon={MODULE_ICONS.backup} title={t("modules.backup.title")} />
       <Tabs value={tab} onValueChange={setTab} className="relative flex min-h-0 flex-1 flex-col">
         <TabsList
           tabs={[
             { value: "apps", label: t("backup.tabs.apps") },
             { value: "folders", label: t("backup.tabs.folders") },
-            { value: "phone", label: t("backup.tabs.phone") },
-            { value: "archive", label: t("backup.tabs.archive") },
           ]}
         />
         <TabsContent value="apps" className="flex min-h-0 flex-1 data-[state=inactive]:hidden">
           <DeviceGuard>
             {(device) => (
-              <AppsTab key={device.serial} device={device} onDone={() => setTab("archive")} />
+              <AppsTab key={device.serial} device={device} onDone={() => setModule("restore")} />
             )}
           </DeviceGuard>
         </TabsContent>
         <TabsContent value="folders" className="flex min-h-0 flex-1 data-[state=inactive]:hidden">
           <DeviceGuard>
             {(device) => (
-              <FoldersTab key={device.serial} device={device} onDone={() => setTab("archive")} />
+              <FoldersTab key={device.serial} device={device} onDone={() => setModule("restore")} />
             )}
           </DeviceGuard>
-        </TabsContent>
-        <TabsContent
-          value="phone"
-          className="relative flex min-h-0 flex-1 data-[state=inactive]:hidden"
-        >
-          <DeviceGuard>
-            {(device) => <PhoneDataTab key={device.serial} device={device} />}
-          </DeviceGuard>
-        </TabsContent>
-        <TabsContent value="archive" className="flex min-h-0 flex-1 data-[state=inactive]:hidden">
-          <ArchiveTab device={selected} />
         </TabsContent>
       </Tabs>
     </>

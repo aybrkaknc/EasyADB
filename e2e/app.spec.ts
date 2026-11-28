@@ -29,13 +29,15 @@ test("guides through authorization", async ({ page }) => {
 
 test("backs up a selected app and lists it in the archive", async ({ page }) => {
   await page.goto("/");
-  await openModule(page, "Backup");
+  await openModule(page, "Back up");
   await page.getByText("Spotify", { exact: true }).click();
   await expect(page.getByText("Estimated size: 23.8 MB")).toBeVisible();
   await page.getByRole("button", { name: "Back up 1 apps" }).click();
   await expect(page.getByRole("dialog").getByText("Backup completed")).toBeVisible();
   await page.getByRole("button", { name: "OK" }).click();
-  await expect(page.getByRole("tab", { name: "Restore" })).toHaveAttribute("data-state", "active");
+  await expect(
+    page.getByRole("navigation", { name: "Modules" }).getByRole("button", { name: "Restore" }),
+  ).toHaveAttribute("aria-current", "page");
   await expect(page.getByText("com.spotify.music | ")).toBeVisible();
 });
 
@@ -83,14 +85,14 @@ test("switches the interface to Turkish", async ({ page }) => {
 
 test("does not offer app data without root", async ({ page }) => {
   await page.goto("/?scenario=noroot");
-  await openModule(page, "Backup");
+  await openModule(page, "Back up");
   await expect(page.getByText(/No root, or root was denied/)).toBeVisible();
   await expect(page.getByRole("checkbox", { name: /^Data/ })).toBeDisabled();
 });
 
 test("offers app data when root is available", async ({ page }) => {
   await page.goto("/");
-  await openModule(page, "Backup");
+  await openModule(page, "Back up");
   await expect(page.getByText("Root available: app data can be copied.")).toBeVisible();
   await expect(page.getByRole("checkbox", { name: /^Data/ })).toBeEnabled();
 });
@@ -139,10 +141,9 @@ test("offers to copy phone backups and warns about root", async ({ page }) => {
 
 test("restores a system settings snapshot", async ({ page }) => {
   await page.goto("/?scenario=systembackup");
-  await openModule(page, "Backup");
-  await page.getByRole("tab", { name: "Restore" }).click();
+  await openModule(page, "Restore");
   await expect(page.getByText("System settings")).toBeVisible();
-  await page.getByRole("button", { name: "Restore", exact: true }).click();
+  await page.getByRole("main").getByRole("button", { name: "Restore", exact: true }).click();
   await expect(page.getByText("Restore system settings")).toBeVisible();
   await page.getByRole("dialog").getByRole("button", { name: "Restore" }).click();
   await page.getByRole("button", { name: "Confirm" }).click();
@@ -159,13 +160,13 @@ test("stays quiet when the phone has no backups", async ({ page }) => {
 
 test("asks whether to restore saved permissions", async ({ page }) => {
   await page.goto("/");
-  await openModule(page, "Backup");
+  await openModule(page, "Back up");
   await page.getByText("Spotify", { exact: true }).click();
   await page.getByRole("button", { name: "Back up 1 apps" }).click();
   await page.getByRole("button", { name: "OK" }).click();
   await expect(page.getByText("com.spotify.music | ")).toBeVisible();
 
-  await page.getByRole("button", { name: "Restore", exact: true }).click();
+  await page.getByRole("main").getByRole("button", { name: "Restore", exact: true }).click();
   const permissions = page.getByRole("checkbox", { name: /saved permissions \(3\)/ });
   await expect(permissions).toBeChecked();
   await permissions.click();
@@ -313,11 +314,11 @@ test("opens the tools inside the settings", async ({ page }) => {
 test("opens and closes the module rail from the corner", async ({ page }) => {
   await page.goto("/");
   const rail = page.getByRole("navigation", { name: "Modules" });
-  await expect(rail.getByText("Backup", { exact: true })).toHaveCount(0);
+  await expect(rail.getByText("Back up", { exact: true })).toHaveCount(0);
   await page.getByRole("button", { name: "Expand menu" }).click();
-  await expect(rail.getByText("Backup", { exact: true })).toBeVisible();
+  await expect(rail.getByText("Back up", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Collapse menu" }).click();
-  await expect(rail.getByText("Backup", { exact: true })).toHaveCount(0);
+  await expect(rail.getByText("Back up", { exact: true })).toHaveCount(0);
 });
 
 test("runs a terminal command typed on the prompt line", async ({ page }) => {
@@ -333,7 +334,7 @@ test("uploads files picked from several folders and refuses the same name twice"
   page,
 }) => {
   await page.goto("/");
-  await openModule(page, "Files");
+  await openModule(page, "File manager");
   await page.getByRole("button", { name: "Upload", exact: true }).click();
   const dialog = page.getByRole("dialog");
   await expect(dialog.getByText("desktop.ini")).toHaveCount(0);
@@ -352,7 +353,7 @@ test("uploads files picked from several folders and refuses the same name twice"
 
 test("downloads to a folder picked in the app, from the right-click menu", async ({ page }) => {
   await page.goto("/");
-  await openModule(page, "Files");
+  await openModule(page, "File manager");
   await page.getByText("notes.txt").click({ button: "right" });
   await page.getByRole("menuitem", { name: "Download" }).click();
   await page.getByRole("button", { name: "Download here" }).click();
@@ -362,7 +363,7 @@ test("downloads to a folder picked in the app, from the right-click menu", async
 
 test("filters the phone folder by name", async ({ page }) => {
   await page.goto("/");
-  await openModule(page, "Files");
+  await openModule(page, "File manager");
   await page.getByRole("button", { name: "Search this folder" }).click();
   await page.getByRole("textbox", { name: "Search this folder" }).fill("note");
   await expect(page.getByText("notes.txt")).toBeVisible();
